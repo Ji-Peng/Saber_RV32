@@ -20,3 +20,6 @@ $(error Unable to determine XLEN from $(RISCV_ARCH))
 endif
 ```
 
+使用环境变量直接$(RISCV_PATH)即可
+
+为何有那么多FLAGS呢？RISCV_CCASFLAGS, RISCV_CFLAGS, RISCV_CXXFLAGS???
