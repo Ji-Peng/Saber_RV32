@@ -7,3 +7,5 @@ bsp: board support package
 freedom-metal: hardware interface
 scripts: extra tools
 src: source file
+
+newline
