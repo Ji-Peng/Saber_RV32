@@ -3,6 +3,6 @@
 
 #include <stdio.h>
 
-int main() {
-    printf("Hello, World123!\n");
+int test() {
+    printf("Hello, World123456!\n");
 }

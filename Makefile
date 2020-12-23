@@ -1,61 +1,22 @@
-PROGRAM = hello
-TARGET = sifive-hifive1-revb
-# set E_SDK_TAGS, E_SDK_REQS
-include freedom-e-sdk.mk
-
 # The configuration defaults to Debug. Valid choices are: debug and release
 CONFIGURATION ?= debug
-
-#############################################################
-# Makefile Arguments
-#############################################################
-
 # BSP_DIR sets the path to the target-specific board support package.
 BSP_DIR ?= $(abspath bsp)
 # SRC_DIR sets the path to the program source directory
 SRC_DIR ?= $(abspath src)
-# Set FREEDOM_E_SDK_VENV_PATH to use a project-local virtualenv
-export FREEDOM_E_SDK_VENV_PATH ?=  $(abspath .)/venv
-# Set FREERTOS_METAL_VENV_PATH to use same venv as FREEDOM_E_SDK_VENV_PATH
-export FREERTOS_METAL_VENV_PATH ?= $(FREEDOM_E_SDK_VENV_PATH)
-
-# Include the BSP settings ARCH, ABI etc
-include $(BSP_DIR)/settings.mk
-
-LIBMETAL_EXTRA=-lmetal-gloss
-METAL_WITH_EXTRA=--with-builtin-libgloss
-SPEC=nano
-
-LINK_TARGET = default
-
-MTIME_RATE_HZ_DEF=32768
-
-#############################################################
-# Toolchain
-#############################################################
 
 # Allow users to select a different cross compiler.
 CROSS_COMPILE ?= riscv64-unknown-elf
+RISCV_GCC     := $(CROSS_COMPILE)-gcc
+RISCV_OBJDUMP := $(CROSS_COMPILE)-objdump
+RISCV_OBJCOPY := $(CROSS_COMPILE)-objcopy
+RISCV_GDB     := $(CROSS_COMPILE)-gdb
+RISCV_AR      := $(CROSS_COMPILE)-ar
+RISCV_SIZE    := $(CROSS_COMPILE)-size
 
-# If users don't specify RISCV_PATH then assume that the tools will just be in
-# their path.
-RISCV_GCC     := $(abspath $(RISCV_PATH)/bin/$(CROSS_COMPILE)-gcc)
-RISCV_OBJDUMP := $(abspath $(RISCV_PATH)/bin/$(CROSS_COMPILE)-objdump)
-RISCV_OBJCOPY := $(abspath $(RISCV_PATH)/bin/$(CROSS_COMPILE)-objcopy)
-RISCV_GDB     := $(abspath $(RISCV_PATH)/bin/$(CROSS_COMPILE)-gdb)
-RISCV_AR      := $(abspath $(RISCV_PATH)/bin/$(CROSS_COMPILE)-ar)
-RISCV_SIZE    := $(abspath $(RISCV_PATH)/bin/$(CROSS_COMPILE)-size)
-PATH          := $(abspath $(RISCV_PATH)/bin):$(PATH)
-
-SEGGER_JLINK_EXE := JLinkExe
-SEGGER_JLINK_GDB_SERVER := JLinkGDBServer
-
-#############################################################
-# Software Flags
-#############################################################
-
-ARCH_FLAGS = -march=$(RISCV_ARCH) -mabi=$(RISCV_ABI) -mcmodel=$(RISCV_CMODEL) 
-
+ARCH_FLAGS = -march=rv32imac -mabi=ilp32 -mcmodel=medlow
+SPEC=nano
+MTIME_RATE_HZ_DEF=32768
 RISCV_CFLAGS  	+= 	-O3 \
 					-ffunction-sections -fdata-sections \
 					-I$(abspath $(BSP_DIR)/install/include/) \
@@ -63,59 +24,48 @@ RISCV_CFLAGS  	+= 	-O3 \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
 					$(ARCH_FLAGS)
 
-# Turn on garbage collection for unused sections
-# Turn on linker map file generation
-# Turn off the C standard library
-# Find the archive files and linker scripts
-RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal $(LIBMETAL_EXTRA) -Wl,--end-group \
-					-Wl,-Map,$(PROGRAM).map \
+RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group \
+					-Wl,-Map,$(basename $@).map \
 					-T$(abspath $(filter %.lds,$^)) -nostartfiles -nostdlib -Wl,--gc-sections \
 					$(ARCH_FLAGS) \
 					-L$(sort $(dir $(abspath $(filter %.a,$^))))
-					
-#############################################################
-# Software
-#############################################################
-
-PROGRAM_ELF ?= $(SRC_DIR)/$(CONFIGURATION)/$(PROGRAM).elf
-PROGRAM_HEX ?= $(SRC_DIR)/$(CONFIGURATION)/$(PROGRAM).hex
-PROGRAM_LST ?= $(SRC_DIR)/$(CONFIGURATION)/$(PROGRAM).lst
 
 .PHONY: all
-all: software
-
-.PHONY: software
-software: $(PROGRAM_ELF)
-
-software: $(PROGRAM_HEX)
+all: out/bench.elf
 
 PROGRAM_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.h) $(wildcard $(SRC_DIR)/*.S)
 
-$(PROGRAM_ELF): \
-		$(PROGRAM_SRCS) \
+out/%.elf: \
+		benchmark/%.c $(PROGRAM_SRCS) \
 		$(BSP_DIR)/install/lib/$(CONFIGURATION)/libmetal.a \
 		$(BSP_DIR)/install/lib/$(CONFIGURATION)/libmetal-gloss.a \
-		$(BSP_DIR)/metal.$(LINK_TARGET).lds
+		$(BSP_DIR)/metal.default.lds
 	mkdir -p $(dir $@)
-	$(RISCV_GCC) -o $(basename $(notdir $@)) $(RISCV_CFLAGS) \
-		$(PROGRAM_SRCS) \
-		$(RISCV_LDFLAGS)
-	mv $(basename $(notdir $@)) $@
-	mv $(basename $(notdir $@)).map $(dir $@)
+	$(RISCV_GCC) -o $(basename $@) $(RISCV_CFLAGS) \
+		$< $(PROGRAM_SRCS) -I$(SRC_DIR) $(RISCV_LDFLAGS)
+	mv $(basename $@) $@
 	touch -c $@
-	$(RISCV_OBJDUMP) --source --all-headers --demangle --line-numbers --wide $@ > $(PROGRAM_LST)
+	$(RISCV_OBJDUMP) --source --all-headers --demangle --line-numbers --wide $@ > $(basename $@).lst
 	$(RISCV_SIZE) $@
-
-$(PROGRAM_HEX): \
-		$(PROGRAM_ELF)
-	$(RISCV_OBJCOPY) -O ihex $(PROGRAM_ELF) $@
+	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 
 .PHONY: clean-software
 clean-software:
-	$(MAKE) -C $(SRC_DIR) clean
-	rm -rf $(SRC_DIR)/$(CONFIGURATION)
+	rm -rf out
+
 .PHONY: clean
 clean: clean-software
+
+#############################################################
+# Freedom Studio
+#############################################################
+include $(BSP_DIR)/settings.mk
+include freedom-e-sdk.mk
+TARGET = sifive-hifive1-revb
+export FREERTOS_SOURCE_PATH = $(abspath FreeRTOS-metal)
+# Set FREEDOM_E_SDK_VENV_PATH to use a project-local virtualenv
+export FREEDOM_E_SDK_VENV_PATH ?=  $(abspath .)/venv
+METAL_WITH_EXTRA=--with-builtin-libgloss
 
 #############################################################
 # Freedom Studio
@@ -273,3 +223,4 @@ clean: clean-metal
 
 metal_install: metal
 	$(MAKE) -C $(METAL_SOURCE_PATH) install
+
