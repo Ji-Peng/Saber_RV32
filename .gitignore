@@ -1,0 +1,5 @@
+out/
+scripts/
+freedom-metal/
+bsp/*
+!bsp/install
