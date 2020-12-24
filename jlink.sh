@@ -1,5 +1,4 @@
 #!/bin/bash
-
 while [[ "$1" != "" ]]
 do
     case "$1"
@@ -35,10 +34,9 @@ else
 
 if [ "$jlink" == "" ]; then echo "$0: --jlink is required" >&2; fi
 if [ "$elf" == "" ]; then echo "$0: --elf is required" >&2; fi
-$jlink -device RISC-V -port ${GDB_PORT} &
-extra_gdb=("-ex" "monitor allowsimulation 0")
+$jlink -device FE310 -if JTAG -speed 4000 -port ${GDB_PORT} &
 
-$gdb $elf -ex "set remotetimeout 2400" -ex "target extended-remote localhost:${GDB_PORT}" "${extra_gdb[@]}"
+$gdb $elf -ex "set remotetimeout 2400" -ex "target extended-remote localhost:${GDB_PORT}"
 
 kill %1
 

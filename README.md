@@ -17,3 +17,10 @@ src: source file
 ./jlink.sh --hex out/bench.hex --jlink JLinkExe
 
 ./jlink.sh --elf out/bench.elf --jlink JLinkGDBServer --gdb riscv64-unknown-elf-gdb
+
+and then input "load"
+
+## GDBServer Tutorial
+
+[Segger JLink-GDBServer](https://wiki.segger.com/J-Link_GDB_Server)
+
