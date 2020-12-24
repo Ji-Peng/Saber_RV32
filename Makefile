@@ -17,7 +17,7 @@ RISCV_SIZE    := $(CROSS_COMPILE)-size
 ARCH_FLAGS = -march=rv32imac -mabi=ilp32 -mcmodel=medlow
 SPEC=nano
 MTIME_RATE_HZ_DEF=32768
-RISCV_CFLAGS  	+= 	-O3 \
+RISCV_CFLAGS  	+= 	-O0 -g \
 					-ffunction-sections -fdata-sections \
 					-I$(abspath $(BSP_DIR)/install/include/) \
 					--specs=$(SPEC).specs \
@@ -31,7 +31,7 @@ RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--
 					-L$(sort $(dir $(abspath $(filter %.a,$^))))
 
 .PHONY: all
-all: out/bench.elf
+all: out/bench.elf out/bench2.elf
 
 PROGRAM_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.S)
 

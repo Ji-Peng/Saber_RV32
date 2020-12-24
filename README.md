@@ -11,3 +11,9 @@ freedom-metal: hardware interface
 scripts: extra tools
 
 src: source file
+
+## Upload and Debug
+
+./jlink.sh --hex out/bench.hex --jlink JLinkExe
+
+./jlink.sh --elf out/bench.elf --jlink JLinkGDBServer --gdb riscv64-unknown-elf-gdb
