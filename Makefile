@@ -19,15 +19,18 @@ ARCH_FLAGS = -march=rv32imac -mabi=ilp32 -mcmodel=medlow
 SPEC=nano
 MTIME_RATE_HZ_DEF=32768
 RISCV_CFLAGS  	+= 	-O0 -g \
-					-ffunction-sections -fdata-sections \
+					-Wall -Wextra -Wimplicit-function-declaration \
+              		-Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes \
+              		-Wundef -Wshadow \
 					-I$(abspath $(BSP_DIR)/install/include/) \
-					--specs=$(SPEC).specs \
+					-fno-common -ffunction-sections -fdata-sections --specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
 					$(ARCH_FLAGS)
 
 RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group \
 					-Wl,-Map,$(basename $@).map \
-					-T$(abspath $(filter %.lds,$^)) -nostartfiles -nostdlib -Wl,--gc-sections \
+					-T$(abspath $(filter %.lds,$^)) -Xlinker --defsym=__heap_max=0x1 \
+					 -nostartfiles -nostdlib -Wl,--gc-sections \
 					$(ARCH_FLAGS) \
 					-L$(sort $(dir $(abspath $(filter %.a,$^))))
 

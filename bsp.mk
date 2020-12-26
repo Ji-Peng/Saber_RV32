@@ -7,7 +7,7 @@ TARGET = sifive-hifive1-revb
 export FREERTOS_SOURCE_PATH = $(abspath FreeRTOS-metal)
 # Set FREEDOM_E_SDK_VENV_PATH to use a project-local virtualenv
 export FREEDOM_E_SDK_VENV_PATH ?=  $(abspath .)/venv
-METAL_WITH_EXTRA=--with-builtin-libgloss
+METAL_WITH_EXTRA=--with-builtin-libmetal-segger
 
 #############################################################
 # Freedom Studio

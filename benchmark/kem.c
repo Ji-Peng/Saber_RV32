@@ -10,7 +10,7 @@
 #include "rng.h"
 #include "verify.h"
 
-static int test_kem_cca()
+static int test_kem_cca(void)
 {
     uint8_t pk[CRYPTO_PUBLICKEYBYTES];
     uint8_t sk[CRYPTO_SECRETKEYBYTES];
@@ -19,11 +19,11 @@ static int test_kem_cca()
 
     unsigned char entropy_input[48];
 
-    uint64_t i;
+    int i;
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i;
-    randombytes_init(entropy_input, NULL, 256);
+    randombytes_init(entropy_input, NULL);
 
     // Generation of secret key sk and public key pk pair
     crypto_kem_keypair(pk, sk);
@@ -47,8 +47,9 @@ static int test_kem_cca()
     return 0;
 }
 
-int main()
+int main(void)
 {
+    printf("hello world\n");
     test_kem_cca();
     return 0;
 }

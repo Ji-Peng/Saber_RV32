@@ -36,7 +36,7 @@ if [ "$jlink" == "" ]; then echo "$0: --jlink is required" >&2; fi
 if [ "$elf" == "" ]; then echo "$0: --elf is required" >&2; fi
 $jlink -device FE310 -if JTAG -speed 4000 -port ${GDB_PORT} &
 
-$gdb $elf -ex "set remotetimeout 2400" -ex "target extended-remote localhost:${GDB_PORT}" -ex "load"
+$gdb $elf -ex "target extended-remote localhost:${GDB_PORT}" -ex "load" -ex "set disassemble-next-line on"
 
 kill %1
 

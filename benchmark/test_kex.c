@@ -29,7 +29,7 @@
 uint64_t clock1, clock2;
 uint64_t clock_kp_mv, clock_cl_mv, clock_kp_sm, clock_cl_sm;
 
-static int test_kem_cca()
+static int test_kem_cca(void)
 {
     uint8_t pk[SABER_PUBLICKEYBYTES];
     uint8_t sk[SABER_SECRETKEYBYTES];
@@ -57,7 +57,7 @@ static int test_kem_cca()
         // entropy_input[i] = rand()%256;
         entropy_input[i] = i;
     }
-    randombytes_init(entropy_input, NULL, 256);
+    randombytes_init(entropy_input, NULL);
 
     printf("SABER_INDCPA_PUBLICKEYBYTES=%d\n", SABER_INDCPA_PUBLICKEYBYTES);
     printf("SABER_INDCPA_SECRETKEYBYTES=%d\n", SABER_INDCPA_SECRETKEYBYTES);
@@ -69,7 +69,7 @@ static int test_kem_cca()
     printf("\n");
 
     for (i = 0; i < repeat; i++) {
-        // printf("i : %lu\n",i);
+        // printf("i : %llu\n",i);
 
         // Generation of secret key sk and public key pk pair
         CLOCK1 = cpucycles();
@@ -109,14 +109,14 @@ static int test_kem_cca()
         // printf("\n");
     }
 
-    printf("Repeat is : %ld\n", repeat);
-    printf("Average times key_pair: \t %lu \n", CLOCK_kp / repeat);
-    printf("Average times enc: \t %lu \n", CLOCK_enc / repeat);
-    printf("Average times dec: \t %lu \n", CLOCK_dec / repeat);
+    printf("Repeat is : %llu\n", repeat);
+    printf("Average times key_pair: \t %llu \n", CLOCK_kp / repeat);
+    printf("Average times enc: \t %llu \n", CLOCK_enc / repeat);
+    printf("Average times dec: \t %llu \n", CLOCK_dec / repeat);
 
-    printf("Average times kp mv: \t %lu \n", clock_kp_mv / repeat);
-    printf("Average times cl mv: \t %lu \n", clock_cl_mv / repeat);
-    printf("Average times sample_kp: \t %lu \n", clock_kp_sm / repeat);
+    printf("Average times kp mv: \t %llu \n", clock_kp_mv / repeat);
+    printf("Average times cl mv: \t %llu \n", clock_cl_mv / repeat);
+    printf("Average times sample_kp: \t %llu \n", clock_kp_sm / repeat);
 
     return 0;
 }
@@ -134,7 +134,7 @@ void test_kem_cpa(){
 unsigned char message_dec[])
 }
 */
-int main()
+int main(void)
 {
     test_kem_cca();
     return 0;

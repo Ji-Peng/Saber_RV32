@@ -25,7 +25,7 @@ int FindMarker(FILE *infile, const char *marker);
 int ReadHex(FILE *infile, unsigned char *A, int Length, char *str);
 void fprintBstr(FILE *fp, char *S, unsigned char *A, unsigned long long L);
 
-int main()
+int main(void)
 {
     char fn_req[32], fn_rsp[32];
     FILE *fp_req, *fp_rsp;
@@ -54,7 +54,7 @@ int main()
     for (i = 0; i < 48; i++)
         entropy_input[i] = i;
 
-    randombytes_init(entropy_input, NULL, 256);
+    randombytes_init(entropy_input, NULL);
     for (i = 0; i < 100; i++) {
         fprintf(fp_req, "count = %d\n", i);
         randombytes(seed, 48);
@@ -89,7 +89,7 @@ int main()
         }
         fprintBstr(fp_rsp, "seed = ", seed, 48);
 
-        randombytes_init(seed, NULL, 256);
+        randombytes_init(seed, NULL);
 
         // Generate the public/private keypair
         if ((ret_val = crypto_kem_keypair(pk, sk)) != 0) {

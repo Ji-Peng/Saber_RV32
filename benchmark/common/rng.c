@@ -21,78 +21,78 @@ void AES256_ECB(unsigned char *key, unsigned char *ctr, unsigned char *buffer);
  maxlen         - maximum number of bytes (less than 2**32) generated under this
  seed and diversifier
  */
-int seedexpander_init(AES_XOF_struct *ctx, unsigned char *seed,
-                      unsigned char *diversifier, unsigned long maxlen)
-{
-    if (maxlen >= 0x100000000)
-        return RNG_BAD_MAXLEN;
+// int seedexpander_init(AES_XOF_struct *ctx, unsigned char *seed,
+//                       unsigned char *diversifier, unsigned long maxlen)
+// {
+//     if (maxlen >= 0x100000000)
+//         return RNG_BAD_MAXLEN;
 
-    ctx->length_remaining = maxlen;
+//     ctx->length_remaining = maxlen;
 
-    memcpy(ctx->key, seed, 32);
+//     memcpy(ctx->key, seed, 32);
 
-    memcpy(ctx->ctr, diversifier, 8);
-    ctx->ctr[11] = maxlen % 256;
-    maxlen >>= 8;
-    ctx->ctr[10] = maxlen % 256;
-    maxlen >>= 8;
-    ctx->ctr[9] = maxlen % 256;
-    maxlen >>= 8;
-    ctx->ctr[8] = maxlen % 256;
-    memset(ctx->ctr + 12, 0x00, 4);
+//     memcpy(ctx->ctr, diversifier, 8);
+//     ctx->ctr[11] = maxlen % 256;
+//     maxlen >>= 8;
+//     ctx->ctr[10] = maxlen % 256;
+//     maxlen >>= 8;
+//     ctx->ctr[9] = maxlen % 256;
+//     maxlen >>= 8;
+//     ctx->ctr[8] = maxlen % 256;
+//     memset(ctx->ctr + 12, 0x00, 4);
 
-    ctx->buffer_pos = 16;
-    memset(ctx->buffer, 0x00, 16);
+//     ctx->buffer_pos = 16;
+//     memset(ctx->buffer, 0x00, 16);
 
-    return RNG_SUCCESS;
-}
+//     return RNG_SUCCESS;
+// }
 
 /*
     ctx  - stores the current state of an instance of the seed expander
     x    - returns the XOF data
     xlen - number of bytes to return
  */
-int seedexpander(AES_XOF_struct *ctx, unsigned char *x, unsigned long xlen)
-{
-    unsigned long offset;
+// int seedexpander(AES_XOF_struct *ctx, unsigned char *x, unsigned long xlen)
+// {
+//     unsigned long offset;
 
-    if (x == NULL)
-        return RNG_BAD_OUTBUF;
-    if (xlen >= ctx->length_remaining)
-        return RNG_BAD_REQ_LEN;
+//     if (x == NULL)
+//         return RNG_BAD_OUTBUF;
+//     if (xlen >= ctx->length_remaining)
+//         return RNG_BAD_REQ_LEN;
 
-    ctx->length_remaining -= xlen;
+//     ctx->length_remaining -= xlen;
 
-    offset = 0;
-    while (xlen > 0) {
-        if (xlen <= (16 - ctx->buffer_pos)) {  // buffer has what we need
-            memcpy(x + offset, ctx->buffer + ctx->buffer_pos, xlen);
-            ctx->buffer_pos += xlen;
+//     offset = 0;
+//     while (xlen > 0) {
+//         if (xlen <= (16 - ctx->buffer_pos)) {  // buffer has what we need
+//             memcpy(x + offset, ctx->buffer + ctx->buffer_pos, xlen);
+//             ctx->buffer_pos += xlen;
 
-            return RNG_SUCCESS;
-        }
+//             return RNG_SUCCESS;
+//         }
 
-        // take what's in the buffer
-        memcpy(x + offset, ctx->buffer + ctx->buffer_pos, 16 - ctx->buffer_pos);
-        xlen -= 16 - ctx->buffer_pos;
-        offset += 16 - ctx->buffer_pos;
+//         // take what's in the buffer
+//         memcpy(x + offset, ctx->buffer + ctx->buffer_pos, 16 - ctx->buffer_pos);
+//         xlen -= 16 - ctx->buffer_pos;
+//         offset += 16 - ctx->buffer_pos;
 
-        AES256_ECB(ctx->key, ctx->ctr, ctx->buffer);
-        ctx->buffer_pos = 0;
+//         AES256_ECB(ctx->key, ctx->ctr, ctx->buffer);
+//         ctx->buffer_pos = 0;
 
-        // increment the counter
-        for (int i = 15; i >= 12; i--) {
-            if (ctx->ctr[i] == 0xff)
-                ctx->ctr[i] = 0x00;
-            else {
-                ctx->ctr[i]++;
-                break;
-            }
-        }
-    }
+//         // increment the counter
+//         for (int i = 15; i >= 12; i--) {
+//             if (ctx->ctr[i] == 0xff)
+//                 ctx->ctr[i] = 0x00;
+//             else {
+//                 ctx->ctr[i]++;
+//                 break;
+//             }
+//         }
+//     }
 
-    return RNG_SUCCESS;
-}
+//     return RNG_SUCCESS;
+// }
 
 /**
  * @description: AES256 ECB mode
@@ -114,9 +114,9 @@ void AES256_ECB(unsigned char *key, unsigned char *in, unsigned char *out)
 }
 
 void randombytes_init(unsigned char *entropy_input,
-                      unsigned char *personalization_string,
-                      int security_strength)
+                      unsigned char *personalization_string)
 {
+    printf("randombytes_init test\n");
     unsigned char seed_material[48];
 
     memcpy(seed_material, entropy_input, 48);
