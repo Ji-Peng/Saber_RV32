@@ -42,7 +42,7 @@ out/%.elf: \
 		benchmark/metal.default.lds
 	mkdir -p $(dir $@)
 	$(RISCV_GCC) -o $(basename $@) $(RISCV_CFLAGS) \
-		$< $(PROGRAM_SRCS) -I$(SRC_DIR) $(RISCV_LDFLAGS)
+		$(filter %.c,$^) $(filter %.S,$^) -I$(SRC_DIR) $(RISCV_LDFLAGS)
 	mv $(basename $@) $@
 	touch -c $@
 	$(RISCV_OBJDUMP) --source --all-headers --demangle --line-numbers --wide $@ > $(basename $@).lst
