@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "pack_unpack.h"
+#include "poly.h"
 #define SCHB_N 16
 
 #define N_RES (SABER_N << 1)
@@ -12,8 +14,8 @@
 #define OVERFLOWING_MUL(X, Y) ((uint16_t)((uint32_t)(X) * (uint32_t)(Y)))
 
 #define KARATSUBA_N 64
-static void karatsuba_simple(const uint16_t *a_1, const uint16_t *b_1,
-                             uint16_t *result_final)
+static void karatsuba_simple(const uint16_t* a_1, const uint16_t* b_1,
+                             uint16_t* result_final)
 {
     uint16_t d01[KARATSUBA_N / 2 - 1];
     uint16_t d0123[KARATSUBA_N / 2 - 1];
@@ -116,8 +118,8 @@ static void karatsuba_simple(const uint16_t *a_1, const uint16_t *b_1,
     }
 }
 
-static void toom_cook_4way(const uint16_t *a1, const uint16_t *b1,
-                           uint16_t *result)
+static void toom_cook_4way(const uint16_t* a1, const uint16_t* b1,
+                           uint16_t* result)
 {
     uint16_t inv3 = 43691, inv9 = 36409, inv15 = 61167;
 
@@ -130,16 +132,16 @@ static void toom_cook_4way(const uint16_t *a1, const uint16_t *b1,
              w7[N_SB_RES] = {0};
     uint16_t r0, r1, r2, r3, r4, r5, r6, r7;
     uint16_t *A0, *A1, *A2, *A3, *B0, *B1, *B2, *B3;
-    A0 = (uint16_t *)a1;
-    A1 = (uint16_t *)&a1[N_SB];
-    A2 = (uint16_t *)&a1[2 * N_SB];
-    A3 = (uint16_t *)&a1[3 * N_SB];
-    B0 = (uint16_t *)b1;
-    B1 = (uint16_t *)&b1[N_SB];
-    B2 = (uint16_t *)&b1[2 * N_SB];
-    B3 = (uint16_t *)&b1[3 * N_SB];
+    A0 = (uint16_t*)a1;
+    A1 = (uint16_t*)&a1[N_SB];
+    A2 = (uint16_t*)&a1[2 * N_SB];
+    A3 = (uint16_t*)&a1[3 * N_SB];
+    B0 = (uint16_t*)b1;
+    B1 = (uint16_t*)&b1[N_SB];
+    B2 = (uint16_t*)&b1[2 * N_SB];
+    B3 = (uint16_t*)&b1[3 * N_SB];
 
-    uint16_t *C;
+    uint16_t* C;
     C = result;
 
     int i, j;
@@ -252,4 +254,535 @@ void poly_mul_acc(const uint16_t a[SABER_N], const uint16_t b[SABER_N],
     for (i = SABER_N; i < 2 * SABER_N; i++) {
         res[i - SABER_N] += (c[i - SABER_N] - c[i]);
     }
+}
+
+// XXX - patch for test.c
+#define toom_cook_4way_mem(x, y, z) pol_mul(x, y, z, SABER_Q, SABER_N)
+
+// cut-off for karatsuba
+#define KARA_CUTOFF 64
+// uint16_t kara_tmp[2*KARA_CUTOFF];
+uint16_t kara_tmp[16];
+#define KARA_TOP_K 128
+#define KARA_BOTTOM_K 32
+uint16_t kara_tmp_top[KARA_TOP_K / 2];
+
+// m0
+void unrolled_kara_mem_top(const uint16_t* a, const uint16_t* c, uint16_t* d);
+void unrolled_kara_mem_bottom(const uint16_t* a, const uint16_t* c,
+                              uint16_t* d);
+void school_book_mul2_16(const uint16_t* a, const uint16_t* b, uint16_t* c);
+
+void pol_mul(uint16_t* a, uint16_t* b, uint16_t* res)
+{
+    uint32_t i;
+
+    uint16_t c[2 * SABER_N];
+
+    for (i = 0; i < 2 * SABER_N; i++) {
+        c[i] = 0;
+    }
+
+    unrolled_kara_mem_top(a, b, c);
+
+    //---------------reduction-------
+    for (i = SABER_N; i < 2 * SABER_N - 1; i++) {
+        c[i - SABER_N] = (c[i - SABER_N] - c[i]);
+    }
+    for (i = 0; i < SABER_N; ++i) {
+        res[i] = res[i] + c[i];
+    }
+}
+
+void unrolled_kara_mem_top(const uint16_t* a, const uint16_t* c, uint16_t* d)
+{
+    int i;
+
+    // loop1 & loop1_2
+    for (i = 0; i < KARA_TOP_K / 2; ++i) {
+        d[KARA_TOP_K + i] = d[i] + d[KARA_TOP_K + i];
+        d[KARA_TOP_K + KARA_TOP_K / 2 + i] =
+            d[KARA_TOP_K / 2 + i] + d[KARA_TOP_K + KARA_TOP_K / 2 + i] +
+            d[KARA_TOP_K + i];
+        d[3 * KARA_TOP_K - 1 + i] = a[i] + a[KARA_TOP_K + i];
+        d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+            a[KARA_TOP_K / 2 + i] + a[KARA_TOP_K + KARA_TOP_K / 2 + i];
+        // XXX: global variable asm
+        kara_tmp_top[i] = d[3 * KARA_TOP_K - 1 + i] +
+                          d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i];
+        d[2 * KARA_TOP_K + i] = 0;
+    }
+    for (i = 0; i < KARA_TOP_K / 2; ++i) {
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+            c[i] + c[KARA_TOP_K / 2 + i] + c[KARA_TOP_K + i] +
+            c[KARA_TOP_K + KARA_TOP_K / 2 + i];
+    }
+
+    unrolled_kara_mem_bottom(kara_tmp_top,
+                             &d[2 * KARA_TOP_K + KARA_TOP_K / 2 - 1],
+                             &d[KARA_TOP_K + KARA_TOP_K / 2]);
+
+    // loop2
+    for (i = 0; i < KARA_TOP_K / 2 - 1; ++i) {
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+            d[KARA_TOP_K + KARA_TOP_K / 2 + i] + d[2 * KARA_TOP_K + i];
+        d[KARA_TOP_K + KARA_TOP_K / 2 + i] = 0;
+        // XXX: global variable asm
+        kara_tmp_top[i] = c[i] + c[KARA_TOP_K + i];
+    }
+    d[2 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+        d[KARA_TOP_K + KARA_TOP_K / 2 + i];
+    d[KARA_TOP_K + KARA_TOP_K / 2 + i] = 0;
+    // XXX: global variable asm
+    kara_tmp_top[i] = c[i] + c[KARA_TOP_K + i];
+
+    unrolled_kara_mem_bottom(kara_tmp_top, &d[3 * KARA_TOP_K - 1],
+                             &d[KARA_TOP_K]);
+
+    // loop3
+    for (i = 0; i < KARA_TOP_K / 2 - 1; ++i) {
+        d[2 * KARA_TOP_K + i] =
+            d[2 * KARA_TOP_K + i] - d[KARA_TOP_K + KARA_TOP_K / 2 + i];
+        d[KARA_TOP_K + KARA_TOP_K / 2 + i] =
+            d[2 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] - d[KARA_TOP_K + i];
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] = 0;
+        // XXX: global variable asm
+        kara_tmp_top[i] =
+            c[KARA_TOP_K / 2 + i] + c[KARA_TOP_K + KARA_TOP_K / 2 + i];
+    }
+    d[KARA_TOP_K + KARA_TOP_K / 2 + i] =
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] - d[KARA_TOP_K + i];
+    d[2 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] = 0;
+    // XXX: global variable asm
+    kara_tmp_top[i] =
+        c[KARA_TOP_K / 2 + i] + c[KARA_TOP_K + KARA_TOP_K / 2 + i];
+
+    unrolled_kara_mem_bottom(kara_tmp_top,
+                             &d[KARA_TOP_K / 2 + 3 * KARA_TOP_K - 1],
+                             &d[2 * KARA_TOP_K]);
+
+    // loop4 & loop4_2
+    for (i = 0; i < KARA_TOP_K / 2 - 1; ++i) {
+        d[KARA_TOP_K / 2 + i] = d[i] + d[KARA_TOP_K / 2 + i];
+        d[2 * KARA_TOP_K + i] =
+            d[2 * KARA_TOP_K + i] - d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i];
+        d[3 * KARA_TOP_K - 1 + i] = d[2 * KARA_TOP_K + i] + d[KARA_TOP_K + i];
+
+        d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+            d[KARA_TOP_K + KARA_TOP_K / 2 + i] - d[2 * KARA_TOP_K + i];
+        d[KARA_TOP_K + i] = 0;
+    }
+    d[KARA_TOP_K / 2 + i] = d[i] + d[KARA_TOP_K / 2 + i];
+    d[3 * KARA_TOP_K - 1 + i] = d[2 * KARA_TOP_K + i] + d[KARA_TOP_K + i];
+    d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+        d[KARA_TOP_K + KARA_TOP_K / 2 + i] - d[2 * KARA_TOP_K + i];  //
+    for (i = 0; i < KARA_TOP_K / 2; ++i) {
+        d[KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] = a[i] + a[KARA_TOP_K / 2 + i];
+        // XXX: global variable asm
+        kara_tmp_top[i] = c[i] + c[KARA_TOP_K / 2 + i];
+    }
+
+    unrolled_kara_mem_bottom(kara_tmp_top, &d[KARA_TOP_K + KARA_TOP_K / 2 - 1],
+                             &d[KARA_TOP_K / 2]);
+
+    // loop5
+    for (i = 0; i < KARA_TOP_K / 2 - 1; ++i) {
+        d[KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+            d[KARA_TOP_K / 2 + i] + d[KARA_TOP_K + i];
+        d[KARA_TOP_K / 2 + i] = 0;
+    }
+    d[KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] = d[KARA_TOP_K / 2 + i];
+    d[KARA_TOP_K / 2 + i] = 0;
+
+    unrolled_kara_mem_bottom(a, c, d);
+
+    // loop6
+    for (i = 0; i < KARA_TOP_K / 2 - 1; ++i) {
+        d[KARA_TOP_K + i] = d[KARA_TOP_K + i] - d[KARA_TOP_K / 2 + i];
+        d[KARA_TOP_K / 2 + i] = d[KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] - d[i];
+        d[KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] = 0;
+    }
+    d[KARA_TOP_K / 2 + i] = d[KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] - d[i];
+    d[KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] = 0;
+
+    unrolled_kara_mem_bottom(&a[KARA_TOP_K / 2], &c[KARA_TOP_K / 2],
+                             &d[KARA_TOP_K]);
+
+    // loop7 & loop7_2
+    for (i = 0; i < KARA_TOP_K / 2 - 1; ++i) {
+        d[KARA_TOP_K / 2 + i] = d[KARA_TOP_K / 2 + i] - d[KARA_TOP_K + i];
+        d[2 * KARA_TOP_K + i] = d[2 * KARA_TOP_K + i] - d[KARA_TOP_K + i] +
+                                d[KARA_TOP_K + KARA_TOP_K / 2 + i];
+        d[KARA_TOP_K + i] = d[3 * KARA_TOP_K - 1 + i] - d[i];
+        d[3 * KARA_TOP_K - 1 + i] = 0;
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] =
+            d[2 * KARA_TOP_K + i] + d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] -
+            d[KARA_TOP_K + KARA_TOP_K / 2 + i];
+        d[KARA_TOP_K + KARA_TOP_K / 2 + i] =
+            d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] - d[KARA_TOP_K / 2 + i];
+        kara_tmp_top[i] =
+            c[KARA_TOP_K + i] + c[KARA_TOP_K + KARA_TOP_K / 2 + i];
+        d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+            a[KARA_TOP_K + i] + a[KARA_TOP_K + KARA_TOP_K / 2 + i];
+    }
+    d[KARA_TOP_K / 2 + i] = d[KARA_TOP_K / 2 + i] - d[KARA_TOP_K + i];
+    d[2 * KARA_TOP_K + i] = d[2 * KARA_TOP_K + i] - d[KARA_TOP_K + i];
+    d[KARA_TOP_K + i] = d[3 * KARA_TOP_K - 1 + i] - d[i];
+    d[3 * KARA_TOP_K - 1 + i] = 0;
+    d[KARA_TOP_K + KARA_TOP_K / 2 + i] =
+        d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] - d[KARA_TOP_K / 2 + i];
+    d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] =
+        d[2 * KARA_TOP_K + i] + d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i];
+    kara_tmp_top[i] = c[KARA_TOP_K + i] + c[KARA_TOP_K + KARA_TOP_K / 2 + i];
+    d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+        a[KARA_TOP_K + i] + a[KARA_TOP_K + KARA_TOP_K / 2 + i];
+    // for (i = 0 ; i < KARA_TOP_K/2; ++i) {
+    // kara_tmp_top[i] = c[KARA_TOP_K+i] + c[KARA_TOP_K+KARA_TOP_K/2+i];
+    // d[3*KARA_TOP_K+KARA_TOP_K/2-1+i] = a[KARA_TOP_K+i] +
+    // a[KARA_TOP_K+KARA_TOP_K/2+i];
+    // }
+
+    unrolled_kara_mem_bottom(kara_tmp_top,
+                             &d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1],
+                             &d[2 * KARA_TOP_K + KARA_TOP_K / 2]);
+
+    // loop8
+    for (i = 0; i < KARA_TOP_K / 2 - 1; ++i) {
+        d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+            d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] + d[3 * KARA_TOP_K + i];
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] = 0;
+    }
+    d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] =
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i];
+    d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] = 0;
+
+    unrolled_kara_mem_bottom(&a[KARA_TOP_K], &c[KARA_TOP_K],
+                             &d[2 * KARA_TOP_K]);
+
+    // loop9
+    for (i = 0; i < KARA_TOP_K / 2 - 1; ++i) {
+        d[3 * KARA_TOP_K + i] =
+            d[3 * KARA_TOP_K + i] - d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i];
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] =
+            d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] - d[2 * KARA_TOP_K + i];
+        d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] = 0;
+    }
+    d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] =
+        d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] - d[2 * KARA_TOP_K + i];
+    d[3 * KARA_TOP_K + KARA_TOP_K / 2 - 1 + i] = 0;
+
+    unrolled_kara_mem_bottom(&a[KARA_TOP_K + KARA_TOP_K / 2],
+                             &c[KARA_TOP_K + KARA_TOP_K / 2],
+                             &d[3 * KARA_TOP_K]);
+
+    // loop10
+    for (i = 0; i < KARA_TOP_K / 2 - 1; ++i) {
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] =
+            d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] - d[3 * KARA_TOP_K + i];
+        d[3 * KARA_TOP_K + i] =
+            d[3 * KARA_TOP_K + i] - d[3 * KARA_TOP_K + KARA_TOP_K / 2 + i];
+        d[KARA_TOP_K + i] = d[KARA_TOP_K + i] - d[2 * KARA_TOP_K + i];
+        d[2 * KARA_TOP_K + i] = d[2 * KARA_TOP_K + i] - d[3 * KARA_TOP_K + i];
+
+        d[KARA_TOP_K + KARA_TOP_K / 2 + i] =
+            d[KARA_TOP_K + KARA_TOP_K / 2 + i] -
+            d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i];
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] =
+            d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] -
+            d[3 * KARA_TOP_K + KARA_TOP_K / 2 + i];
+    }
+    d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] =
+        d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i] - d[3 * KARA_TOP_K + i];
+    d[KARA_TOP_K + i] = d[KARA_TOP_K + i] - d[2 * KARA_TOP_K + i];
+    d[2 * KARA_TOP_K + i] = d[2 * KARA_TOP_K + i] - d[3 * KARA_TOP_K + i];
+    d[KARA_TOP_K + KARA_TOP_K / 2 + i] = d[KARA_TOP_K + KARA_TOP_K / 2 + i] -
+                                         d[2 * KARA_TOP_K + KARA_TOP_K / 2 + i];
+}
+
+void unrolled_kara_mem_bottom(const uint16_t* a, const uint16_t* c, uint16_t* d)
+{
+    int i;
+
+    // loop1 & loop1_2
+    for (i = 0; i < KARA_BOTTOM_K / 2; ++i) {
+        d[KARA_BOTTOM_K + i] = d[i] + d[KARA_BOTTOM_K + i];
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+            d[KARA_BOTTOM_K / 2 + i] +
+            d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] + d[KARA_BOTTOM_K + i];
+        d[3 * KARA_BOTTOM_K - 1 + i] = a[i] + a[KARA_BOTTOM_K + i];
+        d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+            a[KARA_BOTTOM_K / 2 + i] + a[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+        // XXX: global variable asm
+        kara_tmp[i] = d[3 * KARA_BOTTOM_K - 1 + i] +
+                      d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i];
+        d[2 * KARA_BOTTOM_K + i] = 0;
+    }
+    for (i = 0; i < KARA_BOTTOM_K / 2; ++i) {
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+            c[i] + c[KARA_BOTTOM_K / 2 + i] + c[KARA_BOTTOM_K + i] +
+            c[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+    }
+
+    school_book_mul2_16(kara_tmp, &d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1],
+                        &d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2]);
+
+    // loop2
+    for (i = 0; i < KARA_BOTTOM_K / 2 - 1; ++i) {
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+            d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] + d[2 * KARA_BOTTOM_K + i];
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] = 0;
+        // XXX: global variable asm
+        kara_tmp[i] = c[i] + c[KARA_BOTTOM_K + i];
+    }
+    d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+    d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] = 0;
+    // XXX: global variable asm
+    kara_tmp[i] = c[i] + c[KARA_BOTTOM_K + i];
+
+    school_book_mul2_16(kara_tmp, &d[3 * KARA_BOTTOM_K - 1], &d[KARA_BOTTOM_K]);
+
+    // loop3
+    for (i = 0; i < KARA_BOTTOM_K / 2 - 1; ++i) {
+        d[2 * KARA_BOTTOM_K + i] =
+            d[2 * KARA_BOTTOM_K + i] - d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+            d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] -
+            d[KARA_BOTTOM_K + i];
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] = 0;
+        // XXX: global variable asm
+        kara_tmp[i] =
+            c[KARA_BOTTOM_K / 2 + i] + c[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+    }
+    d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] - d[KARA_BOTTOM_K + i];
+    d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] = 0;
+    // XXX: global variable asm
+    kara_tmp[i] =
+        c[KARA_BOTTOM_K / 2 + i] + c[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+
+    school_book_mul2_16(kara_tmp, &d[KARA_BOTTOM_K / 2 + 3 * KARA_BOTTOM_K - 1],
+                        &d[2 * KARA_BOTTOM_K]);
+
+    // loop4 & loop4_2
+    for (i = 0; i < KARA_BOTTOM_K / 2 - 1; ++i) {
+        d[KARA_BOTTOM_K / 2 + i] = d[i] + d[KARA_BOTTOM_K / 2 + i];
+        d[2 * KARA_BOTTOM_K + i] = d[2 * KARA_BOTTOM_K + i] -
+                                   d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+        d[3 * KARA_BOTTOM_K - 1 + i] =
+            d[2 * KARA_BOTTOM_K + i] + d[KARA_BOTTOM_K + i];
+
+        d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+            d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] - d[2 * KARA_BOTTOM_K + i];
+        d[KARA_BOTTOM_K + i] = 0;
+    }
+    d[KARA_BOTTOM_K / 2 + i] = d[i] + d[KARA_BOTTOM_K / 2 + i];
+    d[3 * KARA_BOTTOM_K - 1 + i] =
+        d[2 * KARA_BOTTOM_K + i] + d[KARA_BOTTOM_K + i];
+    d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] - d[2 * KARA_BOTTOM_K + i];
+    for (i = 0; i < KARA_BOTTOM_K / 2; ++i) {
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+            a[i] + a[KARA_BOTTOM_K / 2 + i];
+        // XXX: global variable asm
+        kara_tmp[i] = c[i] + c[KARA_BOTTOM_K / 2 + i];
+    }
+
+    school_book_mul2_16(kara_tmp, &d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1],
+                        &d[KARA_BOTTOM_K / 2]);
+
+    // loop5
+    for (i = 0; i < KARA_BOTTOM_K / 2 - 1; ++i) {
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+            d[KARA_BOTTOM_K / 2 + i] + d[KARA_BOTTOM_K + i];
+        d[KARA_BOTTOM_K / 2 + i] = 0;
+    }
+    d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] = d[KARA_BOTTOM_K / 2 + i];
+    d[KARA_BOTTOM_K / 2 + i] = 0;
+
+    school_book_mul2_16(a, c, d);
+
+    // loop6
+    for (i = 0; i < KARA_BOTTOM_K / 2 - 1; ++i) {
+        d[KARA_BOTTOM_K + i] = d[KARA_BOTTOM_K + i] - d[KARA_BOTTOM_K / 2 + i];
+        d[KARA_BOTTOM_K / 2 + i] =
+            d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] - d[i];
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] = 0;
+    }
+    d[KARA_BOTTOM_K / 2 + i] =
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] - d[i];
+    d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] = 0;
+
+    school_book_mul2_16(&a[KARA_BOTTOM_K / 2], &c[KARA_BOTTOM_K / 2],
+                        &d[KARA_BOTTOM_K]);
+
+    // loop7 & loop7_2
+    for (i = 0; i < KARA_BOTTOM_K / 2 - 1; ++i) {
+        d[KARA_BOTTOM_K / 2 + i] =
+            d[KARA_BOTTOM_K / 2 + i] - d[KARA_BOTTOM_K + i];
+        d[2 * KARA_BOTTOM_K + i] = d[2 * KARA_BOTTOM_K + i] -
+                                   d[KARA_BOTTOM_K + i] +
+                                   d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+        d[KARA_BOTTOM_K + i] = d[3 * KARA_BOTTOM_K - 1 + i] - d[i];
+        d[3 * KARA_BOTTOM_K - 1 + i] = 0;
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+            d[2 * KARA_BOTTOM_K + i] +
+            d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] -
+            d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];  //
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+            d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] -
+            d[KARA_BOTTOM_K / 2 + i];  //
+        kara_tmp[i] =
+            c[KARA_BOTTOM_K + i] + c[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+        d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+            a[KARA_BOTTOM_K + i] + a[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+    }
+    d[KARA_BOTTOM_K / 2 + i] = d[KARA_BOTTOM_K / 2 + i] - d[KARA_BOTTOM_K + i];
+    d[2 * KARA_BOTTOM_K + i] = d[2 * KARA_BOTTOM_K + i] - d[KARA_BOTTOM_K + i];
+    d[KARA_BOTTOM_K + i] = d[3 * KARA_BOTTOM_K - 1 + i] - d[i];
+    d[3 * KARA_BOTTOM_K - 1 + i] = 0;
+    d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+        d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] -
+        d[KARA_BOTTOM_K / 2 + i];
+    d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+        d[2 * KARA_BOTTOM_K + i] + d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+    kara_tmp[i] =
+        c[KARA_BOTTOM_K + i] + c[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+    d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+        a[KARA_BOTTOM_K + i] + a[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+    // for (i = 0 ; i < KARA_BOTTOM_K/2; ++i) {
+    // kara_tmp[i] = c[KARA_BOTTOM_K+i] + c[KARA_BOTTOM_K+KARA_BOTTOM_K/2+i];
+    // d[3*KARA_BOTTOM_K+KARA_BOTTOM_K/2-1+i] = a[KARA_BOTTOM_K+i] +
+    // a[KARA_BOTTOM_K+KARA_BOTTOM_K/2+i];
+    // }
+
+    school_book_mul2_16(kara_tmp, &d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1],
+                        &d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2]);
+
+    // loop8
+    for (i = 0; i < KARA_BOTTOM_K / 2 - 1; ++i) {
+        d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+            d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] +
+            d[3 * KARA_BOTTOM_K + i];
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] = 0;
+    }
+    d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] =
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+    d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] = 0;
+
+    school_book_mul2_16(&a[KARA_BOTTOM_K], &c[KARA_BOTTOM_K],
+                        &d[2 * KARA_BOTTOM_K]);
+
+    // loop9
+    for (i = 0; i < KARA_BOTTOM_K / 2 - 1; ++i) {
+        d[3 * KARA_BOTTOM_K + i] = d[3 * KARA_BOTTOM_K + i] -
+                                   d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+            d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] -
+            d[2 * KARA_BOTTOM_K + i];
+        d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] = 0;
+    }
+    d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+        d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] -
+        d[2 * KARA_BOTTOM_K + i];
+    d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 - 1 + i] = 0;
+
+    school_book_mul2_16(&a[KARA_BOTTOM_K + KARA_BOTTOM_K / 2],
+                        &c[KARA_BOTTOM_K + KARA_BOTTOM_K / 2],
+                        &d[3 * KARA_BOTTOM_K]);
+
+    // loop10
+    for (i = 0; i < KARA_BOTTOM_K / 2 - 1; ++i) {
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+            d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] -
+            d[3 * KARA_BOTTOM_K + i];
+        d[3 * KARA_BOTTOM_K + i] = d[3 * KARA_BOTTOM_K + i] -
+                                   d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+        d[KARA_BOTTOM_K + i] = d[KARA_BOTTOM_K + i] - d[2 * KARA_BOTTOM_K + i];
+        d[2 * KARA_BOTTOM_K + i] =
+            d[2 * KARA_BOTTOM_K + i] - d[3 * KARA_BOTTOM_K + i];
+
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+            d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] -
+            d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+            d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] -
+            d[3 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+    }
+    d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] - d[3 * KARA_BOTTOM_K + i];
+    d[KARA_BOTTOM_K + i] = d[KARA_BOTTOM_K + i] - d[2 * KARA_BOTTOM_K + i];
+    d[2 * KARA_BOTTOM_K + i] =
+        d[2 * KARA_BOTTOM_K + i] - d[3 * KARA_BOTTOM_K + i];
+    d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] =
+        d[KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i] -
+        d[2 * KARA_BOTTOM_K + KARA_BOTTOM_K / 2 + i];
+}
+
+// XXX - schoolbook in plain C
+void school_book_mul2_16(const uint16_t* a, const uint16_t* b, uint16_t* c)
+{
+    int i, j;
+    for (i = 0; i < 16; i++) {
+        for (j = 0; j < 16; ++j) {
+            c[i + j] += a[i] * b[j];
+        }
+    }
+}
+
+void MatrixVectorMul_keypair(const unsigned char* seed,
+                             uint16_t s[SABER_L][SABER_N],
+                             uint16_t b[SABER_L][SABER_N])
+{
+    int32_t i, j;
+    uint16_t temp[SABER_N];
+
+    for (i = 0; i < SABER_L; i++) {
+        for (j = 0; j < SABER_L; j++) {
+            GenMatrix_poly(temp, seed, i + j);
+            pol_mul(temp, s[i], b[j]);
+        }
+    }
+}
+
+void MatrixVectorMul_encryption(const unsigned char* seed,
+                                uint16_t sp[SABER_L][SABER_N],
+                                unsigned char* ciphertext)
+{
+    uint16_t acc[SABER_N];
+    int32_t i, j, k;
+    uint16_t res[SABER_N];
+
+    for (i = 0; i < SABER_L; i++) {
+        for (j = 0; j < SABER_N; j++) {
+            res[j] = 0;
+            acc[j] = 0;
+        }
+        for (j = 0; j < SABER_L; j++) {
+            GenMatrix_poly(acc, seed, i + j);
+            pol_mul(acc, sp[j], res);
+        }
+
+        // Now one polynomial of the output vector is ready.
+        // Rounding: perform bit manipulation before packing into ciphertext
+        for (k = 0; k < SABER_N; k++) {
+            res[k] = (res[k] + h1) >> (SABER_EQ - SABER_EP);
+        }
+
+        POLp2BS(ciphertext, res, i);
+    }
+}
+
+void VectorMul(const unsigned char* bytes, uint16_t sp[SABER_L][SABER_N],
+               uint16_t res[SABER_N])
+{
+    uint32_t j;
+    uint16_t pk[SABER_N];
+
+    // vector-vector scalar multiplication with mod p
+    for (j = 0; j < SABER_L; j++) {
+        BS2POLp(j, bytes, pk);
+        pol_mul(pk, sp[j], res);
+    }
+    //   for (j = 0; j < SABER_N; j++) res[j] = res[j] & (SABER_P - 1);
 }

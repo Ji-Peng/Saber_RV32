@@ -48,6 +48,7 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
+					-Xlinker --defsym=__stack_size=0x2900 \
 					-Xlinker --defsym=__heap_max=1
 
 
@@ -65,7 +66,7 @@ out/%.elf: \
 		$(COMMON_SRCS) $(PROGRAM_SRCS) \
 		benchmark/common/libmetal.a \
 		benchmark/common/libmetal-gloss.a \
-		benchmark/common/metal.ramrodata.lds
+		benchmark/common/metal.default.lds
 	mkdir -p $(dir $@)
 	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_LDFLAGS) \
 		$(filter %.c,$^) $(filter %.S,$^) \
