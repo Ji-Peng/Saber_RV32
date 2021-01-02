@@ -33,7 +33,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-					-O0 -g
+					-Os -g
 
 # RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group \
 # 					-Wl,-Map,$(basename $@).map \
