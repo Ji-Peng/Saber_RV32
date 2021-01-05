@@ -331,7 +331,7 @@ static void KeccakF1600_StatePermute(uint64_t *state)
 #include <string.h>
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-static void keccak_absorb(uint64_t *s,
+void keccak_absorb(uint64_t *s,
                           unsigned int r,
                           const unsigned char *m, unsigned long long int mlen,
                           unsigned char p)
@@ -359,7 +359,7 @@ static void keccak_absorb(uint64_t *s,
     s[i] ^= load64(t + 8 * i);
 }
 
-static void keccak_squeezeblocks(unsigned char *h, unsigned long long int nblocks,
+void keccak_squeezeblocks(unsigned char *h, unsigned long long int nblocks,
                                  uint64_t *s,
                                  unsigned int r)
 {

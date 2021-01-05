@@ -10,8 +10,11 @@ Vadim Lyubashevsky, John M. Schanck, Peter Schwabe & Damien stehle
 
 #include <stdint.h>
 
-#include "SABER_params.h"
+#include "poly.h"
 
-void cbd(uint16_t s[SABER_N], const uint8_t buf[SABER_POLYCOINBYTES]);
+// void cbd(uint16_t *r, const unsigned char *buf);
+
+void cbd(uint16_t poly_start_index, uint16_t *r, uint16_t use_bytes,
+         const unsigned char *buf);
 
 #endif

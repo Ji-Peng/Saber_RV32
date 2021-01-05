@@ -13,14 +13,14 @@ Vadim Lyubashevsky, John M. Schanck, Peter Schwabe & Damien stehle
 /* returns 0 for equal strings, 1 for non-equal strings */
 int verify(const unsigned char *a, const unsigned char *b, size_t len)
 {
-    uint64_t r;
+    uint32_t r;
     size_t i;
     r = 0;
 
     for (i = 0; i < len; i++)
         r |= a[i] ^ b[i];
 
-    r = (-r) >> 63;
+    r = (-r) >> 31;
     return r;
 }
 

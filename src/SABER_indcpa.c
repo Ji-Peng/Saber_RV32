@@ -4,104 +4,447 @@
 #include <string.h>
 
 #include "SABER_params.h"
+#include "encode.h"
 #include "fips202.h"
 #include "pack_unpack.h"
 #include "poly.h"
 #include "poly_mul.h"
 #include "rng.h"
 
-#define h1 (1 << (SABER_EQ - SABER_EP - 1))
-#define h2                                                      \
-    ((1 << (SABER_EP - 2)) - (1 << (SABER_EP - SABER_ET - 1)) + \
-     (1 << (SABER_EQ - SABER_EP - 1)))
+/*-----------------------------------------------------------------------------------
+        This routine generates a=[Matrix K x K] of 256-coefficient polynomials
+-------------------------------------------------------------------------------------*/
 
-void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
-                        uint8_t sk[SABER_INDCPA_SECRETKEYBYTES])
+void VectorMul(const unsigned char *seed, uint16_t skpv[SABER_K][SABER_N],
+               uint16_t res[SABER_N]);
+void MatrixVectorMul_old(polyvec *a, uint16_t skpv[SABER_K][SABER_N],
+                         uint16_t res[SABER_K][SABER_N], uint16_t mod,
+                         int16_t transpose);
+
+void POL2MSG(uint16_t *message_dec_unpacked, unsigned char *message_dec);
+
+void MatrixVectorMul(const unsigned char *seed, uint16_t skpv[SABER_K][SABER_N],
+                     uint16_t res[SABER_K][SABER_N], int8_t transpose);
+
+void MatrixVectorMul_encryption(const unsigned char *seed,
+                                uint16_t skpv[SABER_K][SABER_N],
+                                unsigned char *ciphertext, uint16_t mod);
+
+void MatrixVectorMul_keypair(const unsigned char *seed,
+                             uint16_t skpv[SABER_K][SABER_N],
+                             uint16_t res[SABER_K][SABER_N], uint16_t mod);
+
+void byte_bank2pol_part(unsigned char *bytes, uint16_t pol_part[],
+                        uint16_t pol_part_start_index, uint16_t num_8coeff)
 {
-    uint16_t A[SABER_L][SABER_L][SABER_N];
-    uint16_t s[SABER_L][SABER_N];
-    uint16_t b[SABER_L][SABER_N] = {0};
+    uint32_t j;
+    uint32_t offset_data = 0, offset_byte = 0;
 
-    uint8_t seed_A[SABER_SEEDBYTES];
-    uint8_t seed_s[SABER_NOISE_SEEDBYTES];
-    int i, j;
+    offset_byte = 0;
+
+    for (j = 0; j < num_8coeff; j++) {
+        offset_byte = 13 * j;
+        offset_data = pol_part_start_index + 8 * j;
+        pol_part[offset_data + 0] = (bytes[offset_byte + 0] & (0xff)) |
+                                    ((bytes[offset_byte + 1] & 0x1f) << 8);
+        pol_part[offset_data + 1] = (bytes[offset_byte + 1] >> 5 & (0x07)) |
+                                    ((bytes[offset_byte + 2] & 0xff) << 3) |
+                                    ((bytes[offset_byte + 3] & 0x03) << 11);
+        pol_part[offset_data + 2] = (bytes[offset_byte + 3] >> 2 & (0x3f)) |
+                                    ((bytes[offset_byte + 4] & 0x7f) << 6);
+        pol_part[offset_data + 3] = (bytes[offset_byte + 4] >> 7 & (0x01)) |
+                                    ((bytes[offset_byte + 5] & 0xff) << 1) |
+                                    ((bytes[offset_byte + 6] & 0x0f) << 9);
+        pol_part[offset_data + 4] = (bytes[offset_byte + 6] >> 4 & (0x0f)) |
+                                    ((bytes[offset_byte + 7] & 0xff) << 4) |
+                                    ((bytes[offset_byte + 8] & 0x01) << 12);
+        pol_part[offset_data + 5] = (bytes[offset_byte + 8] >> 1 & (0x7f)) |
+                                    ((bytes[offset_byte + 9] & 0x3f) << 7);
+        pol_part[offset_data + 6] = (bytes[offset_byte + 9] >> 6 & (0x03)) |
+                                    ((bytes[offset_byte + 10] & 0xff) << 2) |
+                                    ((bytes[offset_byte + 11] & 0x07) << 10);
+        pol_part[offset_data + 7] = (bytes[offset_byte + 11] >> 3 & (0x1f)) |
+                                    ((bytes[offset_byte + 12] & 0xff) << 5);
+    }
+}
+
+void GenMatrix(polyvec *a, const unsigned char *seed)
+{
+    unsigned char shake_op_buf[SHAKE128_RATE +
+                               112];  // there can be at most 112 bytes left
+                                      // over from previous shake call
+    uint16_t temp_ar[SABER_N];
+
+    int i, j, k;
+
+    uint64_t s[25];
+
+    uint16_t pol_part_start_index, num_8coeff, num_8coeff_final,
+        left_over_bytes, total_bytes;
+    uint16_t row, column, num_polynomial;
+
+    for (i = 0; i < 25; ++i)
+        s[i] = 0;
+
+    keccak_absorb(s, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
+
+    pol_part_start_index = 0;
+    num_8coeff = 0;
+    left_over_bytes = 0;
+    total_bytes = 0;
+    num_polynomial = 0;
+
+    while (num_polynomial != 9) {
+        keccak_squeezeblocks(shake_op_buf + left_over_bytes, 1, s,
+                             SHAKE128_RATE);
+
+        total_bytes = left_over_bytes + SHAKE128_RATE;
+
+        num_8coeff = total_bytes / 13;
+
+        if ((num_8coeff * 8 + pol_part_start_index) > 255)
+            num_8coeff_final = 32 - pol_part_start_index / 8;
+        else
+            num_8coeff_final = num_8coeff;
+
+        byte_bank2pol_part(shake_op_buf, temp_ar, pol_part_start_index,
+                           num_8coeff_final);
+
+        left_over_bytes = total_bytes - num_8coeff_final * 13;
+
+        for (j = 0; j < left_over_bytes;
+             j++)  // bring the leftover in the begining of the buffer.
+            shake_op_buf[j] = shake_op_buf[num_8coeff_final * 13 + j];
+
+        pol_part_start_index =
+            pol_part_start_index +
+            num_8coeff_final *
+                8;  // this will be >256 when the polynomial is complete.
+
+        if (pol_part_start_index > 255) {
+            pol_part_start_index = 0;
+
+            if (num_polynomial > 5)
+                row = 2;
+            else if (num_polynomial > 2)
+                row = 1;
+            else
+                row = 0;
+
+            column = num_polynomial % 3;
+            for (k = 0; k < SABER_N; k++) {
+                a[row].vec[column].coeffs[k] = temp_ar[k];
+            }
+
+            num_polynomial++;
+        }
+    }
+}
+
+void GenMatrix_poly(uint16_t temp_ar[], const unsigned char *seed,
+                    uint16_t poly_number)
+{
+    static unsigned char
+        shake_op_buf[SHAKE128_RATE +
+                     112];  // there can be at most 112 bytes left
+                            // over from previous shake call
+
+    static int i, j;
+
+    static uint64_t s[25];
+
+    static uint16_t pol_part_start_index, num_8coeff, num_8coeff_final,
+        left_over_bytes, total_bytes;
+    static uint16_t poly_complete;
+
+    // Init state when poly_number=0;
+
+    if (poly_number == 0) {
+        for (i = 0; i < 25; ++i)
+            s[i] = 0;
+
+        keccak_absorb(s, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
+
+        pol_part_start_index = 0;
+        num_8coeff = 0;
+        left_over_bytes = 0;
+        total_bytes = 0;
+    }
+
+    poly_complete = 0;
+
+    while (poly_complete != 1) {
+        keccak_squeezeblocks(shake_op_buf + left_over_bytes, 1, s,
+                             SHAKE128_RATE);
+
+        total_bytes = left_over_bytes + SHAKE128_RATE;
+
+        num_8coeff = total_bytes / 13;
+
+        if ((num_8coeff * 8 + pol_part_start_index) > 255)
+            num_8coeff_final = 32 - pol_part_start_index / 8;
+        else
+            num_8coeff_final = num_8coeff;
+
+        byte_bank2pol_part(shake_op_buf, temp_ar, pol_part_start_index,
+                           num_8coeff_final);
+
+        left_over_bytes = total_bytes - num_8coeff_final * 13;
+
+        for (j = 0; j < left_over_bytes;
+             j++)  // bring the leftover in the begining of the buffer.
+            shake_op_buf[j] = shake_op_buf[num_8coeff_final * 13 + j];
+
+        pol_part_start_index =
+            pol_part_start_index +
+            num_8coeff_final *
+                8;  // this will be >256 when the polynomial is complete.
+
+        if (pol_part_start_index > 255) {
+            pol_part_start_index = 0;
+            poly_complete++;
+        }
+    }
+}
+
+void indcpa_kem_keypair(unsigned char *pk, unsigned char *sk)
+{
+    uint16_t s[SABER_K][SABER_N];
+    uint16_t b[SABER_K][SABER_N];  // NOTE : we can pack res into p immidiately.
+
+    unsigned char seed_A[SABER_SEEDBYTES];
+    unsigned char seed_s[SABER_COINBYTES];
+    int32_t i, j;
 
     randombytes(seed_A, SABER_SEEDBYTES);
     shake128(seed_A, SABER_SEEDBYTES, seed_A,
              SABER_SEEDBYTES);  // for not revealing system RNG state
-    randombytes(seed_s, SABER_NOISE_SEEDBYTES);
+    randombytes(seed_s, SABER_COINBYTES);
 
-    GenMatrix(A, seed_A);
-    GenSecret(s, seed_s);
-    MatrixVectorMul(A, s, b, 1);
+    // GenMatrix(a, seed);	//sample matrix A
 
-    for (i = 0; i < SABER_L; i++) {
+    GenSecret(
+        s, seed_s);  // generate secret from constant-time binomial distribution
+
+    //------------------------do the matrix vector multiplication and
+    // rounding------------
+
+    for (i = 0; i < SABER_K; i++) {
         for (j = 0; j < SABER_N; j++) {
-            b[i][j] = (b[i][j] + h1) >> (SABER_EQ - SABER_EP);
+            b[i][j] = 0;
         }
     }
+
+    // MatrixVectorMul(seed,skpv,res,0);
+    MatrixVectorMul_keypair(seed_A, s, b, SABER_Q - 1);
+    //-----now rounding
+
+    for (i = 0; i < SABER_K; i++) {  // shift right 3 bits
+        for (j = 0; j < SABER_N; j++) {
+            b[i][j] = b[i][j] + 4;
+            b[i][j] = (b[i][j] >> 3);
+        }
+    }
+
+    //------------------unload and pack sk=3 x (256 coefficients of 14
+    // bits)-------
 
     POLVECq2BS(sk, s);
-    POLVECp2BS(pk, b);
-    memcpy(pk + SABER_POLYVECCOMPRESSEDBYTES, seed_A, sizeof(seed_A));
+
+    //------------------unload and pack pk=256 bits seed and 3 x (256
+    //coefficients
+    // of 11 bits)-------
+
+    POLVECp2BS(pk, b);  // load the public-key coefficients
+
+    for (i = 0; i < SABER_SEEDBYTES;
+         i++) {  // now load the seedbytes in PK. Easy since seed bytes are kept
+                 // in byte format.
+        pk[SABER_POLYVECCOMPRESSEDBYTES + i] = seed_A[i];
+    }
 }
 
-void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
-                    const uint8_t seed_sp[SABER_NOISE_SEEDBYTES],
-                    const uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
-                    uint8_t ciphertext[SABER_BYTES_CCA_DEC])
+void indcpa_kem_enc(unsigned char *message_received, unsigned char *noiseseed,
+                    const unsigned char *pk, unsigned char *ciphertext)
 {
-    uint16_t A[SABER_L][SABER_L][SABER_N];
-    uint16_t sp[SABER_L][SABER_N];
-    uint16_t bp[SABER_L][SABER_N] = {0};
-    uint16_t vp[SABER_N] = {0};
-    uint16_t mp[SABER_N];
-    uint16_t b[SABER_L][SABER_N];
-    int i, j;
-    const uint8_t *seed_A = pk + SABER_POLYVECCOMPRESSEDBYTES;
+    uint16_t sp[SABER_K][SABER_N];
+    uint16_t vp[SABER_N];
+    uint16_t message_bit;
+    uint32_t i, j;
+    unsigned char seed_A[SABER_SEEDBYTES];
+    unsigned char msk_c[SABER_SCALEBYTES_KEM];
 
-    GenMatrix(A, seed_A);
-    GenSecret(sp, seed_sp);
-    MatrixVectorMul(A, sp, bp, 0);
+    for (i = 0; i < SABER_SEEDBYTES; i++) {
+        seed_A[i] = pk[SABER_POLYVECCOMPRESSEDBYTES + i];
+    }
 
-    for (i = 0; i < SABER_L; i++) {
+    GenSecret(sp, noiseseed);
+    MatrixVectorMul_encryption(seed_A, sp, ciphertext, SABER_Q - 1);
+
+    for (i = 0; i < SABER_N; i++) {
+        vp[i] = 0;
+    }
+
+    for (i = 0; i < SABER_K; i++) {
         for (j = 0; j < SABER_N; j++) {
-            bp[i][j] = (bp[i][j] + h1) >> (SABER_EQ - SABER_EP);
+            sp[i][j] = sp[i][j] & ((SABER_P - 1));
         }
     }
 
-    POLVECp2BS(ciphertext, bp);
-    BS2POLVECp(pk, b);
-    InnerProd(b, sp, vp);
+    VectorMul(pk, sp, vp);
 
-    BS2POLmsg(m, mp);
-
-    for (j = 0; j < SABER_N; j++) {
-        vp[j] =
-            (vp[j] - (mp[j] << (SABER_EP - 1)) + h1) >> (SABER_EP - SABER_ET);
+    for (j = 0; j < SABER_KEYBYTES; j++) {
+        for (i = 0; i < 8; i++) {
+            message_bit = ((message_received[j] >> i) & 0x01);
+            message_bit = (message_bit << 9);
+            vp[j * 8 + i] = vp[j * 8 + i] + message_bit;
+        }
     }
 
-    POLT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
+    GenCipherText(vp, msk_c);
+
+    for (j = 0; j < SABER_SCALEBYTES_KEM; j++) {
+        ciphertext[SABER_POLYVECCOMPRESSEDBYTES + j] = msk_c[j];
+    }
 }
 
-void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
-                    const uint8_t ciphertext[SABER_BYTES_CCA_DEC],
-                    uint8_t m[SABER_KEYBYTES])
+void indcpa_kem_dec(const unsigned char *sk, const unsigned char *ciphertext,
+                    unsigned char m[])
 {
-    uint16_t s[SABER_L][SABER_N];
-    uint16_t b[SABER_L][SABER_N];
-    uint16_t v[SABER_N] = {0};
-    uint16_t cm[SABER_N];
-    int i;
+    // secret key of the server
+    uint16_t s[SABER_K][SABER_N];
+    uint16_t v[SABER_N];
+    uint32_t i, j;
 
-    BS2POLVECq(sk, s);
-    BS2POLVECp(ciphertext, b);
-    InnerProd(b, s, v);
-    BS2POLT(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, cm);
+    BS2POLVECq(sk, s);  // sksv is the secret-key
 
-    for (i = 0; i < SABER_N; i++) {
-        v[i] = (v[i] + h2 - (cm[i] << (SABER_EP - SABER_ET))) >> (SABER_EP - 1);
+    // vector-vector scalar multiplication with mod p
+    for (i = 0; i < SABER_N; i++)
+        v[i] = 0;
+
+    for (i = 0; i < SABER_K; i++) {
+        for (j = 0; j < SABER_N; j++) {
+            s[i][j] = s[i][j] & ((SABER_P - 1));
+        }
     }
 
-    POLmsg2BS(m, v);
+    VectorMul(ciphertext, s, v);
+
+    ExtractKeyBits(v, ciphertext + SABER_POLYVECCOMPRESSEDBYTES, m);
+}
+
+void POL2MSG(uint16_t *message_dec_unpacked, unsigned char *message_dec)
+{
+    int32_t i, j;
+
+    for (j = 0; j < SABER_KEYBYTES; j++) {
+        message_dec[j] = 0;
+        for (i = 0; i < 8; i++)
+            message_dec[j] =
+                message_dec[j] | (message_dec_unpacked[j * 8 + i] << i);
+    }
+}
+
+void MatrixVectorMul_keypair(const unsigned char *seed,
+                             uint16_t skpv[SABER_K][SABER_N],
+                             uint16_t res[SABER_K][SABER_N], uint16_t mod)
+{
+    // uint16_t acc[SABER_N];
+    int32_t i, j, k;
+    uint16_t temp_ar[SABER_N];
+
+    for (i = 0; i < SABER_K; i++) {
+        for (j = 0; j < SABER_K; j++) {
+            GenMatrix_poly(temp_ar, seed, i + j);
+            // toom_cook_4way(temp_ar, skpv[i], acc, SABER_Q, SABER_N);
+            pol_mul(temp_ar, skpv[i], res[j]);
+            /*for(k=0;k<SABER_N;k++){
+                    res[j][k]=res[j][k]+acc[k];
+                    res[j][k]=(res[j][k]&mod); //reduction mod p
+                    acc[k]=0; //clear the accumulator
+            }*/
+        }
+    }
+}
+
+void MatrixVectorMul_encryption(const unsigned char *seed,
+                                uint16_t skpv[SABER_K][SABER_N],
+                                unsigned char *ciphertext, uint16_t mod)
+{
+    uint16_t acc[SABER_N];
+    int32_t i, j, k;
+    uint16_t res[SABER_N];
+
+    for (i = 0; i < SABER_K; i++) {
+        for (j = 0; j < SABER_N; j++) {
+            res[j] = 0;
+            acc[j] = 0;
+        }
+        for (j = 0; j < SABER_K; j++) {
+            GenMatrix_poly(acc, seed, i + j);
+            // toom_cook_4way(acc, skpv[j], acc, SABER_Q, SABER_N);
+            pol_mul(acc, skpv[j], res);
+            /*for(k=0;k<SABER_N;k++)
+            {
+                    res[k]=res[k]+acc[k];
+                    res[k]=res[k]&mod; //reduction
+                    acc[k]=0; //clear the accumulator
+            }*/
+        }
+
+        // Now one polynomial of the output vector is ready.
+        // Rounding: perform bit manipulation before packing into ciphertext
+        for (k = 0; k < SABER_N; k++) {
+            res[k] = res[k] + 4;
+            res[k] = (res[k] >> 3);
+        }
+
+        POLp2BS(ciphertext, res, i);
+    }
+}
+
+void MatrixVectorMul(const unsigned char *seed, uint16_t skpv[SABER_K][SABER_N],
+                     uint16_t res[SABER_K][SABER_N], int8_t transpose)
+{
+    int32_t i, j, k;
+    uint16_t temp_ar[SABER_N];
+
+    if (transpose == 1) {
+        for (i = 0; i < SABER_K; i++) {
+            for (j = 0; j < SABER_K; j++) {
+                GenMatrix_poly(temp_ar, seed, i + j);
+                pol_mul(temp_ar, skpv[i], res[j]);
+            }
+        }
+    }
+
+    else {
+        for (i = 0; i < SABER_K; i++) {
+            for (j = 0; j < SABER_K; j++) {
+                GenMatrix_poly(temp_ar, seed, i + j);
+                pol_mul(temp_ar, skpv[j], res[i]);
+            }
+        }
+    }
+
+    for (j = 0; j < SABER_K; j++) {
+        for (k = 0; k < SABER_N; k++) {
+            res[j][k] = res[j][k] & (SABER_Q - 1);
+        }
+    }
+}
+
+void VectorMul(const unsigned char *byte_array, uint16_t skpv[SABER_K][SABER_N],
+               uint16_t res[SABER_N])
+{
+    uint32_t j;
+    uint16_t pkcl[SABER_N];
+
+    // vector-vector scalar multiplication with mod p
+    for (j = 0; j < SABER_K; j++) {
+        BS2POLp(j, byte_array, pkcl);
+        pol_mul(pkcl, skpv[j], res);
+    }
+    for (j = 0; j < SABER_N; j++)
+        res[j] = res[j] & (SABER_P - 1);
 }
