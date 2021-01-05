@@ -1,4 +1,5 @@
 out/
+host_out/
 scripts/
 freedom-metal/
 bsp/*

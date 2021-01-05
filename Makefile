@@ -6,6 +6,8 @@ BSP_DIR = $(abspath bsp)
 SRC_DIR = src
 COMMON_DIR = benchmark/common
 
+# for host
+HOST_GCC = /usr/bin/gcc
 # Allow users to select a different cross compiler.
 CROSS_COMPILE ?= riscv64-unknown-elf
 RISCV_GCC     := $(CROSS_COMPILE)-gcc
@@ -34,7 +36,10 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
 					-O0 -g
-
+HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls \
+					-fomit-frame-pointer -march=native \
+					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
+					-O0 -g
 # RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group \
 # 					-Wl,-Map,$(basename $@).map \
 # 					-T$(abspath $(filter %.lds,$^)) -Xlinker --defsym=__heap_max=0x1 \
@@ -52,6 +57,9 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
+
+.PHONY: host
+host: host_out/kem
 
 .PHONY: all
 all: out/kem.elf out/PQCgenKAT_kem.elf out/test_kex.elf
@@ -76,6 +84,12 @@ out/%.elf: \
 	$(RISCV_SIZE) $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
+
+host_out/kem: \
+		benchmark/kem.c \
+		$(COMMON_SRCS) $(PROGRAM_SRCS)
+	mkdir -p $(dir $@)
+	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
 
 .PHONY: clean-software
 clean-software:
