@@ -39,7 +39,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls \
 					-fomit-frame-pointer -march=native \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
-					-O0 -g
+					-O3
 # RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group \
 # 					-Wl,-Map,$(basename $@).map \
 # 					-T$(abspath $(filter %.lds,$^)) -Xlinker --defsym=__heap_max=0x1 \
@@ -53,6 +53,7 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
+					-Xlinker --defsym=__stack_size=0x2600 \
 					-Xlinker --defsym=__heap_max=1
 
 
@@ -60,6 +61,12 @@ RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-
 
 .PHONY: host
 host: host_out/kem
+
+host_out/kem: \
+		benchmark/kem.c \
+		$(COMMON_SRCS) $(PROGRAM_SRCS)
+	mkdir -p $(dir $@)
+	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
 
 .PHONY: all
 all: out/kem.elf out/PQCgenKAT_kem.elf out/test_kex.elf
@@ -73,7 +80,7 @@ out/%.elf: \
 		$(COMMON_SRCS) $(PROGRAM_SRCS) \
 		benchmark/common/libmetal.a \
 		benchmark/common/libmetal-gloss.a \
-		benchmark/common/metal.ramrodata.lds
+		benchmark/common/metal.default.lds
 	mkdir -p $(dir $@)
 	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_LDFLAGS) \
 		$(filter %.c,$^) $(filter %.S,$^) \
@@ -84,12 +91,6 @@ out/%.elf: \
 	$(RISCV_SIZE) $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
-
-host_out/kem: \
-		benchmark/kem.c \
-		$(COMMON_SRCS) $(PROGRAM_SRCS)
-	mkdir -p $(dir $@)
-	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
 
 .PHONY: clean-software
 clean-software:

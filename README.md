@@ -24,3 +24,13 @@ and then input "load"
 
 [Segger JLink-GDBServer](https://wiki.segger.com/J-Link_GDB_Server)
 
+## 实验结果
+
+### -O3选项下
+
+stack size = 0x2600（设为0x2700会导致堆空间无法使用）
+
+运行kem.c测试，发现keypair可跑通，enc可跑通，dec栈溢出
+
+stack size = 0x2600运行test_kex.c发现输出不完整，基本判定是堆空间不够用了，所以只能调整下栈空间
+

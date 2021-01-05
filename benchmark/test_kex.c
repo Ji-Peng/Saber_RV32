@@ -39,7 +39,7 @@ static int test_kem_cca(void)
     unsigned char entropy_input[48];
 
     uint64_t i, j, repeat;
-    repeat = 10000;
+    repeat = 1;
     uint64_t CLOCK1, CLOCK2;
     uint64_t CLOCK_kp, CLOCK_enc, CLOCK_dec;
 
@@ -59,23 +59,25 @@ static int test_kem_cca(void)
     }
     randombytes_init(entropy_input, NULL);
 
-    printf("SABER_INDCPA_PUBLICKEYBYTES=%d\n", SABER_INDCPA_PUBLICKEYBYTES);
-    printf("SABER_INDCPA_SECRETKEYBYTES=%d\n", SABER_INDCPA_SECRETKEYBYTES);
-    printf("SABER_PUBLICKEYBYTES=%d\n", SABER_PUBLICKEYBYTES);
-    printf("SABER_SECRETKEYBYTES=%d\n", SABER_SECRETKEYBYTES);
-    printf("SABER_KEYBYTES=%d\n", SABER_KEYBYTES);
-    printf("SABER_HASHBYTES=%d\n", SABER_HASHBYTES);
-    printf("SABER_BYTES_CCA_DEC=%d\n", SABER_BYTES_CCA_DEC);
-    printf("\n");
+    // printf("SABER_INDCPA_PUBLICKEYBYTES=%d\n", SABER_INDCPA_PUBLICKEYBYTES);
+    // printf("SABER_INDCPA_SECRETKEYBYTES=%d\n", SABER_INDCPA_SECRETKEYBYTES);
+    // printf("SABER_PUBLICKEYBYTES=%d\n", SABER_PUBLICKEYBYTES);
+    // printf("SABER_SECRETKEYBYTES=%d\n", SABER_SECRETKEYBYTES);
+    // printf("SABER_KEYBYTES=%d\n", SABER_KEYBYTES);
+    // printf("SABER_HASHBYTES=%d\n", SABER_HASHBYTES);
+    // printf("SABER_BYTES_CCA_DEC=%d\n", SABER_BYTES_CCA_DEC);
+    // printf("\n");
 
     for (i = 0; i < repeat; i++) {
         // printf("i : %llu\n",i);
 
         // Generation of secret key sk and public key pk pair
         CLOCK1 = cpucycles();
+        printf("clock1 %u\n",CLOCK1);
         crypto_kem_keypair(pk, sk);
         CLOCK2 = cpucycles();
         CLOCK_kp = CLOCK_kp + (CLOCK2 - CLOCK1);
+        printf("kp: %u \n",CLOCK_kp / repeat);
 
         // Key-Encapsulation call; input: pk; output: ciphertext c,
         // shared-secret k_a;
