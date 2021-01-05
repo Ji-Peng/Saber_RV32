@@ -33,7 +33,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-					-Os -g
+					-O3 -g
 
 # RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group \
 # 					-Wl,-Map,$(basename $@).map \
@@ -48,7 +48,7 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x2900 \
+					-Xlinker --defsym=__stack_size=0x2600 \
 					-Xlinker --defsym=__heap_max=1
 
 

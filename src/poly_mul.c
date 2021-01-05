@@ -735,12 +735,14 @@ void MatrixVectorMul_keypair(const unsigned char* seed,
                              uint16_t b[SABER_L][SABER_N])
 {
     int32_t i, j;
-    uint16_t temp[SABER_N];
+    uint16_t a[SABER_N];
 
     for (i = 0; i < SABER_L; i++) {
         for (j = 0; j < SABER_L; j++) {
-            GenMatrix_poly(temp, seed, i + j);
-            pol_mul(temp, s[i], b[j]);
+            // generate a polynomial
+            GenMatrix_poly(a, seed, i + j);
+            // a * s[i] and accumulate to b[j]
+            pol_mul(a, s[i], b[j]);
         }
     }
 }
@@ -749,27 +751,29 @@ void MatrixVectorMul_encryption(const unsigned char* seed,
                                 uint16_t sp[SABER_L][SABER_N],
                                 unsigned char* ciphertext)
 {
-    uint16_t acc[SABER_N];
     int32_t i, j, k;
-    uint16_t res[SABER_N];
+    uint16_t a[SABER_N], b[SABER_N];
 
     for (i = 0; i < SABER_L; i++) {
+        // clear polynomial a and b
+        // memset(a, 0, SABER_N * sizeof(uint16_t));
+        // memset(b, 0, SABER_N * sizeof(uint16_t));
         for (j = 0; j < SABER_N; j++) {
-            res[j] = 0;
-            acc[j] = 0;
+            a[j] = 0;
+            b[j] = 0;
         }
         for (j = 0; j < SABER_L; j++) {
-            GenMatrix_poly(acc, seed, i + j);
-            pol_mul(acc, sp[j], res);
+            GenMatrix_poly(a, seed, i + j);
+            pol_mul(a, sp[j], b);
         }
 
         // Now one polynomial of the output vector is ready.
         // Rounding: perform bit manipulation before packing into ciphertext
         for (k = 0; k < SABER_N; k++) {
-            res[k] = (res[k] + h1) >> (SABER_EQ - SABER_EP);
+            b[k] = (b[k] + h1) >> (SABER_EQ - SABER_EP);
         }
 
-        POLp2BS(ciphertext, res, i);
+        POLp2BS(ciphertext + i * (SABER_EP * SABER_N / 8), b);
     }
 }
 
@@ -777,12 +781,11 @@ void VectorMul(const unsigned char* bytes, uint16_t sp[SABER_L][SABER_N],
                uint16_t res[SABER_N])
 {
     uint32_t j;
-    uint16_t pk[SABER_N];
+    uint16_t b[SABER_N];
 
     // vector-vector scalar multiplication with mod p
     for (j = 0; j < SABER_L; j++) {
-        BS2POLp(j, bytes, pk);
-        pol_mul(pk, sp[j], res);
+        BS2POLp(j, bytes, b);
+        pol_mul(b, sp[j], res);
     }
-    //   for (j = 0; j < SABER_N; j++) res[j] = res[j] & (SABER_P - 1);
 }

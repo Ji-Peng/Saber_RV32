@@ -26,23 +26,26 @@ and then input "load"
 
 ## Code Size
 
-including AES and Keccake Implementation:
+code size with aes and sha3: ./code_size.sh --aes 0
+code size without aes and sha3: ./code_size.sh --aes 1
 
-```bash
-riscv64-unknown-elf-nm out/kem.elf --print-size --size-sort --radix=d | \
-grep ' crypto_\| load_\| sha3_\| poly_\| byte_\| indcpa_\| cbd\| randombytes\| PO\| BS\| Inner\| Gen\| shake\| verify\| cmov\| school\| *keccak*\| *Keccak*\| *kara*\| *toom*\| *Matrix*\| *Vector*\| *aes*\| *AES*' | \
-awk '{sum+=$2 ; print $0} END{print "Total size =", sum, "bytes =", sum/1024, "kB"}'
-```
+## tag: r3_m0
 
-excluding AES and Keccake Implementation:
+Version: after using optimization in Saber on ARM for Cortex-M0 (tag: r3_m0)
 
-```bash
-riscv64-unknown-elf-nm out/kem.elf --print-size --size-sort --radix=d | \
-grep ' crypto_\| load_\| poly_\| byte_\| indcpa_\| cbd\| randombytes\| PO\| BS\| Inner\| Gen\| verify\| cmov\| school\| *kara*\| *toom*\| *Matrix*\| *Vector' | \
-awk '{sum+=$2 ; print $0} END{print "Total size =", sum, "bytes =", sum/1024, "kB"}'
-```
+### Memory Analysis for Saber
 
-### After using optimization in Saber on ARM for Cortex-M0
+1-level: in function indcpa_kem_keypair s=3x256x2=1536bytes, b=1536bytes, seed_A=seed_s=32bytes, total=3.125KB
+
+2-level: in function MatrixVectorMul_keypair temp=2x256=512bytes, total=0.5KB
+
+3-level: in function pol_mul c=2x2x256=1024bytes, total=1KB
+
+4-level: it's hard to analyze. kara_tmp=2x16=32bytes, kara_tmp_top=2x64=128bytes, others
+
+without 4-level total=3.125+0.5+1=4.625KB
+
+### Code Size Data
 
 #### O3 without AES&SHA3
 

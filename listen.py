@@ -8,13 +8,11 @@ import sys
 
 # ports = serial.tools.list_ports.comports()
 # for port in ports:
-#     print(port.device,port.description)
+#     print(port.device, port.description)
     # if 'VCP' in port.description or 'Serial' in port.description:
     #     dev = serial.Serial(port.device, 115200, timeout=10)
     #     print("Listen on port {} from {}".format(port.device, port.description))
     #     break
-
-# print("> Returned data:", file=sys.stderr)
 
 dev=serial.Serial("/dev/ttyACM0",115200, timeout=0.5)
 

@@ -36,7 +36,8 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
 
     POLVECq2BS(sk, s);
     POLVECp2BS(pk, b);
-    memcpy(pk + SABER_POLYVECCOMPRESSEDBYTES, seed_A, sizeof(seed_A));
+    memcpy(pk + SABER_POLYVECCOMPRESSEDBYTES, seed_A,
+           SABER_SEEDBYTES * sizeof(uint8_t));
 }
 
 void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
@@ -59,7 +60,7 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
         for (i = 0; i < 8; i++) {
             message_bit = ((m[j] >> i) & 0x01) << (SABER_EP - 1);
             vp[j * 8 + i] =
-                (vp[j * 8 + i] + h1 - message_bit) >> (SABER_EP - SABER_ET);
+                (vp[j * 8 + i] - message_bit + h1) >> (SABER_EP - SABER_ET);
         }
     }
 
