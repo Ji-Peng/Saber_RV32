@@ -34,3 +34,9 @@ stack size = 0x2600（设为0x2700会导致堆空间无法使用）
 
 stack size = 0x2600运行test_kex.c发现输出不完整，基本判定是堆空间不够用了，所以只能调整下栈空间
 
+调整为0x2500后发现，堆空间又不足了
+
+结论：
+1. stack size=0x2600可运行keypair和enc，dec栈溢出
+2. 目前cpu cycles还没测，因为当前的cpucycles实现错误
+3. 目前code size还每测，需要修改下测试脚本，不着急，很简单
