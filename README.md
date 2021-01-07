@@ -34,8 +34,8 @@ Stack size = 0x2560 is OK.
 
 #### Performance Result
 
-kp cpu cycles: 40115695
-enc cpu cycles: 39824461
+kp cpu cycles: 14241102
+enc cpu cycles: 13713843
 dec stack overflow
 But the results are not constant-time.
 
@@ -132,6 +132,14 @@ Total size = 19006 bytes = 18.5605 kB
 ```
 
 ### -Os Option
+
+
+#### Performance Result
+
+kp: 6623016
+enc: 6930635
+
+#### Code Size
 
 with AES and SHA
 
