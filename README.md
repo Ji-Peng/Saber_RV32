@@ -24,30 +24,22 @@ and then input "load"
 
 [Segger JLink-GDBServer](https://wiki.segger.com/J-Link_GDB_Server)
 
-## 实验结果
+## Result
 
-### -O3选项
+### -O3 Option
 
-stack size = 0x2600（设为0x2700会导致堆空间无法使用）
+When the stack size = 0x2700, malloc will fail. When the stack size = 0x2500, keypair and encapsulation can not run because of stack overflow.
 
-运行kem.c测试，发现keypair可跑通，enc可跑通，dec栈溢出
+Stack size = 0x2560 is OK.
 
-stack size = 0x2600运行test_kex.c发现输出不完整，基本判定是堆空间不够用了，所以只能调整下栈空间
-
-调整为0x2500后发现，堆空间又不足了
-
-输出不完整并非是堆空间不足，而是nano lib没有实现printf("%llu")，所以需要将llu转换为string进行输出
-
-调整为0x2560后，并且将llu转换为string，成功得到输出：
-
-#### 性能结果
+#### Performance Result
 
 kp cpu cycles: 40115695
 enc cpu cycles: 39824461
 dec stack overflow
-但是多次运行发现，每次运行的时间都不同，也就是说是非constant-time的啊？
+But the results are not constant-time.
 
-#### 空间结果
+#### Code Size Result
 
 with AES and SHA:
 
@@ -139,7 +131,7 @@ without AES and SHA
 Total size = 19006 bytes = 18.5605 kB
 ```
 
-### -Os选项
+### -Os Option
 
 with AES and SHA
 
@@ -257,11 +249,10 @@ without AES and SHA
 Total size = 10866 bytes = 10.6113 kB
 ```
 
-## 结论
+## Summary
 
-1. stack size=0x2600可运行keypair和enc，dec栈溢出
-2. 最后设置为0x2560比较合适
-3. 目前cpu cycles已测，但是发现并非是constant-time，github上开源的代码也找不到了，估计被他们删掉了吧～
-4. 目前code size已测，先通过nm将所有的item输出，然后利用clear python脚本做下清理~
-5. O3选项下，包含AES和SHA与不包含情况下的code size分别是：39KB，18KB
-6. Os选项下，分别是：17.9KB，11.6KB
+1. stack size=0x2560 is OK
+2. we find that the keypair and encapsulation are not constant-time and we can not find the newest source code in github.
+3. verify the correction of code size shell tool: 1. run nm and get all the item 2. run clear_nm_out.py for clear results 3. diff
+4. O3 Option: with AES and SHA/without 39KB/18KB
+5. Os Option: 17.9KB/11.6KB
