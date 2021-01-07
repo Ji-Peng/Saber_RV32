@@ -73,11 +73,12 @@ static int test_kem_cca(void)
 
         // Generation of secret key sk and public key pk pair
         CLOCK1 = cpucycles();
-        printf("clock1 %u\n",CLOCK1);
+        // printf("clock1 %s\n",ullu(CLOCK1));
         crypto_kem_keypair(pk, sk);
         CLOCK2 = cpucycles();
+        // printf("clock2 %s\n",ullu(CLOCK2));
         CLOCK_kp = CLOCK_kp + (CLOCK2 - CLOCK1);
-        printf("kp: %u \n",CLOCK_kp / repeat);
+        printf("kp: %s \n",ullu(CLOCK_kp / repeat));
 
         // Key-Encapsulation call; input: pk; output: ciphertext c,
         // shared-secret k_a;
@@ -85,6 +86,7 @@ static int test_kem_cca(void)
         crypto_kem_enc(c, k_a, pk);
         CLOCK2 = cpucycles();
         CLOCK_enc = CLOCK_enc + (CLOCK2 - CLOCK1);
+        printf("enc: %s \n",ullu(CLOCK_enc / repeat));
 
         /*
         printf("ciphertext=\n");
@@ -123,19 +125,6 @@ static int test_kem_cca(void)
     return 0;
 }
 
-/*
-void test_kem_cpa(){
-
-        uint8_t pk[SABER_PUBLICKEYBYTES];
-        uint8_t sk[SABER_SECRETKEYBYTES];
-
-        indcpa_kem_keypair(unsigned char *pk, unsigned char *sk);
-        indcpa_kem_enc(unsigned char *message_received, unsigned char
-*noiseseed, const unsigned char *pk, unsigned char *ciphertext)
-        indcpa_kem_dec(const unsigned char *sk, const unsigned char *ciphertext,
-unsigned char message_dec[])
-}
-*/
 int main(void)
 {
     test_kem_cca();
