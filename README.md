@@ -36,7 +36,16 @@ stack size = 0x2600运行test_kex.c发现输出不完整，基本判定是堆空
 
 调整为0x2500后发现，堆空间又不足了
 
+输出不完整并非是堆空间不足，而是nano lib没有实现printf("%llu")，所以需要将llu转换为string进行输出
+
+调整为0x2560后，并且将llu转换为string，成功得到输出：
+
+kp's cpucycles: 40115695
+enc's cpucycles: 39824461
+dec stack overflow
+但是多次运行发现，每次运行的时间都不同，也就是说是非constant-time的啊？
+
 结论：
 1. stack size=0x2600可运行keypair和enc，dec栈溢出
-2. 目前cpu cycles还没测，因为当前的cpucycles实现错误
+2. 目前cpu cycles已测，但是发现并非是constant-time，github上开源的代码也找不到了，估计被他们删掉了吧～
 3. 目前code size还每测，需要修改下测试脚本，不着急，很简单

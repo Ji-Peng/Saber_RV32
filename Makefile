@@ -53,7 +53,7 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x2600 \
+					-Xlinker --defsym=__stack_size=0x2560 \
 					-Xlinker --defsym=__heap_max=1
 
 
