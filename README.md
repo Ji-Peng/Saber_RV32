@@ -259,8 +259,9 @@ Total size = 10866 bytes = 10.6113 kB
 
 ## Summary
 
-1. stack size=0x2560 is OK
-2. we find that the keypair and encapsulation are not constant-time and we can not find the newest source code in github.
-3. verify the correction of code size shell tool: 1. run nm and get all the item 2. run clear_nm_out.py for clear results 3. diff
-4. O3 Option: with AES and SHA/without 39KB/18KB
-5. Os Option: 17.9KB/11.6KB
+1. Stack size=0x2560 is OK
+2. We find that the keypair and encapsulation are not constant-time and we can not find the newest source code in github.
+3. Verify the correction of code_size.sh: 1. run nm and get all the item 2. run clear_nm_out.py for clear results 3. diff
+4. O3 Option: 39KB/18KB (with AES and SHA/without)
+5. Os Option: 17.9KB/11.6KB (with AES and SHA/without)
+6. We found a strange phenomenon: the speed with Os option is faster than O3. 
