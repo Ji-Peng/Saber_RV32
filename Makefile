@@ -73,7 +73,7 @@ out/%.elf: \
 		$(COMMON_SRCS) $(PROGRAM_SRCS) \
 		benchmark/common/libmetal.a \
 		benchmark/common/libmetal-gloss.a \
-		benchmark/common/metal.ramrodata.lds
+		benchmark/common/metal.default.lds
 	mkdir -p $(dir $@)
 	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_LDFLAGS) \
 		$(filter %.c,$^) $(filter %.S,$^) \
