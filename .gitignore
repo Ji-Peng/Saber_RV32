@@ -6,3 +6,4 @@ bsp/*
 !bsp/install/
 bsp/install/*
 !bsp/install/include
+.vscode/
