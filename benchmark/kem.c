@@ -84,10 +84,29 @@ static int test_kem_cpa(void)
     return 0;
 }
 
+void test_ntt(void)
+{
+    uint16_t b[SABER_L][SABER_N] = {0}, s[SABER_L][SABER_N] = {0};
+    uint16_t res1[SABER_N], res2[SABER_N];
+    memset(b, 0, sizeof(b));
+    memset(s, 0, sizeof(s));
+    memset(res1, 0, sizeof(res1));
+    memset(res2, 0, sizeof(res2));
+
+    b[0][0] = s[0][0] = 8191;
+    InnerProd(b, s, res1);
+    InnerProd_ntt(b, s, res2);
+    for (int i = 0; i < SABER_N; i++) {
+        if (res1[i] != res2[i]) {
+            printf("res1[%d]:%d,res2[%d]:%d ", i, res1[i], i, res2[i]);
+        }
+    }
+}
+
 int main(void)
 {
-    printf("hello world\n");
-    test_kem_cpa();
-    test_kem_cca();
+    // test_kem_cpa();
+    // test_kem_cca();
+    test_ntt();
     return 0;
 }
