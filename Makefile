@@ -36,7 +36,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
 					-O0 -g
-HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls \
+HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
 					-fomit-frame-pointer -march=native \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
 					-O0 -g

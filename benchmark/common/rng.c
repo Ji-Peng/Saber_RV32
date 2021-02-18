@@ -116,7 +116,7 @@ void AES256_ECB(unsigned char *key, unsigned char *in, unsigned char *out)
 void randombytes_init(unsigned char *entropy_input,
                       unsigned char *personalization_string)
 {
-    printf("randombytes_init test\n");
+    // printf("randombytes_init test\n");
     unsigned char seed_material[48];
 
     memcpy(seed_material, entropy_input, 48);

@@ -72,7 +72,7 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
 
     POLVECp2BS(ciphertext, bp);
     BS2POLVECp(pk, b);
-    InnerProd_ntt(b, sp, vp);
+    InnerProd_ntt((int16_t(*)[256])b, (int16_t(*)[256])sp, (int16_t*)vp);
 
     BS2POLmsg(m, mp);
 
