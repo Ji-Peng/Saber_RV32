@@ -94,6 +94,7 @@ host_out/kem: \
 .PHONY: clean-software
 clean-software:
 	rm -rf out
+	rm -rf host_out
 
 .PHONY: clean
 clean: clean-software

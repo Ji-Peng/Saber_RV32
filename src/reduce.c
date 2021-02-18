@@ -44,10 +44,12 @@ int32_t barrett_reduce(int32_t a)
 
 // int main(void)
 // {
-//     printf("%d\n", montgomery_reduce((int64_t)M<<32));
-//     printf("%d\n", montgomery_reduce((int64_t)(M - 1)<<32));
-//     printf("%d\n", montgomery_reduce((int64_t)(2 * M)<<32));
-//     printf("%d\n", montgomery_reduce((int64_t)(2 * M - 1)<<32));
+//     printf("%d\n", montgomery_reduce((int64_t)M * RmodM));
+//     printf("%d\n", montgomery_reduce((int64_t)(M - 1) * RmodM));
+//     printf("%d\n", montgomery_reduce((int64_t)(2 * M) * RmodM));
+//     printf("%d\n", montgomery_reduce((int64_t)(2 * M - 1) * RmodM));
+//     printf("%d\n", montgomery_reduce((int64_t)(3 * M) * RmodM));
+//     printf("%d\n", montgomery_reduce((int64_t)(3 * M - 1) * RmodM));
 //     printf("%d\n", barrett_reduce(M));
 //     printf("%d\n", barrett_reduce(M - 1));
 //     printf("%d\n", barrett_reduce(2 * M));
