@@ -40,12 +40,6 @@ int32_t fqmul(int32_t a, int32_t b)
     return montgomery_reduce((int64_t)a * b);
 }
 
-void check_overflow(int64_t t)
-{
-    if (t > INT32_MAX || t < INT32_MIN) {
-        printf("overflow\n");
-    }
-}
 /*************************************************
  * Name:        ntt
  *
@@ -75,13 +69,11 @@ void ntt(const int16_t in[256], int32_t out[256])
             zeta = root_table[k++];
             for (j = start; j < start + len; j++) {
                 t = fqmul(zeta, out[j + len]);
-                // check_overflow((int64_t)out[j] + t);
                 out[j + len] = out[j] - t;
                 out[j] = out[j] + t;
             }
         }
     }
-    // printf("k is %d\n", k);
 }
 
 /*************************************************
@@ -109,8 +101,7 @@ void invntt(int32_t in[256], int32_t out[256])
         zeta = inv_root_table[k++];
         for (j = start; j < start + len; j++) {
             t = in[j];
-            // out[j] = barrett_reduce(t + in[j + len]);
-            out[j] = fqmul(t + in[j + len], RmodM);
+            out[j] = barrett_reduce(t + in[j + len]);
             out[j + len] = t - in[j + len];
             out[j + len] = fqmul(zeta, out[j + len]);
         }
@@ -121,8 +112,7 @@ void invntt(int32_t in[256], int32_t out[256])
             zeta = inv_root_table[k++];
             for (j = start; j < start + len; j++) {
                 t = out[j];
-                // out[j] = barrett_reduce(t + out[j + len]);
-                out[j] = fqmul(t + out[j + len], RmodM);
+                out[j] = barrett_reduce(t + out[j + len]);
                 out[j + len] = t - out[j + len];
                 out[j + len] = fqmul(zeta, out[j + len]);
             }
@@ -132,12 +122,7 @@ void invntt(int32_t in[256], int32_t out[256])
     // multiply mont^2/64, reduce to centered representatives, get low 13 bits
     for (j = 0; j < 256; j++) {
         out[j] = fqmul(out[j], f);
-        // out[j] = barrett_reduce(out[j]);
-        if (out[j] > M / 2)
-            out[j] -= M;
-        if (out[j] < -M / 2)
-            out[j] += M;
-
+        out[j] = barrett_reduce(out[j]);
         out[j] &= 0x1fff;
     }
 }
