@@ -5,6 +5,7 @@ BSP_DIR = $(abspath bsp)
 # SRC_DIR sets the path to the program source directory
 SRC_DIR = src
 COMMON_DIR = benchmark/common
+HOST_DIR = benchmark/host
 
 # for host
 HOST_GCC = /usr/bin/gcc
@@ -30,6 +31,8 @@ MTIME_RATE_HZ_DEF=32768
 # 					$(ARCH_FLAGS)
 PROGRAM_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.S)
 COMMON_SRCS = $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.S)
+HOST_SRCS = $(wildcard $(HOST_DIR)/*.c)
+
 RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-ffunction-sections -fdata-sections \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
@@ -38,7 +41,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-O0 -g
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
 					-fomit-frame-pointer -march=native \
-					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
+					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
 					-O0 -g
 # RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group \
 # 					-Wl,-Map,$(basename $@).map \
@@ -59,7 +62,7 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
 
 .PHONY: host
-host: host_out/kem
+host: host_out/kem host_out/speed
 
 .PHONY: all
 all: out/kem.elf out/PQCgenKAT_kem.elf out/test_kex.elf
@@ -88,6 +91,12 @@ out/%.elf: \
 host_out/kem: \
 		benchmark/kem.c \
 		$(COMMON_SRCS) $(PROGRAM_SRCS)
+	mkdir -p $(dir $@)
+	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
+
+host_out/speed: \
+		benchmark/host/speed_host.c \
+		$(COMMON_SRCS) $(PROGRAM_SRCS) $(HOST_SRCS)
 	mkdir -p $(dir $@)
 	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
 
