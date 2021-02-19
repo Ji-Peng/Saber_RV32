@@ -17,6 +17,8 @@ static int test_kem_cpa(void);
 static void test_ntt(void);
 static void test_ntt_self(void);
 
+#define NTEST 1000
+
 static int test_kem_cca(void)
 {
     uint8_t pk[CRYPTO_PUBLICKEYBYTES];
@@ -26,28 +28,30 @@ static int test_kem_cca(void)
 
     unsigned char entropy_input[48];
 
-    int i;
+    int i, j;
 
     for (i = 0; i < 48; i++)
-        entropy_input[i] = i;
+        entropy_input[i] = i + 1;
     randombytes_init(entropy_input, NULL);
 
-    // Generation of secret key sk and public key pk pair
-    crypto_kem_keypair(pk, sk);
+    for (j = 0; j < NTEST; j++) {
+        // Generation of secret key sk and public key pk pair
+        crypto_kem_keypair(pk, sk);
 
-    // Key-Encapsulation call; input: pk; output: ciphertext c, shared-secret
-    // ss_a;
-    crypto_kem_enc(ct, ss_a, pk);
+        // Key-Encapsulation call; input: pk; output: ciphertext c,
+        // shared-secret ss_a;
+        crypto_kem_enc(ct, ss_a, pk);
 
-    // Key-Decapsulation call; input: sk, c; output: shared-secret ss_b;
-    crypto_kem_dec(ss_b, ct, sk);
+        // Key-Decapsulation call; input: sk, c; output: shared-secret ss_b;
+        crypto_kem_dec(ss_b, ct, sk);
 
-    // Functional verification: check if ss_a == ss_b?
-    for (i = 0; i < SABER_KEYBYTES; i++) {
-        // printf("%u \t %u\n", ss_a[i], ss_b[i]);
-        if (ss_a[i] != ss_b[i]) {
-            printf(" ----- ERR CCA KEM ------\n");
-            break;
+        // Functional verification: check if ss_a == ss_b?
+        for (i = 0; i < SABER_KEYBYTES; i++) {
+            // printf("%u \t %u\n", ss_a[i], ss_b[i]);
+            if (ss_a[i] != ss_b[i]) {
+                printf(" ----- ERR CCA KEM ------\n");
+                break;
+            }
         }
     }
     printf("test_kem_cca end\n");
@@ -62,29 +66,31 @@ static int test_kem_cpa(void)
     uint8_t message1[64], message2[64];
     uint8_t noiseseed[32];
     uint8_t entropy_input[48];
-    int i;
+    int i, j;
 
     for (i = 0; i < 48; i++)
-        entropy_input[i] = i;
+        entropy_input[i] = i + 1;
     randombytes_init(entropy_input, NULL);
 
-    memset(message1, 0, sizeof(message1));
-    memset(message2, 0, sizeof(message2));
-    memset(noiseseed, 0, sizeof(noiseseed));
+    for (j = 0; j < NTEST; j++) {
+        memset(message1, 0, sizeof(message1));
+        memset(message2, 0, sizeof(message2));
+        memset(noiseseed, 0, sizeof(noiseseed));
 
-    for (i = 0; i < 32; i++) {
-        message1[i] = noiseseed[i] = i;
-    }
+        for (i = 0; i < 32; i++) {
+            message1[i] = noiseseed[i] = i;
+        }
 
-    indcpa_kem_keypair(pk, sk);
-    indcpa_kem_enc(message1, noiseseed, pk, ct);
-    indcpa_kem_dec(sk, ct, message2);
+        indcpa_kem_keypair(pk, sk);
+        indcpa_kem_enc(message1, noiseseed, pk, ct);
+        indcpa_kem_dec(sk, ct, message2);
 
-    for (i = 0; i < 64; i++) {
-        if (message1[i] != message2[i]) {
-            printf("i=%d, %d, %d\n", i, message1[i], message2[i]);
-            printf("ERROR\n");
-            break;
+        for (i = 0; i < 64; i++) {
+            if (message1[i] != message2[i]) {
+                printf("i=%d, %d, %d\n", i, message1[i], message2[i]);
+                printf("ERROR\n");
+                break;
+            }
         }
     }
     printf("test_kem_cpa end\n");
