@@ -102,14 +102,7 @@ void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
             }
         }
     }
-    // printf("\n\n\n");
     BS2POLVECp(ciphertext, b);
-    // for (int i = 0; i < SABER_L; i++) {
-    //     for (int j = 0; j < SABER_N; j++) {
-    //         printf("%hd ", b[i][j]);
-    //     }
-    // }
-    // printf("\n");
     InnerProd_ntt((int16_t(*)[256])b, (int16_t(*)[256])s, (int16_t *)v);
     BS2POLT(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, cm);
 
