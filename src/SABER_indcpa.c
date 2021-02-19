@@ -33,7 +33,8 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
 
     GenMatrix(A, seed_A);
     GenSecret(s, seed_s);
-    MatrixVectorMul(A, s, b, 1);
+    MatrixVectorMul_ntt((int16_t(*)[3][256])A, (int16_t(*)[256])s,
+                        (int16_t(*)[256])b, 1);
 
     for (i = 0; i < SABER_L; i++) {
         for (j = 0; j < SABER_N; j++) {
@@ -62,7 +63,8 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
 
     GenMatrix(A, seed_A);
     GenSecret(sp, seed_sp);
-    MatrixVectorMul(A, sp, bp, 0);
+    MatrixVectorMul_ntt((int16_t(*)[3][256])A, (int16_t(*)[256])sp,
+                        (int16_t(*)[256])bp, 0);
 
     for (i = 0; i < SABER_L; i++) {
         for (j = 0; j < SABER_N; j++) {

@@ -91,6 +91,10 @@ void poly_basemul(int32_t r[SABER_N], const int32_t a[SABER_N],
     }
 }
 
+/**
+ * Name: poly_add
+ * Description: polynomial addition
+ */
 void poly_add(int16_t res[SABER_N], int32_t in[SABER_N])
 {
     int i;
@@ -99,16 +103,46 @@ void poly_add(int16_t res[SABER_N], int32_t in[SABER_N])
     }
 }
 
+/**
+ * Name: poly_mul_acc_ntt
+ * Description: res += a * b using ntt
+ */
+void poly_mul_acc_ntt(const int16_t a[SABER_N], const int16_t b[SABER_N],
+                      int16_t res[SABER_N])
+{
+    int32_t t1[SABER_N], t2[SABER_N], t3[SABER_N];
+    ntt(a, t1);
+    ntt(b, t2);
+    poly_basemul(t3, t1, t2);
+    invntt(t3, t1);
+    poly_add(res, t1);
+}
+
+/**
+ * Name: InnerProd_ntt
+ * Description: inner product using ntt
+ */
 void InnerProd_ntt(const int16_t b[SABER_L][SABER_N],
                    const int16_t s[SABER_L][SABER_N], int16_t res[SABER_N])
 {
-    int32_t t1[SABER_N], t2[SABER_N], t3[SABER_N];
     int j;
     for (j = 0; j < SABER_L; j++) {
-        ntt(b[j], t1);
-        ntt(s[j], t2);
-        poly_basemul(t3, t1, t2);
-        invntt(t3, t1);
-        poly_add(res, t1);
+        poly_mul_acc_ntt(b[j], s[j], res);
+    }
+}
+
+void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
+                         const int16_t s[SABER_L][SABER_N],
+                         int16_t res[SABER_L][SABER_N], int16_t transpose)
+{
+    int i, j;
+    for (i = 0; i < SABER_L; i++) {
+        for (j = 0; j < SABER_L; j++) {
+            if (transpose == 1) {
+                poly_mul_acc_ntt(A[j][i], s[j], res[i]);
+            } else {
+                poly_mul_acc_ntt(A[i][j], s[j], res[i]);
+            }
+        }
     }
 }
