@@ -53,6 +53,9 @@ static int test_kem_cca(void)
                 break;
             }
         }
+        if (i != SABER_KEYBYTES) {
+            break;
+        }
     }
     printf("test_kem_cca end\n");
     return 0;
@@ -91,6 +94,9 @@ static int test_kem_cpa(void)
                 printf("ERROR\n");
                 break;
             }
+        }
+        if (i != 64) {
+            break;
         }
     }
     printf("test_kem_cpa end\n");

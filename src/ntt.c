@@ -141,27 +141,36 @@ void invntt(int32_t in[256], int32_t out[256])
  **************************************************/
 void basemul(int32_t r[4], const int32_t a[4], const int32_t b[4], int32_t zeta)
 {
+    int64_t t;
     // r0=a0b0+zeta*(a1b3+a2b2+a3b1)
-    r[0] = fqmul(a[1], b[3]);
-    r[0] += fqmul(a[2], b[2]);
-    r[0] += fqmul(a[3], b[1]);
+    t = (int64_t)a[1] * b[3];
+    t += (int64_t)a[2] * b[2];
+    t += (int64_t)a[3] * b[1];
+    r[0] = montgomery_reduce(t);
     r[0] = fqmul(r[0], zeta);
     r[0] += fqmul(a[0], b[0]);
+
     // r1=a0b1+a1b0+zeta*(a2b3+a3b2)
-    r[1] = fqmul(a[2], b[3]);
-    r[1] += fqmul(a[3], b[2]);
+    t = (int64_t)a[2] * b[3];
+    t += (int64_t)a[3] * b[2];
+    r[1] = montgomery_reduce(t);
     r[1] = fqmul(r[1], zeta);
-    r[1] += fqmul(a[0], b[1]);
-    r[1] += fqmul(a[1], b[0]);
+    t = (int64_t)a[0] * b[1];
+    t += (int64_t)a[1] * b[0];
+    r[1] += montgomery_reduce(t);
+
     // r2=a0b2+a1b1+a2b0+zeta*(a3b3)
     r[2] = fqmul(a[3], b[3]);
     r[2] = fqmul(r[2], zeta);
-    r[2] += fqmul(a[0], b[2]);
-    r[2] += fqmul(a[1], b[1]);
-    r[2] += fqmul(a[2], b[0]);
+    t = (int64_t)a[0] * b[2];
+    t += (int64_t)a[1] * b[1];
+    t += (int64_t)a[2] * b[0];
+    r[2] += montgomery_reduce(t);
+
     // r3=a0b3+a1b2+a2b1+a3b0
-    r[3] = fqmul(a[0], b[3]);
-    r[3] += fqmul(a[1], b[2]);
-    r[3] += fqmul(a[2], b[1]);
-    r[3] += fqmul(a[3], b[0]);
+    t = (int64_t)a[0] * b[3];
+    t += (int64_t)a[1] * b[2];
+    t += (int64_t)a[2] * b[1];
+    t += (int64_t)a[3] * b[0];
+    r[3] = montgomery_reduce(t);
 }
