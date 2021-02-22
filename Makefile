@@ -42,7 +42,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
 					-fomit-frame-pointer -march=native \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
-					-O0 -g
+					-O3 -g
 # RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group \
 # 					-Wl,-Map,$(basename $@).map \
 # 					-T$(abspath $(filter %.lds,$^)) -Xlinker --defsym=__heap_max=0x1 \

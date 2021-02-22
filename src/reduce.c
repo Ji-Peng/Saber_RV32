@@ -54,4 +54,6 @@ int32_t barrett_reduce(int32_t a)
 //     printf("%d\n", barrett_reduce(M - 1));
 //     printf("%d\n", barrett_reduce(2 * M));
 //     printf("%d\n", barrett_reduce(2 * M - 1));
+
+//     printf("%d\n", barrett_reduce(M/2+3));
 // }
