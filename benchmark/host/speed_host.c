@@ -12,7 +12,7 @@
 
 static int test_ntt(void);
 
-#define NTESTS 1000
+#define NTESTS 100000
 
 uint64_t t[NTESTS];
 

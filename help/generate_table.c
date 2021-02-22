@@ -2,7 +2,9 @@
 #include <stdio.h>
 
 #define M 25166081
-#define MINV 41877759
+// M * Mprime = -1 mod R
+#define Mprime 41877759
+// R = MONT = 2^32
 #define RmodM -8432555
 // MONT^2/64
 #define NINV 7689784
@@ -78,118 +80,160 @@ const int mul_table[64] = {
 
 int32_t root[] = {9849271};
 
-int32_t montgomery_reduce(int64_t a) {
-  int32_t t;
+int32_t montgomery_reduce(int64_t a)
+{
+    int32_t t;
 
-  t = (int32_t)a * MINV;
-  t = ((int64_t)a + (int64_t)t * M) >> 32;
-  return t;
+    t = (int32_t)a * Mprime;
+    t = ((int64_t)a + (int64_t)t * M) >> 32;
+    return t;
 }
 
-int32_t fqmul(int32_t a, int32_t b) {
-  return montgomery_reduce((int64_t)a * b);
+int32_t fqmul(int32_t a, int32_t b)
+{
+    return montgomery_reduce((int64_t)a * b);
 }
 
-int32_t my_pow(int32_t root, int32_t n) {
-  int32_t t = 1;
-  for (int i = 0; i < n; i++) {
-    t = fqmul(t, ((int64_t)root * RmodM) % M);
-  }
-  return t;
+int32_t my_pow(int32_t root, int32_t n)
+{
+    int32_t t = 1;
+    for (int i = 0; i < n; i++) {
+        t = fqmul(t, ((int64_t)root * RmodM) % M);
+    }
+    return t;
 }
 
 // 复现NTT Multiplication for NTT-unfriendly Rings论文中saber ntt的相关常数
-void check(void) {
-  int32_t t;
-  //   printf("%d\n", my_pow(3773600, 32));
-  int my_root_table[63] = {};
-  int my_inv_root_table[63] = {};
+void check(void)
+{
+    int32_t t;
+    //   printf("%d\n", my_pow(3773600, 32));
+    int my_root_table[63] = {};
+    int my_inv_root_table[63] = {};
 
-  for (int i = 0; i < 1; i++) {
-    for (int j = 0; j < 63; j++) {
-      t = my_pow(root[i], tree_ntt_merged[j]);
-      t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
-      if (t > M / 2) t -= M;
-      if (t < -M / 2) t += M;
-      // printf("%d, ", t);
-      my_root_table[j] = t;
-      if (my_root_table[j] != root_table[j]) {
-        printf("root_table error: %d\n", j);
-      }
+    for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 63; j++) {
+            t = my_pow(root[i], tree_ntt_merged[j]);
+            t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
+            if (t > M / 2)
+                t -= M;
+            if (t < -M / 2)
+                t += M;
+            // printf("%d, ", t);
+            my_root_table[j] = t;
+            if (my_root_table[j] != root_table[j]) {
+                printf("root_table error: %d\n", j);
+            }
+        }
+        // printf("\n\n");
     }
-    // printf("\n\n");
-  }
 
-  for (int i = 0; i < 1; i++) {
-    for (int j = 0; j < 63; j++) {
-      t = my_pow(root[i], 128 - tree_intt_merged[j]);
-      t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
-      if (t > M / 2) t -= M;
-      if (t < -M / 2) t += M;
-      my_inv_root_table[j] = t;
-      if (my_inv_root_table[j] != inv_root_table[j]) {
-        printf("inv_root_table error: %d\n", j);
-        printf("tree_inv[j] is %d\n", tree_intt_merged[j]);
-        printf("my is %d, right is %d\n", my_inv_root_table[j],
-               inv_root_table[j]);
-        printf("my*NINV is %d\n",
-               fqmul(my_inv_root_table[j], ((int64_t)NINV) % M));
-      }
-      // printf("%d, ", t);
+    for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 63; j++) {
+            t = my_pow(root[i], 128 - tree_intt_merged[j]);
+            t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
+            if (t > M / 2)
+                t -= M;
+            if (t < -M / 2)
+                t += M;
+            my_inv_root_table[j] = t;
+            if (my_inv_root_table[j] != inv_root_table[j]) {
+                printf("inv_root_table error: %d\n", j);
+                printf("tree_inv[j] is %d\n", tree_intt_merged[j]);
+                printf("my is %d, right is %d\n", my_inv_root_table[j],
+                       inv_root_table[j]);
+                printf("my*NINV is %d\n",
+                       fqmul(my_inv_root_table[j], ((int64_t)NINV) % M));
+            }
+            // printf("%d, ", t);
+        }
+        // printf("\n\n");
     }
-    // printf("\n\n");
-  }
 
-  for (int i = 0; i < 1; i++) {
-    for (int j = 0; j < 64; j++) {
-      t = my_pow(root[i], tree_mul_table[j]);
-      t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
-      if (t > M / 2) t -= M;
-      if (t < -M / 2) t += M;
-      // printf("%d, ", t);
-      if (t != mul_table[j]) {
-        printf("mul_table[%d] error, my:%d, right:%d\n", j, t, mul_table[j]);
-      }
+    for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 64; j++) {
+            t = my_pow(root[i], tree_mul_table[j]);
+            t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
+            if (t > M / 2)
+                t -= M;
+            if (t < -M / 2)
+                t += M;
+            // printf("%d, ", t);
+            if (t != mul_table[j]) {
+                printf("mul_table[%d] error, my:%d, right:%d\n", j, t,
+                       mul_table[j]);
+            }
+        }
+        printf("check mul_table end\n");
     }
-    printf("check mul_table end\n");
-  }
 }
 
-void generate_tables(void) {
-  int32_t t;
-  for (int i = 0; i < 1; i++) {
-    for (int j = 0; j < 63; j++) {
-      t = my_pow(root[i], tree_ntt[j]);
-      t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
-      // if (t > M / 2) t -= M;
-      // if (t < -M / 2) t += M;
-      printf("%d, ", t);
+void generate_tables(void)
+{
+    int32_t t;
+    for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 63; j++) {
+            t = my_pow(root[i], tree_ntt[j]);
+            t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
+            // if (t > M / 2) t -= M;
+            // if (t < -M / 2) t += M;
+            printf("%d, ", t);
+        }
     }
-  }
-  printf("\n\n");
+    printf("\n\n");
 
-  for (int i = 0; i < 1; i++) {
-    for (int j = 0; j < 63; j++) {
-      t = my_pow(root[i], 128 - tree_intt[j]);
-      t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
-      // if (t > M / 2) t -= M;
-      // if (t < -M / 2) t += M;
-      printf("%d, ", t);
+    for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 63; j++) {
+            t = my_pow(root[i], 128 - tree_intt[j]);
+            t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
+            // if (t > M / 2) t -= M;
+            // if (t < -M / 2) t += M;
+            printf("%d, ", t);
+        }
     }
-  }
 }
 
-void test_centered_method(void) {
-  uint16_t t1;
-  for (int i = 0; i < 8192; i++) {
-    t1 = i;
-    t1 = ((int16_t)(t1 << 3)) >> 3;
-    printf("%hd ", t1);
-  }
+void test_centered_method(void)
+{
+    uint16_t t1;
+    for (int i = 0; i < 8192; i++) {
+        t1 = i;
+        t1 = ((int16_t)(t1 << 3)) >> 3;
+        printf("%hd ", t1);
+    }
 }
-int main(void) {
-  // check();
-  // generate_tables();
-  // printf("%d\n",fqmul(32,NINV));
-  test_centered_method();
+
+void gen_constant(void)
+{
+    int32_t t, m = 4205569;
+    t = M * Mprime;
+    // printf("%d\n", t);
+    for (int i = 1; i != 0; i++) {
+        t = m * i;
+        if (t == -1) {
+            printf("Mprime is %d\n", i);
+        }
+        if (t == 1) {
+            printf("MINV is %d\n", i);
+        }
+    }
+}
+
+void gen_constant1(void)
+{
+    int32_t t, m = 4205569;
+    t = ((int64_t)1 << 32) % M;
+    printf("%d\n", t - 25166081);
+    t = ((int64_t)1 << 32) % m;
+    printf("%d\n", t);
+}
+
+int main(void)
+{
+    // check();
+    // generate_tables();
+    // printf("%d\n",fqmul(32,NINV));
+    // test_centered_method();
+    // gen_constant();
+    gen_constant1();
 }
