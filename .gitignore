@@ -7,3 +7,5 @@ bsp/*
 bsp/install/*
 !bsp/install/include
 .vscode/
+src/test.c
+help/help

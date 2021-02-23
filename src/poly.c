@@ -98,8 +98,8 @@ void poly_mul_acc_ntt(const int16_t a[SABER_N], const int16_t b[SABER_N],
                       int16_t res[SABER_N])
 {
     int32_t t1[SABER_N], t2[SABER_N], t3[SABER_N];
-    ntt(a, t1);
-    ntt(b, t2);
+    ntt_merged(a, t1);
+    ntt_merged(b, t2);
     poly_basemul(t3, t1, t2);
     invntt(t3, t1);
     poly_add(res, t1);
