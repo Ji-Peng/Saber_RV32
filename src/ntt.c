@@ -220,36 +220,39 @@ void ntt_merged(const int16_t in[256], int32_t out[256])
 {
     unsigned int len, start, i, j, k;
     int32_t t, zeta;
-    // int32_t tt1 = 0;
+    int32_t a[16];
 
     // merged layers 1-4
     for (i = 0; i < 16; i++) {
-        // layer1
+        // sepearate layer 1 for transfering coefficients to a[16]
         k = 0;
         len = 128;
         zeta = root_table_merged[k++];
-        for (j = i; j < i + len; j += 16) {
+        for (start = 0, j = i; j < i + len; start++, j += 16) {
             t = fqmul(zeta, (int32_t)in[j + len]);
-            out[j + len] = in[j] - t;
-            out[j] = in[j] + t;
+            a[start + 8] = in[j] - t;
+            a[start] = in[j] + t;
         }
-        // layer234
-        for (len = 64; len >= 16; len >>= 1) {
-            // tt1 = 0;
-            // len:block = 64:2, 32:4, 16:8, block = 256/(2*len)
-            for (start = i; start < i + 256; start = j + len) {
+        // in-place layers 2-4
+        for (len = 4; len >= 1; len >>= 1) {
+            // len:block = 4:2, 2:4, 1:8, block = 16/(2*len)
+            for (start = 0; start < 16; start = j + len) {
                 zeta = root_table_merged[k++];
-                for (j = start; j < start + len; j += 16) {
-                    t = fqmul(zeta, out[j + len]);
-                    out[j + len] = out[j] - t;
-                    out[j] = out[j] + t;
+                for (j = start; j < start + len; j++) {
+                    t = fqmul(zeta, a[j + len]);
+                    a[j + len] = a[j] - t;
+                    a[j] = a[j] + t;
                 }
-                // tt1++;
             }
-            // printf("tt1=%d\n", tt1);
+        }
+        len = 128;
+        // save results to out
+        for (start = 0, j = i; j < i + len; start++, j += 16) {
+            out[j + len] = a[start + 8];
+            out[j] = a[start];
         }
     }
-    // printf("k is %d tt1 is %d\n", k, tt1);
+
     // merged layers 5-8
     for (i = 0; i < 256; i += 16) {
         // layer 5-8
