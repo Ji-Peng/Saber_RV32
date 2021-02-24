@@ -208,6 +208,30 @@ void ntt(const int16_t in[256], int32_t out[256])
     }
 }
 
+// input: in[index], in[index+len] output: arg1, arg2
+#define BFUNIT_IN(arg1, arg2, index, len)      \
+    t = fqmul(zeta, (int32_t)in[index + len]); \
+    arg2 = in[index] - t;                      \
+    arg1 = in[index] + t;
+
+// input: in[index], in[index+len] output: arg1, arg2
+#define BFUNIT_IN_OUT(arg1, arg2, index, len)   \
+    t = fqmul(zeta, (int32_t)out[index + len]); \
+    arg2 = out[index] - t;                      \
+    arg1 = out[index] + t;
+
+// in-place
+#define BFUNIT(arg1, arg2) \
+    t = fqmul(zeta, arg2); \
+    arg2 = arg1 - t;       \
+    arg1 = arg1 + t;
+
+// input: arg1, arg2 output: out[index], out[index+len]
+#define BFUNIT_OUT(arg1, arg2, index, len) \
+    t = fqmul(zeta, arg2);                 \
+    out[index + len] = arg1 - t;           \
+    out[index] = arg1 + t;
+
 /*************************************************
  * Name:        ntt_merged
  *
@@ -217,6 +241,132 @@ void ntt(const int16_t in[256], int32_t out[256])
  * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
  **************************************************/
 void ntt_merged(const int16_t in[256], int32_t out[256])
+{
+    unsigned int i, k;
+    int32_t t, zeta;
+    int32_t t0, t1, t2, t3, t4, t5, t6, t7;
+    int32_t t8, t9, t10, t11, t12, t13, t14, t15;
+
+    // merged layers 1-4, which need 15 canstant
+    for (i = 0; i < 16; i++) {
+        // layer 1 for loading coefficients to t0-t15
+        zeta = root_table_merged[0];
+        BFUNIT_IN(t0, t8, 0 * 16 + i, 128)
+        BFUNIT_IN(t1, t9, 1 * 16 + i, 128)
+        BFUNIT_IN(t2, t10, 2 * 16 + i, 128)
+        BFUNIT_IN(t3, t11, 3 * 16 + i, 128)
+        BFUNIT_IN(t4, t12, 4 * 16 + i, 128)
+        BFUNIT_IN(t5, t13, 5 * 16 + i, 128)
+        BFUNIT_IN(t6, t14, 6 * 16 + i, 128)
+        BFUNIT_IN(t7, t15, 7 * 16 + i, 128)
+        // layer 2
+        zeta = root_table_merged[1];
+        BFUNIT(t0, t4)
+        BFUNIT(t1, t5)
+        BFUNIT(t2, t6)
+        BFUNIT(t3, t7)
+        zeta = root_table_merged[2];
+        BFUNIT(t8, t12)
+        BFUNIT(t9, t13)
+        BFUNIT(t10, t14)
+        BFUNIT(t11, t15)
+        // layer 3
+        zeta = root_table_merged[3];
+        BFUNIT(t0, t2)
+        BFUNIT(t1, t3)
+        zeta = root_table_merged[4];
+        BFUNIT(t4, t6)
+        BFUNIT(t5, t7)
+        zeta = root_table_merged[5];
+        BFUNIT(t8, t10)
+        BFUNIT(t9, t11)
+        zeta = root_table_merged[6];
+        BFUNIT(t12, t14)
+        BFUNIT(t13, t15)
+        // layer 4 for storing results to out
+        zeta = root_table_merged[7];
+        BFUNIT_OUT(t0, t1, 0 * 16 + i, 16)
+        zeta = root_table_merged[8];
+        BFUNIT_OUT(t2, t3, 2 * 16 + i, 16)
+        zeta = root_table_merged[9];
+        BFUNIT_OUT(t4, t5, 4 * 16 + i, 16)
+        zeta = root_table_merged[10];
+        BFUNIT_OUT(t6, t7, 6 * 16 + i, 16)
+        zeta = root_table_merged[11];
+        BFUNIT_OUT(t8, t9, 8 * 16 + i, 16)
+        zeta = root_table_merged[12];
+        BFUNIT_OUT(t10, t11, 10 * 16 + i, 16)
+        zeta = root_table_merged[13];
+        BFUNIT_OUT(t12, t13, 12 * 16 + i, 16)
+        zeta = root_table_merged[14];
+        BFUNIT_OUT(t14, t15, 14 * 16 + i, 16)
+    }
+    // merged layers 5-8, which need 15*16 constant
+    k = 15;
+    for (i = 0; i < 256; i += 16) {
+        // layer 5 for loading coefficients to t0-t15
+        zeta = root_table_merged[k++];
+        BFUNIT_IN_OUT(t0, t8, i + 0, 8)
+        BFUNIT_IN_OUT(t1, t9, i + 1, 8)
+        BFUNIT_IN_OUT(t2, t10, i + 2, 8)
+        BFUNIT_IN_OUT(t3, t11, i + 3, 8)
+        BFUNIT_IN_OUT(t4, t12, i + 4, 8)
+        BFUNIT_IN_OUT(t5, t13, i + 5, 8)
+        BFUNIT_IN_OUT(t6, t14, i + 6, 8)
+        BFUNIT_IN_OUT(t7, t15, i + 7, 8)
+        // layer 6
+        zeta = root_table_merged[k++];
+        BFUNIT(t0, t4)
+        BFUNIT(t1, t5)
+        BFUNIT(t2, t6)
+        BFUNIT(t3, t7)
+        zeta = root_table_merged[k++];
+        BFUNIT(t8, t12)
+        BFUNIT(t9, t13)
+        BFUNIT(t10, t14)
+        BFUNIT(t11, t15)
+        // layer 7
+        zeta = root_table_merged[k++];
+        BFUNIT(t0, t2)
+        BFUNIT(t1, t3)
+        zeta = root_table_merged[k++];
+        BFUNIT(t4, t6)
+        BFUNIT(t5, t7)
+        zeta = root_table_merged[k++];
+        BFUNIT(t8, t10)
+        BFUNIT(t9, t11)
+        zeta = root_table_merged[k++];
+        BFUNIT(t12, t14)
+        BFUNIT(t13, t15)
+        // layer 8 for storing results to out
+        zeta = root_table_merged[k++];
+        BFUNIT_OUT(t0, t1, i + 0, 1)
+        zeta = root_table_merged[k++];
+        BFUNIT_OUT(t2, t3, i + 2, 1)
+        zeta = root_table_merged[k++];
+        BFUNIT_OUT(t4, t5, i + 4, 1)
+        zeta = root_table_merged[k++];
+        BFUNIT_OUT(t6, t7, i + 6, 1)
+        zeta = root_table_merged[k++];
+        BFUNIT_OUT(t8, t9, i + 8, 1)
+        zeta = root_table_merged[k++];
+        BFUNIT_OUT(t10, t11, i + 10, 1)
+        zeta = root_table_merged[k++];
+        BFUNIT_OUT(t12, t13, i + 12, 1)
+        zeta = root_table_merged[k++];
+        BFUNIT_OUT(t14, t15, i + 14, 1)
+    }
+}
+
+/*************************************************
+ * Name:        ntt_merged
+ *
+ * Description: Number-theoretic transform (NTT).
+ *              input is in standard order, output is in bitreversed order
+ *
+ * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
+ **************************************************/
+void ntt_merged_old(const int16_t in[256], int32_t out[256])
 {
     unsigned int len, start, i, j, k;
     int32_t t, zeta;
@@ -252,6 +402,9 @@ void ntt_merged(const int16_t in[256], int32_t out[256])
             out[j] = a[start];
         }
     }
+    // for (i = 0; i < 256; i++) {
+    //     printf("%d,", out[i]);
+    // }
 
     // merged layers 5-8
     for (i = 0; i < 256; i += 16) {
@@ -269,9 +422,17 @@ void ntt_merged(const int16_t in[256], int32_t out[256])
                 // tt1++;
             }
             // printf("tt1=%d\n", tt1);
+            // for (unsigned int ii = i; ii < i + 16; ii++) {
+            //     printf("%d,", out[ii]);
+            // }
+            // printf("\n");
         }
     }
     // printf("k is %d\n", k);
+    // printf("\n");
+    // for (i = 0; i < 16; i++) {
+    //     printf("%d,", a[i]);
+    // }
 }
 
 /*************************************************

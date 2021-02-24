@@ -7,12 +7,14 @@
 #include "api.h"
 #include "cpucycles_host.h"
 #include "fips202.h"
+#include "ntt.h"
 #include "poly.h"
 #include "rng.h"
 
 static int test_ntt(void);
+static int test_ntt2(void);
 
-#define NTESTS 1000
+#define NTESTS 100
 
 uint64_t t[NTESTS];
 
@@ -53,7 +55,28 @@ static int test_ntt(void)
     return 0;
 }
 
+static int test_ntt2(void)
+{
+    int16_t in[256];
+    int32_t out1[256], out2[256];
+    int32_t i;
+
+    for (i = 0; i < NTESTS; i++) {
+        t[i] = cpucycles();
+        ntt(in, out1);
+    }
+    print_results("ntt: ", t, NTESTS);
+
+    for (i = 0; i < NTESTS; i++) {
+        t[i] = cpucycles();
+        ntt_merged(in, out2);
+    }
+    print_results("ntt_merged: ", t, NTESTS);
+    return 0;
+}
+
 int main(void)
 {
     test_ntt();
+    test_ntt2();
 }

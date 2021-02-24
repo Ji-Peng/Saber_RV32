@@ -160,9 +160,11 @@ static void test_ntt_merged(void)
         res1[i] = i;
     }
     ntt_merged(res1, (int32_t *)res2);
-    ntt(res1, (int32_t *)res3);
+    ntt_merged_old(res1, (int32_t *)res3);
+    // ntt(res1, (int32_t *)res3);
     for (int i = 0; i < SABER_N; i++) {
         if (res2[i] != res3[i]) {
+            printf("i is %d\n", i);
             printf("NTT Merged ERROR\n");
             break;
         }
@@ -172,8 +174,8 @@ static void test_ntt_merged(void)
 
 int main(void)
 {
-        test_kem_cpa();
-        test_kem_cca();
+    test_kem_cpa();
+    test_kem_cca();
     // test_ntt();
     // test_ntt_self();
     // test_ntt_merged();
