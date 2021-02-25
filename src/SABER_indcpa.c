@@ -99,9 +99,12 @@ void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
     BS2POLVECq(sk, s);
     for (int i = 0; i < SABER_L; i++) {
         for (int j = 0; j < SABER_N; j++) {
-            if (s[i][j] > (1 << (SABER_EQ - 1))) {
-                s[i][j] -= (1 << SABER_EQ);
-            }
+            // if (s[i][j] > (1 << (SABER_EQ - 1))) {
+            //     s[i][j] -= (1 << SABER_EQ);
+            // }
+            // printf("%hd\n",s[i][j]);
+            s[i][j]=((int16_t)(s[i][j] << 3)) >> 3;
+            // printf("%hd\n",s[i][j]);
         }
     }
     BS2POLVECp(ciphertext, b);
