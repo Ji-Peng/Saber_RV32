@@ -56,6 +56,7 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
+					-Xlinker --defsym=__stack_size=0x2000 \
 					-Xlinker --defsym=__heap_max=1
 
 
@@ -64,8 +65,9 @@ RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-
 .PHONY: host
 host: host_out/kem host_out/speed
 
+# out/PQCgenKAT_kem.elf out/test_kex.elf
 .PHONY: all
-all: out/kem.elf out/PQCgenKAT_kem.elf out/test_kex.elf
+all: out/kem.elf out/speed.elf
 
 # $(RISCV_GCC) -o $(basename $@) $(RISCV_CFLAGS) \
 # 	$(filter %.c,$^) $(filter %.S,$^) -I$(COMMON_DIR) -I$(SRC_DIR) $(RISCV_LDFLAGS)
