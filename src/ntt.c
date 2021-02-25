@@ -244,8 +244,8 @@ void ntt_merged(const int16_t in[256], int32_t out[256])
 {
     unsigned int i, k;
     int32_t t, zeta;
-    int32_t t0, t1, t2, t3, t4, t5, t6, t7;
-    int32_t t8, t9, t10, t11, t12, t13, t14, t15;
+    register int32_t t0, t1, t2, t3, t4, t5, t6, t7;
+    register int32_t t8, t9, t10, t11, t12, t13, t14, t15;
 
     // merged layers 1-4, which need 15 canstant
     for (i = 0; i < 16; i++) {

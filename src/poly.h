@@ -22,6 +22,8 @@ void poly_add(int16_t res[SABER_N], int32_t in[SABER_N]);
 
 void poly_mul_acc_ntt(const int16_t a[SABER_N], const int16_t b[SABER_N],
                       int16_t res[SABER_N]);
+void poly_mul_acc_ntt_merged(const int16_t a[SABER_N], const int16_t b[SABER_N],
+                             int16_t res[SABER_N]);
 
 void InnerProd_ntt(const int16_t b[SABER_L][SABER_N],
                    const int16_t s[SABER_L][SABER_N], int16_t res[SABER_N]);

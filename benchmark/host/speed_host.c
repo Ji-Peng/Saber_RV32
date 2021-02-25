@@ -9,12 +9,14 @@
 #include "fips202.h"
 #include "ntt.h"
 #include "poly.h"
+#include "poly_mul.h"
 #include "rng.h"
 
 static int test_ntt(void);
 static int test_ntt2(void);
+void test_poly_mul(void);
 
-#define NTESTS 100
+#define NTESTS 10000
 
 uint64_t t[NTESTS];
 
@@ -75,8 +77,29 @@ static int test_ntt2(void)
     return 0;
 }
 
+void test_poly_mul(void)
+{
+    int16_t a[SABER_N];
+    int16_t b[SABER_N];
+    int16_t res[SABER_N];
+    uint64_t t1, t2;
+    t1 = cpucycles();
+    poly_mul_acc(a, b, res);
+    t2 = cpucycles();
+    printf("poly_mul_acc cycles is %lu\n", (t2 - t1));
+    t1 = cpucycles();
+    poly_mul_acc_ntt(a, b, res);
+    t2 = cpucycles();
+    printf("poly_mul_acc_ntt cycles is %lu\n", (t2 - t1));
+    t1 = cpucycles();
+    poly_mul_acc_ntt_merged(a, b, res);
+    t2 = cpucycles();
+    printf("poly_mul_acc_ntt_merged cycles is %lu\n", (t2 - t1));    
+}
+
 int main(void)
 {
     test_ntt();
     test_ntt2();
+    test_poly_mul();
 }
