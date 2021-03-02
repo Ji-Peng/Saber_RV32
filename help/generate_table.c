@@ -156,10 +156,12 @@ const int mul_table[64] = {
     5184115,  -5184115,  -1069349,  1069349,   -9233574,  9233574,   12174351,
     -12174351};
 
-// root from NTT Multiplication for NTT-unfriendly Rings
+// 128th root from NTT Multiplication for NTT-unfriendly Rings
 // int32_t root[] = {9849271};
-// root for my new ntt
-int32_t root[] = {30909};
+// 512th root for my new ntt
+// int32_t root[] = {30909};
+// 128th root = 512th-root^4
+int32_t root[] = {1298882};
 
 int32_t montgomery_reduce(int64_t a)
 {
@@ -272,6 +274,15 @@ void generate_tables(void)
             printf("%d, ", t);
         }
     }
+    printf("\n\n");
+
+    for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 64; j++) {
+            t = my_pow(root[i], tree_mul_table[j]);
+            t = fqmul(t, ((int64_t)RmodM * RmodM) % M);
+            printf("%d, ", t);
+        }
+    }
 }
 
 void generate_tables_256(void)
@@ -362,9 +373,9 @@ void gen_constant1(void)
 int main(void)
 {
     // check();
-    // generate_tables();
+    generate_tables();
     // generate_tables_256();
-    generate_tables_256_merged();
+    // generate_tables_256_merged();
     // printf("%d\n",fqmul(32,NINV));
     // test_centered_method();
     // gen_constant();

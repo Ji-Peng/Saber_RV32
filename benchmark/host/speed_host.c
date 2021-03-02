@@ -60,7 +60,7 @@ static int test_ntt(void)
 static int test_ntt2(void)
 {
     int16_t in[256];
-    int32_t out1[256], out2[256];
+    int32_t out1[256];
     int32_t i;
 
     for (i = 0; i < NTESTS; i++) {
@@ -69,11 +69,6 @@ static int test_ntt2(void)
     }
     print_results("ntt: ", t, NTESTS);
 
-    for (i = 0; i < NTESTS; i++) {
-        t[i] = cpucycles();
-        ntt_merged(in, out2);
-    }
-    print_results("ntt_merged: ", t, NTESTS);
     return 0;
 }
 
@@ -84,17 +79,13 @@ void test_poly_mul(void)
     int16_t res[SABER_N];
     uint64_t t1, t2;
     t1 = cpucycles();
-    poly_mul_acc(a, b, res);
+    poly_mul_acc((uint16_t*)a, (uint16_t*)b, (uint16_t*)res);
     t2 = cpucycles();
     printf("poly_mul_acc cycles is %lu\n", (t2 - t1));
     t1 = cpucycles();
     poly_mul_acc_ntt(a, b, res);
     t2 = cpucycles();
     printf("poly_mul_acc_ntt cycles is %lu\n", (t2 - t1));
-    t1 = cpucycles();
-    poly_mul_acc_ntt_merged(a, b, res);
-    t2 = cpucycles();
-    printf("poly_mul_acc_ntt_merged cycles is %lu\n", (t2 - t1));    
 }
 
 int main(void)

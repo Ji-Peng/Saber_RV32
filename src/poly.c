@@ -9,6 +9,19 @@
 #include "pack_unpack.h"
 #include "poly_mul.h"
 
+// point-wise multiplication mod (X^4-zeta^{2br(i)+1}) i=0,1,...,63
+const int32_t mul_table[64] = {
+    -136014,  136014,   966523,   -966523,  959523,   -959523,  846643,
+    -846643,  -86562,   86562,    -489847,  489847,   136654,   -136654,
+    -2088895, 2088895,  17941,    -17941,   -1051723, 1051723,  -1316589,
+    1316589,  1814059,  -1814059, -230501,  230501,   1626667,  -1626667,
+    -1171284, 1171284,  2085817,  -2085817, 1830521,  -1830521, -1951522,
+    1951522,  445122,   -445122,  -1689285, 1689285,  -1551600, 1551600,
+    -2055310, 2055310,  -1064338, 1064338,  -368446,  368446,   535845,
+    -535845,  361370,   -361370,  676319,   -676319,  -541241,  541241,
+    1009639,  -1009639, 538875,   -538875,  -2102677, 2102677,  1585701,
+    -1585701};
+
 void MatrixVectorMul(const uint16_t A[SABER_L][SABER_L][SABER_N],
                      const uint16_t s[SABER_L][SABER_N],
                      uint16_t res[SABER_L][SABER_N], int16_t transpose)
@@ -73,8 +86,8 @@ void poly_basemul(int32_t r[SABER_N], const int32_t a[SABER_N],
                   const int32_t b[SABER_N])
 {
     unsigned int i;
-    for (i = 0; i < SABER_N; i++) {
-        r[i] = fqmul(a[i], b[i]);
+    for (i = 0; i < SABER_N / 4; i++) {
+        basemul(&r[4 * i], &a[4 * i], &b[4 * i], mul_table[i]);
     }
 }
 
