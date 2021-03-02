@@ -208,6 +208,57 @@ void ntt(const int16_t in[256], int32_t out[256])
     }
 }
 
+/*************************************************
+ * Name:        invntt_tomont
+ *
+ * Description: Inverse number-theoretic transform and
+ *              multiplication by Montgomery factor 2^32.
+ *              Input is in bitreversed order, output is in standard order
+ *
+ * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
+ **************************************************/
+void invntt(int32_t in[256], int32_t out[256])
+{
+    unsigned int start, len, j, k;
+    int32_t t, zeta;
+    // mont^2/256 mod M = (2^32)^2/256 mod M
+    const int32_t f = NINV;
+
+    k = 0;
+    len = 1;
+    // a separate first layer for storing results to output polynomial
+    for (start = 0; start < 256; start = j + len) {
+        zeta = inv_root_table[k++];
+        for (j = start; j < start + len; j++) {
+            t = in[j];
+            // out[j] = barrett_reduce(t + in[j + len]);
+            out[j] = t + in[j + len];
+            out[j + len] = t - in[j + len];
+            out[j + len] = fqmul(zeta, out[j + len]);
+        }
+    }
+    // remaining seven layers
+    for (len = 2; len <= 128; len <<= 1) {
+        for (start = 0; start < 256; start = j + len) {
+            zeta = inv_root_table[k++];
+            for (j = start; j < start + len; j++) {
+                t = out[j];
+                // out[j] = barrett_reduce(t + out[j + len]);
+                out[j] = t + out[j + len];
+                out[j + len] = t - out[j + len];
+                out[j + len] = fqmul(zeta, out[j + len]);
+            }
+        }
+    }
+
+    // multiply mont^2/256, reduce to centered representatives, get low 13 bits
+    for (j = 0; j < 256; j++) {
+        out[j] = fqmul(out[j], f);
+        out[j] = barrett_reduce(out[j]);
+        out[j] &= 0x1fff;
+    }
+}
+
 // input: in[index], in[index+len] output: arg1, arg2
 #define BFUNIT_IN(arg1, arg2, index, len)      \
     t = fqmul(zeta, (int32_t)in[index + len]); \
@@ -402,15 +453,11 @@ void ntt_merged_old(const int16_t in[256], int32_t out[256])
             out[j] = a[start];
         }
     }
-    // for (i = 0; i < 256; i++) {
-    //     printf("%d,", out[i]);
-    // }
 
     // merged layers 5-8
     for (i = 0; i < 256; i += 16) {
         // layer 5-8
         for (len = 8; len >= 1; len >>= 1) {
-            // tt1 = 0;
             // len:block = 8:1, 4:2, 2:4, 1:8, block = 16/(2*len)
             for (start = i; start < i + 16; start = j + len) {
                 zeta = root_table_merged[k++];
@@ -419,69 +466,7 @@ void ntt_merged_old(const int16_t in[256], int32_t out[256])
                     out[j + len] = out[j] - t;
                     out[j] = out[j] + t;
                 }
-                // tt1++;
-            }
-            // printf("tt1=%d\n", tt1);
-            // for (unsigned int ii = i; ii < i + 16; ii++) {
-            //     printf("%d,", out[ii]);
-            // }
-            // printf("\n");
-        }
-    }
-    // printf("k is %d\n", k);
-    // printf("\n");
-    // for (i = 0; i < 16; i++) {
-    //     printf("%d,", a[i]);
-    // }
-}
-
-/*************************************************
- * Name:        invntt_tomont
- *
- * Description: Inverse number-theoretic transform and
- *              multiplication by Montgomery factor 2^32.
- *              Input is in bitreversed order, output is in standard order
- *
- * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
- **************************************************/
-void invntt(int32_t in[256], int32_t out[256])
-{
-    unsigned int start, len, j, k;
-    int32_t t, zeta;
-    // mont^2/256 mod M = (2^32)^2/256 mod M
-    const int32_t f = NINV;
-
-    k = 0;
-    len = 1;
-    // a separate first layer for storing results to output polynomial
-    for (start = 0; start < 256; start = j + len) {
-        zeta = inv_root_table[k++];
-        for (j = start; j < start + len; j++) {
-            t = in[j];
-            // out[j] = barrett_reduce(t + in[j + len]);
-            out[j] = t + in[j + len];
-            out[j + len] = t - in[j + len];
-            out[j + len] = fqmul(zeta, out[j + len]);
-        }
-    }
-    // remaining seven layers
-    for (len = 2; len <= 128; len <<= 1) {
-        for (start = 0; start < 256; start = j + len) {
-            zeta = inv_root_table[k++];
-            for (j = start; j < start + len; j++) {
-                t = out[j];
-                // out[j] = barrett_reduce(t + out[j + len]);
-                out[j] = t + out[j + len];
-                out[j + len] = t - out[j + len];
-                out[j + len] = fqmul(zeta, out[j + len]);
             }
         }
-    }
-
-    // multiply mont^2/256, reduce to centered representatives, get low 13 bits
-    for (j = 0; j < 256; j++) {
-        out[j] = fqmul(out[j], f);
-        out[j] = barrett_reduce(out[j]);
-        out[j] &= 0x1fff;
     }
 }
