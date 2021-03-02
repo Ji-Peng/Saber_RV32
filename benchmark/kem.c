@@ -16,7 +16,6 @@ static int test_kem_cca(void);
 static int test_kem_cpa(void);
 static void test_ntt(void);
 static void test_ntt_self(void);
-static void test_ntt_merged(void);
 
 #define NTEST 1000
 
@@ -149,35 +148,11 @@ static void test_ntt_self(void)
     printf("test_ntt_self end\n");
 }
 
-static void test_ntt_merged(void)
-{
-    int16_t res1[SABER_N];
-    int32_t res2[SABER_N], res3[SABER_N];
-    memset(res1, 0, sizeof(res1));
-    memset(res2, 0, sizeof(res2));
-    memset(res3, 0, sizeof(res3));
-    for (int i = 0; i < SABER_N; i++) {
-        res1[i] = i;
-    }
-    ntt_merged(res1, (int32_t *)res2);
-    ntt_merged_old(res1, (int32_t *)res3);
-    // ntt(res1, (int32_t *)res3);
-    for (int i = 0; i < SABER_N; i++) {
-        if (res2[i] != res3[i]) {
-            printf("i is %d\n", i);
-            printf("NTT Merged ERROR\n");
-            break;
-        }
-    }
-    printf("NTT Merged End\n");
-}
-
 int main(void)
 {
     test_kem_cpa();
     test_kem_cca();
     // test_ntt();
     // test_ntt_self();
-    // test_ntt_merged();
     return 0;
 }

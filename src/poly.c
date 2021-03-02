@@ -106,21 +106,6 @@ void poly_mul_acc_ntt(const int16_t a[SABER_N], const int16_t b[SABER_N],
 }
 
 /**
- * Name: poly_mul_acc_ntt
- * Description: res += a * b using ntt
- */
-void poly_mul_acc_ntt_merged(const int16_t a[SABER_N], const int16_t b[SABER_N],
-                      int16_t res[SABER_N])
-{
-    int32_t t1[SABER_N], t2[SABER_N], t3[SABER_N];
-    ntt_merged(a, t1);
-    ntt_merged(b, t2);
-    poly_basemul(t3, t1, t2);
-    invntt(t3, t1);
-    poly_add(res, t1);
-}
-
-/**
  * Name: InnerProd_ntt
  * Description: inner product using ntt
  */

@@ -21,10 +21,6 @@ void test_ntt(void)
     ntt(in, out1);
     t2 = cpucycles();
     printf("ntt cycles is %s\n", ullu(t2 - t1));
-    t1 = cpucycles();
-    ntt_merged(in, out2);
-    t2 = cpucycles();
-    printf("ntt_merged cycles is %s\n", ullu(t2 - t1));
 }
 
 void test_poly_mul(void)
@@ -41,10 +37,6 @@ void test_poly_mul(void)
     poly_mul_acc_ntt(a, b, res);
     t2 = cpucycles();
     printf("poly_mul_acc_ntt cycles is %s\n", ullu(t2 - t1));
-    t1 = cpucycles();
-    poly_mul_acc_ntt_merged(a, b, res);
-    t2 = cpucycles();
-    printf("poly_mul_acc_ntt_merged cycles is %s\n", ullu(t2 - t1));
 }
 
 int main(void)
