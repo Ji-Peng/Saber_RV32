@@ -12,6 +12,8 @@
 #include "poly_mul.h"
 #include "rng.h"
 
+#define NTESTS 1000
+
 void test_ntt(void)
 {
     int16_t in[256];
@@ -28,15 +30,26 @@ void test_poly_mul(void)
     int16_t a[SABER_N];
     int16_t b[SABER_N];
     int16_t res[SABER_N];
-    uint64_t t1, t2;
-    t1 = cpucycles();
-    poly_mul_acc(a, b, res);
-    t2 = cpucycles();
-    printf("poly_mul_acc cycles is %s\n", ullu(t2 - t1));
-    t1 = cpucycles();
-    poly_mul_acc_ntt(a, b, res);
-    t2 = cpucycles();
-    printf("poly_mul_acc_ntt cycles is %s\n", ullu(t2 - t1));
+    uint64_t t1, t2, sum;
+    printf("---------TESTING-----------\n");
+    sum = 0;
+    for (int i = 0; i < NTESTS; i++) {
+        t1 = cpucycles();
+        poly_mul_acc(a, b, res);
+        t2 = cpucycles();
+        sum += (t2 - t1);
+    }
+    printf("poly_mul_acc cycles is %s\n", ullu(sum / NTESTS));
+    sum = 0;
+    for (int i = 0; i < NTESTS; i++) {
+        t1 = cpucycles();
+        poly_mul_acc_ntt(a, b, res);
+        t2 = cpucycles();
+        sum += (t2 - t1);
+    }
+    printf("poly_mul_acc_ntt cycles is %s\n", ullu(sum / NTESTS));
+    printf("NTESTS is %d\n", NTESTS);
+    printf("---------TEST END----------\n");
 }
 
 int main(void)

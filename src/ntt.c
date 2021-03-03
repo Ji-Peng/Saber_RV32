@@ -112,7 +112,6 @@ void invntt(int32_t in[256], int32_t out[256])
             zeta = inv_root_table[k++];
             for (j = start; j < start + len; j++) {
                 t = out[j];
-                // out[j] = barrett_reduce(t + out[j + len]);
                 out[j] = t + out[j + len];
                 out[j + len] = t - out[j + len];
                 out[j + len] = fqmul(zeta, out[j + len]);
@@ -124,7 +123,6 @@ void invntt(int32_t in[256], int32_t out[256])
     for (j = 0; j < 256; j++) {
         out[j] = fqmul(out[j], f);
         out[j] = barrett_reduce(out[j]);
-        out[j] &= 0x1fff;
     }
 }
 
