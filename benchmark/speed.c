@@ -31,6 +31,7 @@ void test_poly_mul(void)
     int16_t b[SABER_N];
     int16_t res[SABER_N];
     uint64_t t1, t2, sum;
+    printf("---------TESTING-----------\n");
     sum = 0;
     for (int i = 0; i < NTESTS; i++) {
         t1 = cpucycles();
@@ -48,6 +49,7 @@ void test_poly_mul(void)
     }
     printf("poly_mul_acc_ntt cycles is %s\n", ullu(sum / NTESTS));
     printf("NTESTS is %d\n", NTESTS);
+    printf("---------TEST END----------\n");
 }
 
 int main(void)
