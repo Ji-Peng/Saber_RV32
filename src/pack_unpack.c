@@ -163,8 +163,8 @@ void POLp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
     }
 }
 
-static void BS2POLp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
-                    uint16_t data[SABER_N])
+void BS2POLp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
+             uint16_t data[SABER_N])
 {
     size_t j, offset_byte, offset_data;
     for (j = 0; j < SABER_N / 4; j++) {

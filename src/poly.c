@@ -1,6 +1,7 @@
 #include "poly.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "api.h"
@@ -81,12 +82,10 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
 
     // init: clear states and absorb seed
     if (init == 1) {
-        printf("init\n");
         for (i = 0; i < 25; i++)
             s[i] = 0;
         keccak_absorb(s, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
     }
-    printf("%d-", nblocks);
     // squeeze output and generate polynomial
     keccak_squeezeblocks(buf, nblocks, s, SHAKE128_RATE);
     if (nblocks == 3) {
@@ -204,7 +203,7 @@ void MatrixVectorMulKP_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
             GenPoly(a, seed, 1 - i - j, 3 - ((i + j) & 0x01));
-            poly_mul_acc_ntt(a, s[i], b[j]);
+            poly_mul_acc_ntt((int16_t *)a, (int16_t *)s[i], (int16_t *)b[j]);
         }
     }
 }
@@ -229,7 +228,7 @@ void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
         // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
         for (j = 0; j < SABER_L; j++) {
             GenPoly(a, seed, 1 - i - j, 3 - ((i + j) & 0x01));
-            poly_mul_acc_ntt(a, s[j], res);
+            poly_mul_acc_ntt((int16_t *)a, (int16_t *)s[j], (int16_t *)res);
         }
         for (j = 0; j < SABER_N; j++) {
             res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
@@ -251,6 +250,6 @@ void InnerProdInTime_ntt(const uint8_t *bytes,
 
     for (j = 0; j < SABER_L; j++) {
         BS2POLp(bytes + j * (SABER_EP * SABER_N / 8), b);
-        poly_mul_acc_ntt(b, s[j], res);
+        poly_mul_acc_ntt((int16_t *)b, s[j], res);
     }
 }

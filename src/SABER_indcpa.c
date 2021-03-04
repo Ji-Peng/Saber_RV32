@@ -53,7 +53,7 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
     GenSecret(sp, seed_sp);
     MatrixVectorMulEnc_ntt(seed_A, sp, ciphertext);
 
-    InnerProdInTime_ntt(pk, sp, vp);
+    InnerProdInTime_ntt(pk, (int16_t(*)[256])sp, (int16_t *)vp);
 
     for (j = 0; j < SABER_KEYBYTES; j++)
         for (i = 0; i < 8; i++) {
@@ -76,13 +76,13 @@ void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
     int i, j;
 
     BS2POLVECq(sk, s);
-    for (int i = 0; i < SABER_L; i++) {
-        for (int j = 0; j < SABER_N; j++) {
+    for (i = 0; i < SABER_L; i++) {
+        for (j = 0; j < SABER_N; j++) {
             s[i][j] = ((int16_t)(s[i][j] << 3)) >> 3;
         }
     }
-    
-    InnerProdInTime_ntt(ciphertext, s, v);
+
+    InnerProdInTime_ntt(ciphertext, (int16_t(*)[256])s, (int16_t *)v);
 
     BS2POLT(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, cm);
 
