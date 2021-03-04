@@ -195,7 +195,27 @@ void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
  * 21 22, so when ij = 00 02 11 20 22, (i+j)&1=0, nblocks=3-(i+j)&1=3, when
  * ij=01, 10, 12, 21, (i+j)&1=1, nblocks=3-(i+j)&1=2
  */
-void MatrixVectorMulEnc_ntt(uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+void MatrixVectorMulKP_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+                           uint16_t b[SABER_L][SABER_N])
+{
+    int i, j;
+    uint16_t a[SABER_N];
+    for (i = 0; i < SABER_L; i++) {
+        // generate poly and muladd
+        for (j = 0; j < SABER_L; j++) {
+            GenPoly(a, seed, 1 - i - j, 3 - ((i + j) & 0x01));
+            poly_mul_acc_ntt(a, s[i], b[j]);
+        }
+    }
+}
+
+/**
+ * @description: MatrixVectorMul just-in-time
+ * nblocks = 3 2 3 2 3 2 3 2 3 corresponding to ij = 00 01 02 10 11 12 20
+ * 21 22, so when ij = 00 02 11 20 22, (i+j)&1=0, nblocks=3-(i+j)&1=3, when
+ * ij=01, 10, 12, 21, (i+j)&1=1, nblocks=3-(i+j)&1=2
+ */
+void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext)
 {
     int i, j;

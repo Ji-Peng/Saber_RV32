@@ -13,7 +13,7 @@
 void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
                         uint8_t sk[SABER_INDCPA_SECRETKEYBYTES])
 {
-    uint16_t A[SABER_L][SABER_L][SABER_N];
+    // uint16_t A[SABER_L][SABER_L][SABER_N];
     uint16_t s[SABER_L][SABER_N];
     uint16_t b[SABER_L][SABER_N] = {0};
 
@@ -26,10 +26,11 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
              SABER_SEEDBYTES);  // for not revealing system RNG state
     randombytes(seed_s, SABER_NOISE_SEEDBYTES);
 
-    GenMatrix(A, seed_A);
+    // GenMatrix(A, seed_A);
     GenSecret(s, seed_s);
-    MatrixVectorMul_ntt((int16_t(*)[3][256])A, (int16_t(*)[256])s,
-                        (int16_t(*)[256])b, 1);
+    // MatrixVectorMul_ntt((int16_t(*)[3][256])A, (int16_t(*)[256])s,
+    //                     (int16_t(*)[256])b, 1);
+    MatrixVectorMulKP_ntt(seed_A, s, b);
 
     for (i = 0; i < SABER_L; i++) {
         for (j = 0; j < SABER_N; j++) {

@@ -27,12 +27,15 @@ void poly_mul_acc_ntt(const int16_t a[SABER_N], const int16_t b[SABER_N],
 
 void InnerProd_ntt(const int16_t b[SABER_L][SABER_N],
                    const int16_t s[SABER_L][SABER_N], int16_t res[SABER_N]);
-void InnerProdInTime_ntt(const uint8_t *bytes, const int16_t s[SABER_L][SABER_N],
+void InnerProdInTime_ntt(const uint8_t *bytes,
+                         const int16_t s[SABER_L][SABER_N],
                          int16_t res[SABER_N]);
 
 void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
                          const int16_t s[SABER_L][SABER_N],
                          int16_t res[SABER_L][SABER_N], int16_t transpose);
-void MatrixVectorMulEnc_ntt(uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+void MatrixVectorMulKP_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+                           uint16_t b[SABER_L][SABER_N]);
+void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext);
 #endif
