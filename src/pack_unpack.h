@@ -22,4 +22,8 @@ void BS2POLVECp(const uint8_t bytes[SABER_POLYVECCOMPRESSEDBYTES],
 void BS2POLmsg(const uint8_t bytes[SABER_KEYBYTES], uint16_t data[SABER_N]);
 void POLmsg2BS(uint8_t bytes[SABER_KEYBYTES], const uint16_t data[SABER_N]);
 
+void BS2POLq(const uint8_t bytes[SABER_POLYBYTES], uint16_t data[SABER_N]);
+
+void POLp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
+             const uint16_t data[SABER_N]);
 #endif

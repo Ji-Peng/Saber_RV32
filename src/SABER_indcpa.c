@@ -10,11 +10,6 @@
 #include "poly_mul.h"
 #include "rng.h"
 
-#define h1 (1 << (SABER_EQ - SABER_EP - 1))
-#define h2                                                      \
-    ((1 << (SABER_EP - 2)) - (1 << (SABER_EP - SABER_ET - 1)) + \
-     (1 << (SABER_EQ - SABER_EP - 1)))
-
 void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
                         uint8_t sk[SABER_INDCPA_SECRETKEYBYTES])
 {
@@ -52,35 +47,44 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
                     const uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
                     uint8_t ciphertext[SABER_BYTES_CCA_DEC])
 {
-    uint16_t A[SABER_L][SABER_L][SABER_N];
+    // uint16_t A[SABER_L][SABER_L][SABER_N];
     uint16_t sp[SABER_L][SABER_N];
-    uint16_t bp[SABER_L][SABER_N] = {0};
+    // uint16_t bp[SABER_L][SABER_N] = {0};
     uint16_t vp[SABER_N] = {0};
-    uint16_t mp[SABER_N];
-    uint16_t b[SABER_L][SABER_N];
+    // uint16_t mp[SABER_N];
+    uint16_t message_bit;
+    // uint16_t b[SABER_L][SABER_N];
     int i, j;
     const uint8_t *seed_A = pk + SABER_POLYVECCOMPRESSEDBYTES;
 
-    GenMatrix(A, seed_A);
+    // GenMatrix(A, seed_A);
     GenSecret(sp, seed_sp);
-    MatrixVectorMul_ntt((int16_t(*)[3][256])A, (int16_t(*)[256])sp,
-                        (int16_t(*)[256])bp, 0);
+    // MatrixVectorMul_ntt((int16_t(*)[3][256])A, (int16_t(*)[256])sp,
+    //                     (int16_t(*)[256])bp, 0);
+    MatrixVectorMulEnc_ntt(seed_A, sp, ciphertext);
+    // for (i = 0; i < SABER_L; i++) {
+    //     for (j = 0; j < SABER_N; j++) {
+    //         bp[i][j] = (bp[i][j] + h1) >> (SABER_EQ - SABER_EP);
+    //     }
+    // }
+    // POLVECp2BS(ciphertext, bp);
 
-    for (i = 0; i < SABER_L; i++) {
-        for (j = 0; j < SABER_N; j++) {
-            bp[i][j] = (bp[i][j] + h1) >> (SABER_EQ - SABER_EP);
+    // BS2POLVECp(pk, b);
+    // InnerProd_ntt((int16_t(*)[256])b, (int16_t(*)[256])sp, (int16_t *)vp);
+    InnerProdInTime_ntt(pk, sp, vp);
+
+    // BS2POLmsg(m, mp);
+
+    for (j = 0; j < SABER_KEYBYTES; j++) {
+        for (i = 0; i < 8; i++) {
+            message_bit = ((m[j] >> i) & 0x01);
+            message_bit = (message_bit << (SABER_EP - 1));
+            vp[j * 8 + i] =
+                (vp[j * 8 + i] - message_bit + h1) >> (SABER_EP - SABER_ET);
         }
-    }
-
-    POLVECp2BS(ciphertext, bp);
-    BS2POLVECp(pk, b);
-    InnerProd_ntt((int16_t(*)[256])b, (int16_t(*)[256])sp, (int16_t *)vp);
-
-    BS2POLmsg(m, mp);
-
-    for (j = 0; j < SABER_N; j++) {
-        vp[j] =
-            (vp[j] - (mp[j] << (SABER_EP - 1)) + h1) >> (SABER_EP - SABER_ET);
+        // vp[j] =
+        //     (vp[j] - (mp[j] << (SABER_EP - 1)) + h1) >> (SABER_EP -
+        //     SABER_ET);
     }
 
     POLT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
@@ -103,7 +107,7 @@ void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
             //     s[i][j] -= (1 << SABER_EQ);
             // }
             // printf("%hd\n",s[i][j]);
-            s[i][j]=((int16_t)(s[i][j] << 3)) >> 3;
+            s[i][j] = ((int16_t)(s[i][j] << 3)) >> 3;
             // printf("%hd\n",s[i][j]);
         }
     }

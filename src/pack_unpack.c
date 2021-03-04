@@ -116,8 +116,7 @@ static void POLq2BS(uint8_t bytes[SABER_POLYBYTES],
     }
 }
 
-static void BS2POLq(const uint8_t bytes[SABER_POLYBYTES],
-                    uint16_t data[SABER_N])
+void BS2POLq(const uint8_t bytes[SABER_POLYBYTES], uint16_t data[SABER_N])
 {
     size_t j, offset_byte, offset_data;
     for (j = 0; j < SABER_N / 8; j++) {
@@ -146,8 +145,8 @@ static void BS2POLq(const uint8_t bytes[SABER_POLYBYTES],
     }
 }
 
-static void POLp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
-                    const uint16_t data[SABER_N])
+void POLp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
+             const uint16_t data[SABER_N])
 {
     size_t j, offset_byte, offset_data;
     for (j = 0; j < SABER_N / 4; j++) {

@@ -1,6 +1,7 @@
 #include "poly.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "api.h"
 #include "cbd.h"
@@ -58,6 +59,47 @@ void GenMatrix(uint16_t A[SABER_L][SABER_L][SABER_N],
     for (i = 0; i < SABER_L; i++) {
         BS2POLVECq(buf + i * SABER_POLYVECBYTES, A[i]);
     }
+}
+
+/**
+ * @description: Generate polynomial in time
+ * @param: nblocks = 2 or 3
+ *  if nblocks==3: squeeze 3 blocks -> 168*3=504B -> use 418B to generate poly
+ * -> mov remaining 88B to static leftovers
+ *
+ * if nblocks==2: squeeze 2 blocks -> 168*2=336B -> merge with leftovers 88B and
+ * get 424B
+ */
+void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
+             uint8_t init, uint8_t nblocks)
+{
+    uint8_t i;
+    uint8_t buf[SHAKE128_RATE * 3];
+    static uint8_t leftovers[SHAKE128_RATE * 3 - SABER_POLYBYTES];
+    // keccak states
+    static uint64_t s[25];
+
+    // init: clear states and absorb seed
+    if (init == 1) {
+        printf("init\n");
+        for (i = 0; i < 25; i++)
+            s[i] = 0;
+        keccak_absorb(s, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
+    }
+    printf("%d-", nblocks);
+    // squeeze output and generate polynomial
+    keccak_squeezeblocks(buf, nblocks, s, SHAKE128_RATE);
+    if (nblocks == 3) {
+        // move remaining 88bytes to static leftovers
+        memcpy(leftovers, buf + SABER_POLYBYTES, sizeof(leftovers));
+    } else if (nblocks == 2) {
+        //  merge with leftovers
+        memcpy(buf + SHAKE128_RATE * 2, leftovers, sizeof(leftovers));
+    } else {
+        printf("ERROR in GenPoly\n");
+        exit(1);
+    }
+    BS2POLq(buf, poly);
 }
 
 void GenSecret(uint16_t s[SABER_L][SABER_N],
@@ -144,5 +186,51 @@ void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
                 poly_mul_acc_ntt(A[i][j], s[j], res[i]);
             }
         }
+    }
+}
+
+/**
+ * @description: MatrixVectorMul just-in-time
+ * nblocks = 3 2 3 2 3 2 3 2 3 corresponding to ij = 00 01 02 10 11 12 20
+ * 21 22, so when ij = 00 02 11 20 22, (i+j)&1=0, nblocks=3-(i+j)&1=3, when
+ * ij=01, 10, 12, 21, (i+j)&1=1, nblocks=3-(i+j)&1=2
+ */
+void MatrixVectorMulEnc_ntt(uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+                            uint8_t *ciphertext)
+{
+    int i, j;
+    uint16_t a[SABER_N], res[SABER_N];
+    for (i = 0; i < SABER_L; i++) {
+        // clear a and res
+        for (j = 0; j < SABER_N; j++) {
+            a[j] = 0;
+            res[j] = 0;
+        }
+        // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
+        for (j = 0; j < SABER_L; j++) {
+            GenPoly(a, seed, 1 - i - j, 3 - ((i + j) & 0x01));
+            poly_mul_acc_ntt(a, s[j], res);
+        }
+        for (j = 0; j < SABER_N; j++) {
+            res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
+        }
+        POLp2BS(ciphertext + i * (SABER_EP * SABER_N / 8), res);
+    }
+}
+
+/**
+ * Name: InnerProd just-in-time
+ * Description: inner product using ntt
+ */
+void InnerProdInTime_ntt(const uint8_t *bytes,
+                         const int16_t s[SABER_L][SABER_N],
+                         int16_t res[SABER_N])
+{
+    int j;
+    uint16_t b[SABER_N];
+
+    for (j = 0; j < SABER_L; j++) {
+        BS2POLp(bytes + j * (SABER_EP * SABER_N / 8), b);
+        poly_mul_acc_ntt(b, s[j], res);
     }
 }
