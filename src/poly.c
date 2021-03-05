@@ -148,7 +148,7 @@ void poly_add(int16_t res[SABER_N], int32_t in[SABER_N])
  * Name: poly_mul_acc_ntt
  * Description: res += a * b using ntt
  */
-void poly_mul_acc_ntt(const int16_t a[SABER_N], const int16_t b[SABER_N],
+void poly_mul_acc_ntt(const uint16_t a[SABER_N], const uint16_t b[SABER_N],
                       int16_t res[SABER_N])
 {
     int32_t t1[SABER_N], t2[SABER_N], t3[SABER_N];
@@ -163,30 +163,30 @@ void poly_mul_acc_ntt(const int16_t a[SABER_N], const int16_t b[SABER_N],
  * Name: InnerProd_ntt
  * Description: inner product using ntt
  */
-void InnerProd_ntt(const int16_t b[SABER_L][SABER_N],
-                   const int16_t s[SABER_L][SABER_N], int16_t res[SABER_N])
-{
-    int j;
-    for (j = 0; j < SABER_L; j++) {
-        poly_mul_acc_ntt(b[j], s[j], res);
-    }
-}
+// void InnerProd_ntt(const int16_t b[SABER_L][SABER_N],
+//                    const int16_t s[SABER_L][SABER_N], int16_t res[SABER_N])
+// {
+//     int j;
+//     for (j = 0; j < SABER_L; j++) {
+//         poly_mul_acc_ntt(b[j], s[j], res);
+//     }
+// }
 
-void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
-                         const int16_t s[SABER_L][SABER_N],
-                         int16_t res[SABER_L][SABER_N], int16_t transpose)
-{
-    int i, j;
-    for (i = 0; i < SABER_L; i++) {
-        for (j = 0; j < SABER_L; j++) {
-            if (transpose == 1) {
-                poly_mul_acc_ntt(A[j][i], s[j], res[i]);
-            } else {
-                poly_mul_acc_ntt(A[i][j], s[j], res[i]);
-            }
-        }
-    }
-}
+// void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
+//                          const int16_t s[SABER_L][SABER_N],
+//                          int16_t res[SABER_L][SABER_N], int16_t transpose)
+// {
+//     int i, j;
+//     for (i = 0; i < SABER_L; i++) {
+//         for (j = 0; j < SABER_L; j++) {
+//             if (transpose == 1) {
+//                 poly_mul_acc_ntt(A[j][i], s[j], res[i]);
+//             } else {
+//                 poly_mul_acc_ntt(A[i][j], s[j], res[i]);
+//             }
+//         }
+//     }
+// }
 
 /**
  * @description: MatrixVectorMul just-in-time
@@ -203,7 +203,7 @@ void MatrixVectorMulKP_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
             GenPoly(a, seed, 1 - i - j, 3 - ((i + j) & 0x01));
-            poly_mul_acc_ntt((int16_t *)a, (int16_t *)s[i], (int16_t *)b[j]);
+            poly_mul_acc_ntt(a, s[i], (int16_t *)b[j]);
         }
     }
 }
@@ -228,7 +228,7 @@ void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
         // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
         for (j = 0; j < SABER_L; j++) {
             GenPoly(a, seed, 1 - i - j, 3 - ((i + j) & 0x01));
-            poly_mul_acc_ntt((int16_t *)a, (int16_t *)s[j], (int16_t *)res);
+            poly_mul_acc_ntt(a, s[j], (int16_t *)res);
         }
         for (j = 0; j < SABER_N; j++) {
             res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
@@ -242,7 +242,7 @@ void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
  * Description: inner product using ntt
  */
 void InnerProdInTime_ntt(const uint8_t *bytes,
-                         const int16_t s[SABER_L][SABER_N],
+                         const uint16_t s[SABER_L][SABER_N],
                          int16_t res[SABER_N])
 {
     int j;
@@ -250,6 +250,6 @@ void InnerProdInTime_ntt(const uint8_t *bytes,
 
     for (j = 0; j < SABER_L; j++) {
         BS2POLp(bytes + j * (SABER_EP * SABER_N / 8), b);
-        poly_mul_acc_ntt((int16_t *)b, s[j], res);
+        poly_mul_acc_ntt(b, s[j], res);
     }
 }

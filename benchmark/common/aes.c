@@ -30,6 +30,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 static inline uint32_t br_dec32le(const unsigned char *src)
 {
@@ -585,6 +586,7 @@ void aes128_ecb_keyexp(aes128ctx *r, const unsigned char *key)
 
     r->sk_exp = malloc(sizeof(uint64_t) * PQC_AES128_STATESIZE);
     if (r->sk_exp == NULL) {
+        printf("aes128_ecb_keyexp exit(111)\n");
         exit(111);
     }
 
@@ -602,6 +604,7 @@ void aes192_ecb_keyexp(aes192ctx *r, const unsigned char *key)
     uint64_t skey[26];
     r->sk_exp = malloc(sizeof(uint64_t) * PQC_AES192_STATESIZE);
     if (r->sk_exp == NULL) {
+        printf("aes192_ecb_keyexp exit(111)\n");
         exit(111);
     }
 
@@ -619,6 +622,7 @@ void aes256_ecb_keyexp(aes256ctx *r, const unsigned char *key)
     uint64_t skey[30];
     r->sk_exp = malloc(sizeof(uint64_t) * PQC_AES256_STATESIZE);
     if (r->sk_exp == NULL) {
+        printf("aes256_ecb_keyexp exit(111)\n");
         exit(111);
     }
 

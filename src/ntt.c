@@ -49,7 +49,7 @@ int32_t fqmul(int32_t a, int32_t b)
  *
  * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
  **************************************************/
-void ntt(const int16_t in[256], int32_t out[256])
+void ntt(const uint16_t in[256], int32_t out[256])
 {
     unsigned int len, start, j, k;
     int32_t t, zeta;
@@ -59,9 +59,9 @@ void ntt(const int16_t in[256], int32_t out[256])
     zeta = root_table[k++];
     // a sepearate first layer for storing results to output polynomial
     for (j = 0; j < len; j++) {
-        t = fqmul(zeta, (int32_t)in[j + len]);
-        out[j + len] = in[j] - t;
-        out[j] = in[j] + t;
+        t = fqmul(zeta, (int16_t)in[j + len]);
+        out[j + len] = (int32_t)(int16_t)in[j] - t;
+        out[j] = (int32_t)(int16_t)in[j] + t;
     }
     // remaining five layers
     for (len = 64; len >= 4; len >>= 1) {
