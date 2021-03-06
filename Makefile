@@ -1,7 +1,7 @@
 # The configuration defaults to Debug. Valid choices are: debug and release
 CONFIGURATION ?= debug
 # BSP_DIR sets the path to the target-specific board support package.
-BSP_DIR = $(abspath bsp)
+BSP_DIR = bsp
 # SRC_DIR sets the path to the program source directory
 SRC_DIR = src
 COMMON_DIR = benchmark/common
@@ -36,10 +36,10 @@ HOST_SRCS = $(wildcard $(HOST_DIR)/*.c)
 #  -mstrict-align -mtune=size 
 RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-ffunction-sections -fdata-sections \
-					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
+					-I$(BSP_DIR)/install/include -I$(COMMON_DIR) -I$(SRC_DIR) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-					-O3 -g
+					-Os
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
 					-fomit-frame-pointer -fno-tree-vectorize -march=native \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
@@ -67,9 +67,9 @@ RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-
 .PHONY: host
 host: host_out/kem
 
-# out/PQCgenKAT_kem.elf out/test_kex.elf
+# out/PQCgenKAT_kem.elf out/test_kex.elf  out/speed.elf
 .PHONY: all
-all: out/kem.elf out/speed.elf
+all: out/kem.elf
 
 # $(RISCV_GCC) -o $(basename $@) $(RISCV_CFLAGS) \
 # 	$(filter %.c,$^) $(filter %.S,$^) -I$(COMMON_DIR) -I$(SRC_DIR) $(RISCV_LDFLAGS)

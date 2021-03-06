@@ -7,7 +7,7 @@
 #include "reduce.h"
 
 // zeta^{br(1,2,3...)}*RmodM
-const int32_t root_table[] = {
+const int32_t root_table[64] = {
     846038,  370173,   -2016489, -1216365, 1843388,  -677362,  -1072953,
     -273335, 571552,   355329,   -1953862, 1203721,  1720831,  965995,
     641414,  1406204,  -869335,  -603157,  348730,   2063531,  -1328182,
@@ -19,7 +19,7 @@ const int32_t root_table[] = {
     361370,  676319,   -541241,  1009639,  538875,   -2102677, 1585701};
 
 // zeta^{-i} in intt, montgomery field
-const int32_t inv_root_table[] = {
+const int32_t inv_root_table[64] = {
     -1585701, 2102677,  -538875,  -1009639, 541241,   -676319,  -361370,
     -535845,  368446,   1064338,  2055310,  1551600,  1689285,  -445122,
     1951522,  -1830521, -2085817, 1171284,  -1626667, 230501,   -1814059,
@@ -57,12 +57,17 @@ void ntt(const uint16_t in[256], int32_t out[256])
     k = 0;
     len = 128;
     zeta = root_table[k++];
+    // printf("---ntt start\n");
     // a sepearate first layer for storing results to output polynomial
     for (j = 0; j < len; j++) {
-        t = fqmul(zeta, (int16_t)in[j + len]);
+        t = fqmul(zeta, (int32_t)(int16_t)in[j + len]);
+        // printf("---%d fqmul\n",j);
         out[j + len] = (int32_t)(int16_t)in[j] - t;
+        // printf("---%d out[j+len]\n",j);
         out[j] = (int32_t)(int16_t)in[j] + t;
+        printf("---%d out[j]\n",j);
     }
+    printf("---ntt middle\n");
     // remaining five layers
     for (len = 64; len >= 4; len >>= 1) {
         for (start = 0; start < 256; start = j + len) {
@@ -74,6 +79,7 @@ void ntt(const uint16_t in[256], int32_t out[256])
             }
         }
     }
+    // printf("---ntt end\n");
 }
 
 /*************************************************

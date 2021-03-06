@@ -6,6 +6,7 @@
 #include "SABER_indcpa.h"
 #include "api.h"
 #include "cpucycles.h"
+#include "metal/watchdog.h"
 #include "ntt.h"
 #include "poly.h"
 #include "reduce.h"
@@ -18,6 +19,21 @@ static void test_ntt(void);
 static void test_ntt_self(void);
 
 #define NTEST 1
+
+static void disable_watchdog(void)
+{
+    int result = 1;
+    struct metal_watchdog *wdog;
+    wdog = metal_watchdog_get_device(0);
+    result = metal_watchdog_run(wdog, METAL_WATCHDOG_STOP);
+    if (result != 0) {
+        printf("watchdog disable failed\n");
+    } else if (result == 0) {
+        printf("watchdog disable success\n");
+    } else {
+        printf("unknown return value %d\n", result);
+    }
+}
 
 static int test_kem_cca(void)
 {
@@ -84,13 +100,13 @@ static int test_kem_cpa(void)
             message1[i] = noiseseed[i] = i;
         }
 
-        // printf("1\n");
-        indcpa_kem_keypair(pk, sk);
-        // printf("2\n");
-        indcpa_kem_enc(message1, noiseseed, pk, ct);
-        // printf("3\n");
-        indcpa_kem_dec(sk, ct, message2);
         printf("1234\n");
+        indcpa_kem_keypair(pk, sk);
+        printf("2345\n");
+        indcpa_kem_enc(message1, noiseseed, pk, ct);
+        printf("3456\n");
+        indcpa_kem_dec(sk, ct, message2);
+        printf("4567\n");
 
         for (i = 0; i < 64; i++) {
             if (message1[i] != message2[i]) {
@@ -154,6 +170,7 @@ static int test_kem_cpa(void)
 
 int main(void)
 {
+    disable_watchdog();
     test_kem_cpa();
     // test_kem_cca();
     // test_ntt();

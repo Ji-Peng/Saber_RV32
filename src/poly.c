@@ -136,7 +136,7 @@ void poly_basemul(int32_t r[SABER_N], const int32_t a[SABER_N],
  * Name: poly_add
  * Description: polynomial addition
  */
-void poly_add(int16_t res[SABER_N], int32_t in[SABER_N])
+void poly_add(uint16_t res[SABER_N], int32_t in[SABER_N])
 {
     int i;
     for (i = 0; i < SABER_N; i++) {
@@ -149,14 +149,19 @@ void poly_add(int16_t res[SABER_N], int32_t in[SABER_N])
  * Description: res += a * b using ntt
  */
 void poly_mul_acc_ntt(const uint16_t a[SABER_N], const uint16_t b[SABER_N],
-                      int16_t res[SABER_N])
+                      uint16_t res[SABER_N])
 {
     int32_t t1[SABER_N], t2[SABER_N], t3[SABER_N];
     ntt(a, t1);
+    // printf("--ntt\n");
     ntt(b, t2);
+    // printf("--ntt\n");
     poly_basemul(t3, t1, t2);
+    // printf("--poly_basemul\n");
     invntt(t3, t1);
+    // printf("--invntt\n");
     poly_add(res, t1);
+    // printf("--poly_add\n");
 }
 
 /**
@@ -203,7 +208,9 @@ void MatrixVectorMulKP_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
             GenPoly(a, seed, 1 - i - j, 3 - ((i + j) & 0x01));
-            poly_mul_acc_ntt(a, s[i], (int16_t *)b[j]);
+            // printf("-GenPoly\n");
+            poly_mul_acc_ntt(a, s[i], b[j]);
+            // printf("-poly_mul_acc_ntt\n");
         }
     }
 }
@@ -228,7 +235,7 @@ void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
         // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
         for (j = 0; j < SABER_L; j++) {
             GenPoly(a, seed, 1 - i - j, 3 - ((i + j) & 0x01));
-            poly_mul_acc_ntt(a, s[j], (int16_t *)res);
+            poly_mul_acc_ntt(a, s[j], res);
         }
         for (j = 0; j < SABER_N; j++) {
             res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
@@ -243,7 +250,7 @@ void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
  */
 void InnerProdInTime_ntt(const uint8_t *bytes,
                          const uint16_t s[SABER_L][SABER_N],
-                         int16_t res[SABER_N])
+                         uint16_t res[SABER_N])
 {
     int j;
     uint16_t b[SABER_N];
