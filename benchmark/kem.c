@@ -6,7 +6,9 @@
 #include "SABER_indcpa.h"
 #include "api.h"
 #include "cpucycles.h"
-#include "metal/watchdog.h"
+#ifndef HOST
+#    include "metal/watchdog.h"
+#endif
 #include "ntt.h"
 #include "poly.h"
 #include "reduce.h"
@@ -22,6 +24,7 @@ static void test_ntt_self(void);
 
 static void disable_watchdog(void)
 {
+#ifndef HOST
     int result = 1;
     struct metal_watchdog *wdog;
     wdog = metal_watchdog_get_device(0);
@@ -33,6 +36,7 @@ static void disable_watchdog(void)
     } else {
         printf("unknown return value %d\n", result);
     }
+#endif
 }
 
 static int test_kem_cca(void)
