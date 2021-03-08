@@ -11,7 +11,7 @@
 #include "rng.h"
 
 void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
-                        uint8_t sk[SABER_INDCPA_SECRETKEYBYTES])
+                        uint8_t sk[SABER_SKBYTES])
 {
     uint16_t s[SABER_L][SABER_N];
     uint16_t b[SABER_L][SABER_N] = {0};
@@ -39,7 +39,8 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
         }
     }
 
-    POLVECq2BS(sk, s);
+    // POLVECq2BS(sk, s);
+    pack_sk(sk, s);
     // printf("POLVECq2BS\n");
     POLVECp2BS(pk, b);
     // printf("POLVECp2BS\n");
@@ -74,7 +75,7 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
     POLT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
 }
 
-void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
+void indcpa_kem_dec(const uint8_t sk[SABER_SKBYTES],
                     const uint8_t ciphertext[SABER_BYTES_CCA_DEC],
                     uint8_t m[SABER_KEYBYTES])
 {
@@ -83,7 +84,8 @@ void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
     uint16_t cm[SABER_N];
     int i, j;
 
-    BS2POLVECq(sk, s);
+    // BS2POLVECq(sk, s);
+    unpack_sk(sk, s);
     for (i = 0; i < SABER_L; i++) {
         for (j = 0; j < SABER_N; j++) {
             s[i][j] = ((int16_t)(s[i][j] << 3)) >> 3;

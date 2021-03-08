@@ -190,6 +190,36 @@ void POLVECq2BS(uint8_t bytes[SABER_POLYVECBYTES],
     }
 }
 
+void pack_sk(uint8_t bytes[SABER_SKBYTES],
+             const uint16_t data[SABER_L][SABER_N])
+{
+    size_t i, j, offset_byte, offset_data;
+    for (i = 0; i < SABER_L; i++) {
+        for (j = 0; j < SABER_N / 2; j++) {
+            offset_byte = i * SABER_SKPOLYBYTES + j;
+            offset_data = 2 * j;
+            bytes[offset_byte] =
+                (data[i][offset_data + 1] << 4) | (data[i][offset_data] & 0xf);
+        }
+    }
+}
+
+void unpack_sk(const uint8_t bytes[SABER_SKBYTES],
+               uint16_t data[SABER_L][SABER_N])
+{
+    size_t i, j, offset_byte, offset_data;
+    for (i = 0; i < SABER_L; i++) {
+        for (j = 0; j < SABER_N / 2; j++) {
+            offset_byte = i * SABER_SKPOLYBYTES + j;
+            offset_data = 2 * j;
+            data[i][offset_data] =
+                (int16_t)((int16_t)bytes[offset_byte] << 12) >> 12;
+            data[i][offset_data + 1] =
+                (int16_t)((bytes[offset_byte] >> 4) << 12) >> 12;
+        }
+    }
+}
+
 void BS2POLVECq(const uint8_t bytes[SABER_POLYVECBYTES],
                 uint16_t data[SABER_L][SABER_N])
 {
@@ -238,3 +268,40 @@ void POLmsg2BS(uint8_t bytes[SABER_KEYBYTES], const uint16_t data[SABER_N])
         }
     }
 }
+
+// void main(void)
+// {
+//     size_t i, j;
+//     uint16_t data[SABER_L][SABER_N], data1[SABER_L][SABER_N];
+//     uint8_t bytes[SABER_SKBYTES];
+//     for (i = 0; i < SABER_L; i++) {
+//         for (j = 0; j < SABER_N; j++) {
+//             data[i][j] = j & 0x7;
+//         }
+//     }
+//     for (j = 0; j < SABER_N; j++) {
+//         data[2][j] = -(j & 0x7);
+//     }
+//     // printf("%x\n", data[2][1]);
+//     pack_sk(bytes, data);
+//     unpack_sk(bytes, data1);
+//     for (i = 0; i < SABER_L - 1; i++) {
+//         for (j = 0; j < SABER_N; j++) {
+//             if (data1[i][j] != (j & 0x7)) {
+//                 printf("error\n");
+//                 printf("%d,%d\n", i, j);
+//                 printf("%x,%x\n", data1[i][j], j & 0x7);
+//                 break;
+//             }
+//         }
+//     }
+//     for (j = 0; j < SABER_N; j++) {
+//         if (data1[2][j] != (uint16_t)(-(j & 0x7))) {
+//             printf("error\n");
+//             printf("%d\n", j);
+//             printf("%x,%x\n", data1[2][j], (uint16_t)(-(j & 0x7)));
+//             break;
+//         }
+//     }
+//     printf("test end\n");
+// }

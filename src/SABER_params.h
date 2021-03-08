@@ -53,4 +53,7 @@
 #define h2                                                      \
     ((1 << (SABER_EP - 2)) - (1 << (SABER_EP - SABER_ET - 1)) + \
      (1 << (SABER_EQ - SABER_EP - 1)))
+
+#define SABER_SKPOLYBYTES 4 * SABER_N / 8
+#define SABER_SKBYTES SABER_L* SABER_SKPOLYBYTES
 #endif
