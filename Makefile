@@ -35,12 +35,13 @@ HOST_SRCS = $(wildcard $(HOST_DIR)/*.c)
 
 #  -mstrict-align -mtune=size 
 RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
-					-ffunction-sections -fdata-sections \
+					-ffunction-sections -fdata-sections -fstack-usage \
 					-I$(BSP_DIR)/install/include -I$(COMMON_DIR) -I$(SRC_DIR) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
 					-Os
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
+					-DHOST -fstack-usage \
 					-fomit-frame-pointer -fno-tree-vectorize -march=native \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
 					-O3 -g
@@ -91,12 +92,16 @@ out/%.elf: \
 	$(RISCV_SIZE) $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
+	cat *.su > $(basename $@).stack
+	rm *.su
 
 host_out/kem: \
 		benchmark/kem.c \
 		$(COMMON_SRCS) $(PROGRAM_SRCS)
 	mkdir -p $(dir $@)
 	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
+	cat *.su > $(basename $@).stack
+	rm *.su
 
 host_out/speed: \
 		benchmark/host/speed_host.c \
