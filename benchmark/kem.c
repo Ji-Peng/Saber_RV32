@@ -83,10 +83,10 @@ static int test_kem_cca(void)
 
 static int test_kem_cpa(void)
 {
-    uint8_t pk[CRYPTO_PUBLICKEYBYTES];
-    uint8_t sk[SABER_INDCPA_SECRETKEYBYTES];
-    uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
-    uint8_t message1[64], message2[64];
+    uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES];
+    uint8_t sk[SABER_INDCPA_SKBYTES];
+    uint8_t ct[SABER_BYTES_CCA_DEC];
+    uint8_t message1[SABER_KEYBYTES], message2[SABER_KEYBYTES];
     uint8_t noiseseed[32];
     uint8_t entropy_input[48];
     int i, j;
@@ -112,14 +112,14 @@ static int test_kem_cpa(void)
         indcpa_kem_dec(sk, ct, message2);
         printf("4567\n");
 
-        for (i = 0; i < 64; i++) {
+        for (i = 0; i < SABER_KEYBYTES; i++) {
             if (message1[i] != message2[i]) {
                 printf("i=%d, %d, %d\n", i, message1[i], message2[i]);
                 printf("ERROR\n");
                 break;
             }
         }
-        if (i != 64) {
+        if (i != SABER_KEYBYTES) {
             break;
         }
     }

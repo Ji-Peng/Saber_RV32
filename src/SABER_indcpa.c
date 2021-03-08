@@ -11,7 +11,7 @@
 #include "rng.h"
 
 void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
-                        uint8_t sk[SABER_SKBYTES])
+                        uint8_t sk[SABER_INDCPA_SKBYTES])
 {
     uint16_t s[SABER_L][SABER_N];
     uint16_t b[SABER_L][SABER_N] = {0};
@@ -75,7 +75,7 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
     POLT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
 }
 
-void indcpa_kem_dec(const uint8_t sk[SABER_SKBYTES],
+void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SKBYTES],
                     const uint8_t ciphertext[SABER_BYTES_CCA_DEC],
                     uint8_t m[SABER_KEYBYTES])
 {

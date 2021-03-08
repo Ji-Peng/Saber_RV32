@@ -190,7 +190,7 @@ void POLVECq2BS(uint8_t bytes[SABER_POLYVECBYTES],
     }
 }
 
-void pack_sk(uint8_t bytes[SABER_SKBYTES],
+void pack_sk(uint8_t bytes[SABER_INDCPA_SKBYTES],
              const uint16_t data[SABER_L][SABER_N])
 {
     size_t i, j, offset_byte, offset_data;
@@ -204,7 +204,7 @@ void pack_sk(uint8_t bytes[SABER_SKBYTES],
     }
 }
 
-void unpack_sk(const uint8_t bytes[SABER_SKBYTES],
+void unpack_sk(const uint8_t bytes[SABER_INDCPA_SKBYTES],
                uint16_t data[SABER_L][SABER_N])
 {
     size_t i, j, offset_byte, offset_data;
@@ -273,7 +273,7 @@ void POLmsg2BS(uint8_t bytes[SABER_KEYBYTES], const uint16_t data[SABER_N])
 // {
 //     size_t i, j;
 //     uint16_t data[SABER_L][SABER_N], data1[SABER_L][SABER_N];
-//     uint8_t bytes[SABER_SKBYTES];
+//     uint8_t bytes[SABER_INDCPA_SKBYTES];
 //     for (i = 0; i < SABER_L; i++) {
 //         for (j = 0; j < SABER_N; j++) {
 //             data[i][j] = j & 0x7;
