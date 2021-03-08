@@ -9,3 +9,5 @@ bsp/install/*
 .vscode/
 src/test.c
 help/help
+help/test
+help/test.c

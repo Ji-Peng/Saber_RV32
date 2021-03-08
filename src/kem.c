@@ -14,8 +14,7 @@ int crypto_kem_keypair(unsigned char *pk, unsigned char *sk)
     int i;
     // sk[0:SABER_INDCPA_SECRETKEYBYTES-1] <-- sk
     indcpa_kem_keypair(pk, sk);
-    // sk[SABER_INDCPA_SECRETKEYBYTES:SABER_INDCPA_SECRETKEYBYTES+SABER_INDCPA_SECRETKEYBYTES-1<--
-    // pk
+    // sk[SABER_INDCPA_SECRETKEYBYTES:SABER_INDCPA_SECRETKEYBYTES+SABER_INDCPA_PUBLICKEYBYTES-1<--pk
     for (i = 0; i < SABER_INDCPA_PUBLICKEYBYTES; i++)
         sk[i + SABER_INDCPA_SECRETKEYBYTES] = pk[i];
 

@@ -190,7 +190,7 @@ void POLVECq2BS(uint8_t bytes[SABER_POLYVECBYTES],
     }
 }
 
-void pack_sk(uint8_t bytes[SABER_INDCPA_SKBYTES],
+void pack_sk(uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
              const uint16_t data[SABER_L][SABER_N])
 {
     size_t i, j, offset_byte, offset_data;
@@ -204,7 +204,7 @@ void pack_sk(uint8_t bytes[SABER_INDCPA_SKBYTES],
     }
 }
 
-void unpack_sk(const uint8_t bytes[SABER_INDCPA_SKBYTES],
+void unpack_sk(const uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
                uint16_t data[SABER_L][SABER_N])
 {
     size_t i, j, offset_byte, offset_data;

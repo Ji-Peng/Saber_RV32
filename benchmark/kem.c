@@ -84,7 +84,7 @@ static int test_kem_cca(void)
 static int test_kem_cpa(void)
 {
     uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES];
-    uint8_t sk[SABER_INDCPA_SKBYTES];
+    uint8_t sk[SABER_INDCPA_SECRETKEYBYTES];
     uint8_t ct[SABER_BYTES_CCA_DEC];
     uint8_t message1[SABER_KEYBYTES], message2[SABER_KEYBYTES];
     uint8_t noiseseed[32];
@@ -176,7 +176,7 @@ int main(void)
 {
     disable_watchdog();
     test_kem_cpa();
-    // test_kem_cca();
+    test_kem_cca();
     // test_ntt();
     // test_ntt_self();
     return 0;
