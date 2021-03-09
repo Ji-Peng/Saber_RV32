@@ -64,19 +64,13 @@ void GenMatrix(uint16_t A[SABER_L][SABER_L][SABER_N],
 
 /**
  * @description: Generate polynomial in time
- * @param: nblocks = 2 or 3
- *  if nblocks==3: squeeze 3 blocks -> 168*3=504B -> use 418B to generate poly
- * -> mov remaining 88B to static leftovers
- *
- * if nblocks==2: squeeze 2 blocks -> 168*2=336B -> merge with leftovers 88B and
- * get 424B
  */
 void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
-             uint8_t init, uint8_t nblocks)
+             uint8_t init)
 {
     uint8_t i;
-    uint8_t buf[SHAKE128_RATE * 3];
-    static uint8_t leftovers[SHAKE128_RATE * 3 - SABER_POLYBYTES];
+    uint8_t buf[SHAKE128_RATE];
+    static uint8_t leftovers[82];
     // keccak states
     static uint64_t s[25];
 
@@ -87,7 +81,7 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
         keccak_absorb(s, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
     }
     // squeeze output and generate polynomial
-    keccak_squeezeblocks(buf, nblocks, s, SHAKE128_RATE);
+    keccak_squeezeblocks(buf, 1, s, SHAKE128_RATE);
     if (nblocks == 3) {
         // move remaining 88bytes to static leftovers
         memcpy(leftovers, buf + SABER_POLYBYTES, sizeof(leftovers));

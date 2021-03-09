@@ -86,35 +86,35 @@ void BS2POLT(const uint8_t bytes[SABER_SCALEBYTES_KEM], uint16_t data[SABER_N])
 #endif
 }
 
-static void POLq2BS(uint8_t bytes[SABER_POLYBYTES],
-                    const uint16_t data[SABER_N])
-{
-    size_t j, offset_byte, offset_data;
-    for (j = 0; j < SABER_N / 8; j++) {
-        offset_byte = 13 * j;
-        offset_data = 8 * j;
-        bytes[offset_byte + 0] = (data[offset_data + 0] & (0xff));
-        bytes[offset_byte + 1] = ((data[offset_data + 0] >> 8) & 0x1f) |
-                                 ((data[offset_data + 1] & 0x07) << 5);
-        bytes[offset_byte + 2] = ((data[offset_data + 1] >> 3) & 0xff);
-        bytes[offset_byte + 3] = ((data[offset_data + 1] >> 11) & 0x03) |
-                                 ((data[offset_data + 2] & 0x3f) << 2);
-        bytes[offset_byte + 4] = ((data[offset_data + 2] >> 6) & 0x7f) |
-                                 ((data[offset_data + 3] & 0x01) << 7);
-        bytes[offset_byte + 5] = ((data[offset_data + 3] >> 1) & 0xff);
-        bytes[offset_byte + 6] = ((data[offset_data + 3] >> 9) & 0x0f) |
-                                 ((data[offset_data + 4] & 0x0f) << 4);
-        bytes[offset_byte + 7] = ((data[offset_data + 4] >> 4) & 0xff);
-        bytes[offset_byte + 8] = ((data[offset_data + 4] >> 12) & 0x01) |
-                                 ((data[offset_data + 5] & 0x7f) << 1);
-        bytes[offset_byte + 9] = ((data[offset_data + 5] >> 7) & 0x3f) |
-                                 ((data[offset_data + 6] & 0x03) << 6);
-        bytes[offset_byte + 10] = ((data[offset_data + 6] >> 2) & 0xff);
-        bytes[offset_byte + 11] = ((data[offset_data + 6] >> 10) & 0x07) |
-                                  ((data[offset_data + 7] & 0x1f) << 3);
-        bytes[offset_byte + 12] = ((data[offset_data + 7] >> 5) & 0xff);
-    }
-}
+// static void POLq2BS(uint8_t bytes[SABER_POLYBYTES],
+//                     const uint16_t data[SABER_N])
+// {
+//     size_t j, offset_byte, offset_data;
+//     for (j = 0; j < SABER_N / 8; j++) {
+//         offset_byte = 13 * j;
+//         offset_data = 8 * j;
+//         bytes[offset_byte + 0] = (data[offset_data + 0] & (0xff));
+//         bytes[offset_byte + 1] = ((data[offset_data + 0] >> 8) & 0x1f) |
+//                                  ((data[offset_data + 1] & 0x07) << 5);
+//         bytes[offset_byte + 2] = ((data[offset_data + 1] >> 3) & 0xff);
+//         bytes[offset_byte + 3] = ((data[offset_data + 1] >> 11) & 0x03) |
+//                                  ((data[offset_data + 2] & 0x3f) << 2);
+//         bytes[offset_byte + 4] = ((data[offset_data + 2] >> 6) & 0x7f) |
+//                                  ((data[offset_data + 3] & 0x01) << 7);
+//         bytes[offset_byte + 5] = ((data[offset_data + 3] >> 1) & 0xff);
+//         bytes[offset_byte + 6] = ((data[offset_data + 3] >> 9) & 0x0f) |
+//                                  ((data[offset_data + 4] & 0x0f) << 4);
+//         bytes[offset_byte + 7] = ((data[offset_data + 4] >> 4) & 0xff);
+//         bytes[offset_byte + 8] = ((data[offset_data + 4] >> 12) & 0x01) |
+//                                  ((data[offset_data + 5] & 0x7f) << 1);
+//         bytes[offset_byte + 9] = ((data[offset_data + 5] >> 7) & 0x3f) |
+//                                  ((data[offset_data + 6] & 0x03) << 6);
+//         bytes[offset_byte + 10] = ((data[offset_data + 6] >> 2) & 0xff);
+//         bytes[offset_byte + 11] = ((data[offset_data + 6] >> 10) & 0x07) |
+//                                   ((data[offset_data + 7] & 0x1f) << 3);
+//         bytes[offset_byte + 12] = ((data[offset_data + 7] >> 5) & 0xff);
+//     }
+// }
 
 void BS2POLq(const uint8_t bytes[SABER_POLYBYTES], uint16_t data[SABER_N])
 {
@@ -181,14 +181,14 @@ void BS2POLp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
     }
 }
 
-void POLVECq2BS(uint8_t bytes[SABER_POLYVECBYTES],
-                const uint16_t data[SABER_L][SABER_N])
-{
-    size_t i;
-    for (i = 0; i < SABER_L; i++) {
-        POLq2BS(bytes + i * SABER_POLYBYTES, data[i]);
-    }
-}
+// void POLVECq2BS(uint8_t bytes[SABER_POLYVECBYTES],
+//                 const uint16_t data[SABER_L][SABER_N])
+// {
+//     size_t i;
+//     for (i = 0; i < SABER_L; i++) {
+//         POLq2BS(bytes + i * SABER_POLYBYTES, data[i]);
+//     }
+// }
 
 void pack_sk(uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
              const uint16_t data[SABER_L][SABER_N])
