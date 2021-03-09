@@ -84,14 +84,14 @@ static void test_pack(void)
     }
     printf("unpack_sk cycles is %s\n", ullu(sum / NTESTS));
 
-    sum = 0;
-    for (int i = 0; i < NTESTS; i++) {
-        t1 = cpucycles();
-        POLVECq2BS(sk2, s2);
-        t2 = cpucycles();
-        sum += (t2 - t1);
-    }
-    printf("POLVECq2BS cycles is %s\n", ullu(sum / NTESTS));
+    // sum = 0;
+    // for (int i = 0; i < NTESTS; i++) {
+    //     t1 = cpucycles();
+    //     POLVECq2BS(sk2, s2);
+    //     t2 = cpucycles();
+    //     sum += (t2 - t1);
+    // }
+    // printf("POLVECq2BS cycles is %s\n", ullu(sum / NTESTS));
 
     sum = 0;
     for (int i = 0; i < NTESTS; i++) {
