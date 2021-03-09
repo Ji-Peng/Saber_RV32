@@ -6,7 +6,7 @@
 
 void POLT2BS(uint8_t bytes[SABER_SCALEBYTES_KEM], const uint16_t data[SABER_N])
 {
-    size_t j, offset_byte, offset_data;
+    int32_t j, offset_byte, offset_data;
 #if SABER_ET == 3
     for (j = 0; j < SABER_N / 8; j++) {
         offset_byte = 3 * j;
@@ -47,7 +47,7 @@ void POLT2BS(uint8_t bytes[SABER_SCALEBYTES_KEM], const uint16_t data[SABER_N])
 
 void BS2POLT(const uint8_t bytes[SABER_SCALEBYTES_KEM], uint16_t data[SABER_N])
 {
-    size_t j, offset_byte, offset_data;
+    int32_t j, offset_byte, offset_data;
 #if SABER_ET == 3
     for (j = 0; j < SABER_N / 8; j++) {
         offset_byte = 3 * j;
@@ -122,7 +122,7 @@ void BS2POLT(const uint8_t bytes[SABER_SCALEBYTES_KEM], uint16_t data[SABER_N])
  */
 void BS2POLq(const uint8_t *bytes, uint16_t *data, int32_t coeff_num)
 {
-    size_t j, offset_byte, offset_data;
+    int32_t j, offset_byte, offset_data;
     for (j = 0; j < coeff_num / 8; j++) {
         offset_byte = 13 * j;
         offset_data = 8 * j;
@@ -180,7 +180,7 @@ void BS2POLq2(const uint8_t *bytes, uint16_t *data)
 void POLp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
              const uint16_t data[SABER_N])
 {
-    size_t j, offset_byte, offset_data;
+    int32_t j, offset_byte, offset_data;
     for (j = 0; j < SABER_N / 4; j++) {
         offset_byte = 5 * j;
         offset_data = 4 * j;
@@ -198,7 +198,7 @@ void POLp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
 void BS2POLp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
              uint16_t data[SABER_N])
 {
-    size_t j, offset_byte, offset_data;
+    int32_t j, offset_byte, offset_data;
     for (j = 0; j < SABER_N / 4; j++) {
         offset_byte = 5 * j;
         offset_data = 4 * j;
@@ -225,7 +225,7 @@ void BS2POLp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
 void pack_sk(uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
              const uint16_t data[SABER_L][SABER_N])
 {
-    size_t i, j, offset_byte, offset_data;
+    int32_t i, j, offset_byte, offset_data;
     for (i = 0; i < SABER_L; i++) {
         for (j = 0; j < SABER_N / 2; j++) {
             offset_byte = i * SABER_SKPOLYBYTES + j;
@@ -239,7 +239,7 @@ void pack_sk(uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
 void unpack_sk(const uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
                uint16_t data[SABER_L][SABER_N])
 {
-    size_t i, j, offset_byte, offset_data;
+    int32_t i, j, offset_byte, offset_data;
     for (i = 0; i < SABER_L; i++) {
         for (j = 0; j < SABER_N / 2; j++) {
             offset_byte = i * SABER_SKPOLYBYTES + j;
@@ -264,7 +264,7 @@ void unpack_sk(const uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
 void POLVECp2BS(uint8_t bytes[SABER_POLYVECCOMPRESSEDBYTES],
                 const uint16_t data[SABER_L][SABER_N])
 {
-    size_t i;
+    int32_t i;
     for (i = 0; i < SABER_L; i++) {
         POLp2BS(bytes + i * (SABER_EP * SABER_N / 8), data[i]);
     }
@@ -273,7 +273,7 @@ void POLVECp2BS(uint8_t bytes[SABER_POLYVECCOMPRESSEDBYTES],
 void BS2POLVECp(const uint8_t bytes[SABER_POLYVECCOMPRESSEDBYTES],
                 uint16_t data[SABER_L][SABER_N])
 {
-    size_t i;
+    int32_t i;
     for (i = 0; i < SABER_L; i++) {
         BS2POLp(bytes + i * (SABER_EP * SABER_N / 8), data[i]);
     }
@@ -281,7 +281,7 @@ void BS2POLVECp(const uint8_t bytes[SABER_POLYVECCOMPRESSEDBYTES],
 
 void BS2POLmsg(const uint8_t bytes[SABER_KEYBYTES], uint16_t data[SABER_N])
 {
-    size_t i, j;
+    int32_t i, j;
     for (j = 0; j < SABER_KEYBYTES; j++) {
         for (i = 0; i < 8; i++) {
             data[j * 8 + i] = ((bytes[j] >> i) & 0x01);
@@ -291,7 +291,7 @@ void BS2POLmsg(const uint8_t bytes[SABER_KEYBYTES], uint16_t data[SABER_N])
 
 void POLmsg2BS(uint8_t bytes[SABER_KEYBYTES], const uint16_t data[SABER_N])
 {
-    size_t i, j;
+    int32_t i, j;
     memset(bytes, 0, SABER_KEYBYTES);
 
     for (j = 0; j < SABER_KEYBYTES; j++) {

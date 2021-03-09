@@ -13,7 +13,7 @@ void InnerProd(const uint16_t b[SABER_L][SABER_N],
 // void GenMatrix(uint16_t a[SABER_L][SABER_L][SABER_N],
 //                const uint8_t seed[SABER_SEEDBYTES]);
 void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
-             uint8_t init);
+             uint32_t init);
 void GenSecret(uint16_t s[SABER_L][SABER_N],
                const uint8_t seed[SABER_NOISE_SEEDBYTES]);
 

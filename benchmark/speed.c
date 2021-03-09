@@ -58,7 +58,7 @@ static void test_pack(void)
     uint16_t s1[SABER_L][SABER_N], s2[SABER_L][SABER_N];
     uint8_t sk1[SABER_INDCPA_SECRETKEYBYTES],
         sk2[SABER_INDCPA_SECRETKEYBYTES + 9 * 3 * 256 / 8];
-    size_t i, j;
+    int32_t i, j;
     uint64_t t1, t2, sum;
 
     for (i = 0; i < SABER_L; i++)
