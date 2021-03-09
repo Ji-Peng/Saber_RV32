@@ -116,10 +116,14 @@ void BS2POLT(const uint8_t bytes[SABER_SCALEBYTES_KEM], uint16_t data[SABER_N])
 //     }
 // }
 
-void BS2POLq(const uint8_t bytes[SABER_POLYBYTES], uint16_t data[SABER_N])
+/**
+ * @description: 12*13bytes=156bytes <==> 12*8=96coefficients or 6*13=78bytes
+ * <==> 6*8=48coefficients
+ */
+void BS2POLq(const uint8_t *bytes, uint16_t *data, int32_t coeff_num)
 {
     size_t j, offset_byte, offset_data;
-    for (j = 0; j < SABER_N / 8; j++) {
+    for (j = 0; j < coeff_num / 8; j++) {
         offset_byte = 13 * j;
         offset_data = 8 * j;
         data[offset_data + 0] = (bytes[offset_byte + 0] & (0xff)) |
@@ -143,6 +147,34 @@ void BS2POLq(const uint8_t bytes[SABER_POLYBYTES], uint16_t data[SABER_N])
         data[offset_data + 7] = (bytes[offset_byte + 11] >> 3 & (0x1f)) |
                                 ((bytes[offset_byte + 12] & 0xff) << 5);
     }
+}
+
+/**
+ * @description: 91bits(12bytes) = 7coeffcients
+ */
+void BS2POLq7(const uint8_t *bytes, uint16_t *data)
+{
+    data[0] = (bytes[0] & (0xff)) | ((bytes[1] & 0x1f) << 8);
+    data[1] = (bytes[1] >> 5 & (0x07)) | ((bytes[2] & 0xff) << 3) |
+              ((bytes[3] & 0x03) << 11);
+    data[2] = (bytes[3] >> 2 & (0x3f)) | ((bytes[4] & 0x7f) << 6);
+    data[3] = (bytes[4] >> 7 & (0x01)) | ((bytes[5] & 0xff) << 1) |
+              ((bytes[6] & 0x0f) << 9);
+    data[4] = (bytes[6] >> 4 & (0x0f)) | ((bytes[7] & 0xff) << 4) |
+              ((bytes[8] & 0x01) << 12);
+    data[5] = (bytes[8] >> 1 & (0x7f)) | ((bytes[9] & 0x3f) << 7);
+    data[6] = (bytes[9] >> 6 & (0x03)) | ((bytes[10] & 0xff) << 2) |
+              ((bytes[11] & 0x07) << 10);
+}
+
+/**
+ * @description: 26bits(4bytes) = 2coeffcients
+ */
+void BS2POLq2(const uint8_t *bytes, uint16_t *data)
+{
+    data[0] = (bytes[0] & (0xff)) | ((bytes[1] & 0x1f) << 8);
+    data[1] = (bytes[1] >> 5 & (0x07)) | ((bytes[2] & 0xff) << 3) |
+              ((bytes[3] & 0x03) << 11);
 }
 
 void POLp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
