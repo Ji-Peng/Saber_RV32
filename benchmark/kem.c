@@ -127,57 +127,10 @@ static int test_kem_cpa(void)
     return 0;
 }
 
-// static void test_ntt(void)
-// {
-//     uint16_t b[SABER_L][SABER_N] = {0}, s[SABER_L][SABER_N] = {0};
-//     uint16_t res1[SABER_N], res2[SABER_N];
-//     memset(b, 0, sizeof(b));
-//     memset(s, 0, sizeof(s));
-//     memset(res1, 0, sizeof(res1));
-//     memset(res2, 0, sizeof(res2));
-
-//     // b[0][0] = s[0][0] = 512;
-//     for (int i = 0; i < SABER_L; i++) {
-//         for (int j = 0; j < SABER_N; j++) {
-//             b[i][j] = j;
-//             s[i][j] = j;
-//         }
-//     }
-//     InnerProd(b, s, res1);
-//     InnerProd_ntt((int16_t(*)[256])b, (int16_t(*)[256])s, (int16_t *)res2);
-//     for (int i = 0; i < SABER_N; i++) {
-//         if ((res1[i] & 0x1fff) != (res2[i] & 0x1fff)) {
-//             printf("res1[%d]:%d,res2[%d]:%d ", i, res1[i], i, res2[i]);
-//         }
-//     }
-//     printf("test_ntt end\n");
-// }
-
-// static void test_ntt_self(void)
-// {
-//     int16_t res1[SABER_N];
-//     int32_t res2[SABER_N], res3[SABER_N], j;
-//     memset(res1, 0, sizeof(res1));
-//     memset(res2, 0, sizeof(res2));
-//     memset(res3, 0, sizeof(res3));
-//     // res1[0] = 1;
-//     for (int i = 0; i < SABER_N; i++) {
-//         res1[i] = i;
-//     }
-//     ntt(res1, (int32_t *)res2);
-//     invntt((int32_t *)res2, (int32_t *)res3);
-//     for (j = 0; j < SABER_N; j++) {
-//         printf("%d ", res3[j]);
-//     }
-//     printf("test_ntt_self end\n");
-// }
-
 int main(void)
 {
     disable_watchdog();
     test_kem_cpa();
     test_kem_cca();
-    // test_ntt();
-    // test_ntt_self();
     return 0;
 }
