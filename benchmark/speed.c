@@ -93,14 +93,14 @@ static void test_pack(void)
     // }
     // printf("POLVECq2BS cycles is %s\n", ullu(sum / NTESTS));
 
-    sum = 0;
-    for (int i = 0; i < NTESTS; i++) {
-        t1 = cpucycles();
-        BS2POLVECq(sk2, s2);
-        t2 = cpucycles();
-        sum += (t2 - t1);
-    }
-    printf("BS2POLVECq cycles is %s\n", ullu(sum / NTESTS));
+    // sum = 0;
+    // for (int i = 0; i < NTESTS; i++) {
+    //     t1 = cpucycles();
+    //     BS2POLVECq(sk2, s2);
+    //     t2 = cpucycles();
+    //     sum += (t2 - t1);
+    // }
+    // printf("BS2POLVECq cycles is %s\n", ullu(sum / NTESTS));
     printf("---------TEST END----------\n");
 }
 

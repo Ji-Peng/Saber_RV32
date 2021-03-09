@@ -49,18 +49,18 @@ void InnerProd(const uint16_t b[SABER_L][SABER_N],
     }
 }
 
-void GenMatrix(uint16_t A[SABER_L][SABER_L][SABER_N],
-               const uint8_t seed[SABER_SEEDBYTES])
-{
-    uint8_t buf[SABER_L * SABER_POLYVECBYTES];
-    int i;
+// void GenMatrix(uint16_t A[SABER_L][SABER_L][SABER_N],
+//                const uint8_t seed[SABER_SEEDBYTES])
+// {
+//     uint8_t buf[SABER_L * SABER_POLYVECBYTES];
+//     int i;
 
-    shake128(buf, sizeof(buf), seed, SABER_SEEDBYTES);
+//     shake128(buf, sizeof(buf), seed, SABER_SEEDBYTES);
 
-    for (i = 0; i < SABER_L; i++) {
-        BS2POLVECq(buf + i * SABER_POLYVECBYTES, A[i]);
-    }
-}
+//     for (i = 0; i < SABER_L; i++) {
+//         BS2POLVECq(buf + i * SABER_POLYVECBYTES, A[i]);
+//     }
+// }
 
 /**
  * @description: Generate polynomial in time

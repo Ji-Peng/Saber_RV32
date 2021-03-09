@@ -39,7 +39,6 @@ static int test_ntt(void)
              SABER_SEEDBYTES);  // for not revealing system RNG state
     randombytes(seed_s, SABER_NOISE_SEEDBYTES);
 
-    GenMatrix(A, seed_A);
     GenSecret(s, seed_s);
 
     for (i = 0; i < NTESTS; i++) {

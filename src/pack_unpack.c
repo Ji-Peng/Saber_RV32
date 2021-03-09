@@ -220,14 +220,14 @@ void unpack_sk(const uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
     }
 }
 
-void BS2POLVECq(const uint8_t bytes[SABER_POLYVECBYTES],
-                uint16_t data[SABER_L][SABER_N])
-{
-    size_t i;
-    for (i = 0; i < SABER_L; i++) {
-        BS2POLq(bytes + i * SABER_POLYBYTES, data[i]);
-    }
-}
+// void BS2POLVECq(const uint8_t bytes[SABER_POLYVECBYTES],
+//                 uint16_t data[SABER_L][SABER_N])
+// {
+//     size_t i;
+//     for (i = 0; i < SABER_L; i++) {
+//         BS2POLq(bytes + i * SABER_POLYBYTES, data[i]);
+//     }
+// }
 
 void POLVECp2BS(uint8_t bytes[SABER_POLYVECCOMPRESSEDBYTES],
                 const uint16_t data[SABER_L][SABER_N])
