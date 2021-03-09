@@ -20,7 +20,7 @@ static int test_kem_cpa(void);
 static void test_ntt(void);
 static void test_ntt_self(void);
 
-#define NTEST 1
+#define NTEST 1000
 
 static void disable_watchdog(void)
 {
@@ -104,13 +104,13 @@ static int test_kem_cpa(void)
             message1[i] = noiseseed[i] = i;
         }
 
-        printf("1234\n");
+        // printf("1234\n");
         indcpa_kem_keypair(pk, sk);
-        printf("2345\n");
+        // printf("2345\n");
         indcpa_kem_enc(message1, noiseseed, pk, ct);
-        printf("3456\n");
+        // printf("3456\n");
         indcpa_kem_dec(sk, ct, message2);
-        printf("4567\n");
+        // printf("4567\n");
 
         for (i = 0; i < SABER_KEYBYTES; i++) {
             if (message1[i] != message2[i]) {

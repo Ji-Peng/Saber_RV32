@@ -41,7 +41,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
 					-O3
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
-					-DHOST -fstack-usage \
+					-DHOST \
 					-fomit-frame-pointer -fno-tree-vectorize -march=native \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
 					-O3 -g
@@ -100,8 +100,6 @@ host_out/kem: \
 		$(COMMON_SRCS) $(PROGRAM_SRCS)
 	mkdir -p $(dir $@)
 	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
-	cat *.su > $(basename $@).stack
-	rm *.su
 
 host_out/speed: \
 		benchmark/host/speed_host.c \

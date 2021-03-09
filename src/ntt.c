@@ -65,9 +65,9 @@ void ntt(const uint16_t in[256], int32_t out[256])
         out[j + len] = (int32_t)(int16_t)in[j] - t;
         // printf("---%d out[j+len]\n",j);
         out[j] = (int32_t)(int16_t)in[j] + t;
-        printf("---%d out[j]\n",j);
+        // printf("---%d out[j]\n",j);
     }
-    printf("---ntt middle\n");
+    // printf("---ntt middle\n");
     // remaining five layers
     for (len = 64; len >= 4; len >>= 1) {
         for (start = 0; start < 256; start = j + len) {
@@ -138,43 +138,50 @@ void invntt(int32_t in[256], int32_t out[256])
  * Description: Multiplication of polynomials in Zq[X]/(X^4-zeta)
  * used for multiplication of elements in Rq in NTT domain
  *
- * Arguments:   - int32_t r[4]: pointer to the output polynomial
- *              - const int32_t a[4]: pointer to the first polynomial
+ * Arguments:   - int32_t a[4]: pointer to the first polynomial, is also output
  *              - const int32_t b[4]: pointer to the second polynomial
  *              - int32_t zeta: integer defining the reduction polynomial
  **************************************************/
-void basemul(int32_t r[4], const int32_t a[4], const int32_t b[4], int32_t zeta)
+void basemul(int32_t a[4], const int32_t b[4], int32_t zeta)
 {
     int64_t t;
+    int32_t a0, a1, a2, a3;
+
+    // get values from memory for storing result
+    a0 = a[0];
+    a1 = a[1];
+    a2 = a[2];
+    a3 = a[3];
+
     // r0=a0b0+zeta*(a1b3+a2b2+a3b1)
-    t = (int64_t)a[1] * b[3];
-    t += (int64_t)a[2] * b[2];
-    t += (int64_t)a[3] * b[1];
-    r[0] = montgomery_reduce(t);
-    r[0] = fqmul(r[0], zeta);
-    r[0] += fqmul(a[0], b[0]);
+    t = (int64_t)a1 * b[3];
+    t += (int64_t)a2 * b[2];
+    t += (int64_t)a3 * b[1];
+    a[0] = montgomery_reduce(t);
+    a[0] = fqmul(a[0], zeta);
+    a[0] += fqmul(a0, b[0]);
 
     // r1=a0b1+a1b0+zeta*(a2b3+a3b2)
-    t = (int64_t)a[2] * b[3];
-    t += (int64_t)a[3] * b[2];
-    r[1] = montgomery_reduce(t);
-    r[1] = fqmul(r[1], zeta);
-    t = (int64_t)a[0] * b[1];
-    t += (int64_t)a[1] * b[0];
-    r[1] += montgomery_reduce(t);
+    t = (int64_t)a2 * b[3];
+    t += (int64_t)a3 * b[2];
+    a[1] = montgomery_reduce(t);
+    a[1] = fqmul(a[1], zeta);
+    t = (int64_t)a0 * b[1];
+    t += (int64_t)a1 * b[0];
+    a[1] += montgomery_reduce(t);
 
     // r2=a0b2+a1b1+a2b0+zeta*(a3b3)
-    r[2] = fqmul(a[3], b[3]);
-    r[2] = fqmul(r[2], zeta);
-    t = (int64_t)a[0] * b[2];
-    t += (int64_t)a[1] * b[1];
-    t += (int64_t)a[2] * b[0];
-    r[2] += montgomery_reduce(t);
+    a[2] = fqmul(a3, b[3]);
+    a[2] = fqmul(a[2], zeta);
+    t = (int64_t)a0 * b[2];
+    t += (int64_t)a1 * b[1];
+    t += (int64_t)a2 * b[0];
+    a[2] += montgomery_reduce(t);
 
     // r3=a0b3+a1b2+a2b1+a3b0
-    t = (int64_t)a[0] * b[3];
-    t += (int64_t)a[1] * b[2];
-    t += (int64_t)a[2] * b[1];
-    t += (int64_t)a[3] * b[0];
-    r[3] = montgomery_reduce(t);
+    t = (int64_t)a0 * b[3];
+    t += (int64_t)a1 * b[2];
+    t += (int64_t)a2 * b[1];
+    t += (int64_t)a3 * b[0];
+    a[3] = montgomery_reduce(t);
 }

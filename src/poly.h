@@ -17,8 +17,7 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
 void GenSecret(uint16_t s[SABER_L][SABER_N],
                const uint8_t seed[SABER_NOISE_SEEDBYTES]);
 
-void poly_basemul(int32_t r[SABER_N], const int32_t a[SABER_N],
-                  const int32_t b[SABER_N]);
+void poly_basemul(int32_t a[SABER_N], const int32_t b[SABER_N]);
 
 void poly_add(uint16_t res[SABER_N], int32_t in[SABER_N]);
 

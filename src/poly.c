@@ -123,12 +123,11 @@ void GenSecret(uint16_t s[SABER_L][SABER_N],
  *              - a: pointer to first input polynomial
  *              - b: pointer to second input polynomial
  **************************************************/
-void poly_basemul(int32_t r[SABER_N], const int32_t a[SABER_N],
-                  const int32_t b[SABER_N])
+void poly_basemul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     unsigned int i;
     for (i = 0; i < SABER_N / 4; i++) {
-        basemul(&r[4 * i], &a[4 * i], &b[4 * i], mul_table[i]);
+        basemul(&a[4 * i], &b[4 * i], mul_table[i]);
     }
 }
 
@@ -151,16 +150,16 @@ void poly_add(uint16_t res[SABER_N], int32_t in[SABER_N])
 void poly_mul_acc_ntt(const uint16_t a[SABER_N], const uint16_t b[SABER_N],
                       uint16_t res[SABER_N])
 {
-    int32_t t1[SABER_N], t2[SABER_N], t3[SABER_N];
+    int32_t t1[SABER_N], t2[SABER_N];
     ntt(a, t1);
     // printf("--ntt\n");
     ntt(b, t2);
     // printf("--ntt\n");
-    poly_basemul(t3, t1, t2);
+    poly_basemul(t1, t2);
     // printf("--poly_basemul\n");
-    invntt(t3, t1);
+    invntt(t1, t2);
     // printf("--invntt\n");
-    poly_add(res, t1);
+    poly_add(res, t2);
     // printf("--poly_add\n");
 }
 
