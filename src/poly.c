@@ -49,19 +49,6 @@ void InnerProd(const uint16_t b[SABER_L][SABER_N],
     }
 }
 
-// void GenMatrix(uint16_t A[SABER_L][SABER_L][SABER_N],
-//                const uint8_t seed[SABER_SEEDBYTES])
-// {
-//     uint8_t buf[SABER_L * SABER_POLYVECBYTES];
-//     int i;
-
-//     shake128(buf, sizeof(buf), seed, SABER_SEEDBYTES);
-
-//     for (i = 0; i < SABER_L; i++) {
-//         BS2POLVECq(buf + i * SABER_POLYVECBYTES, A[i]);
-//     }
-// }
-
 /**
  * @description: Generate polynomial on the fly
  */
@@ -161,56 +148,29 @@ void poly_add(uint16_t res[SABER_N], int32_t in[SABER_N])
  * Name: poly_mul_acc_ntt
  * Description: res += a * b using ntt
  */
-void poly_mul_acc_ntt(const uint16_t a[SABER_N], const uint16_t b[SABER_N],
+void poly_mul_acc_ntt(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],
                       uint16_t res[SABER_N])
 {
-    int32_t t1[SABER_N], t2[SABER_N];
-    ntt(a, t1);
+    int32_t t[SABER_N];
+    int32_t *p = (int32_t *)a;
+    ntt(a, t);
     // printf("--ntt\n");
-    ntt(b, t2);
+    ntt(b, p);
     // printf("--ntt\n");
-    poly_basemul(t1, t2);
+    poly_basemul(p, t);
     // printf("--poly_basemul\n");
-    invntt(t1, t2);
+    invntt(p, t);
     // printf("--invntt\n");
-    poly_add(res, t2);
+    poly_add(res, t);
     // printf("--poly_add\n");
 }
-
-/**
- * Name: InnerProd_ntt
- * Description: inner product using ntt
- */
-// void InnerProd_ntt(const int16_t b[SABER_L][SABER_N],
-//                    const int16_t s[SABER_L][SABER_N], int16_t res[SABER_N])
-// {
-//     int j;
-//     for (j = 0; j < SABER_L; j++) {
-//         poly_mul_acc_ntt(b[j], s[j], res);
-//     }
-// }
-
-// void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
-//                          const int16_t s[SABER_L][SABER_N],
-//                          int16_t res[SABER_L][SABER_N], int16_t transpose)
-// {
-//     int i, j;
-//     for (i = 0; i < SABER_L; i++) {
-//         for (j = 0; j < SABER_L; j++) {
-//             if (transpose == 1) {
-//                 poly_mul_acc_ntt(A[j][i], s[j], res[i]);
-//             } else {
-//                 poly_mul_acc_ntt(A[i][j], s[j], res[i]);
-//             }
-//         }
-//     }
-// }
 
 void MatrixVectorMulKP_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
                            uint16_t b[SABER_L][SABER_N])
 {
     int i, j;
-    uint16_t a[SABER_N];
+    // length N is ok, 2N for reuse a in poly_mul_acc_ntt
+    uint16_t a[2 * SABER_N];
     for (i = 0; i < SABER_L; i++) {
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
@@ -227,7 +187,7 @@ void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext)
 {
     int i, j;
-    uint16_t a[SABER_N], res[SABER_N];
+    uint16_t a[2 * SABER_N], res[SABER_N];
     for (i = 0; i < SABER_L; i++) {
         // clear a and res
         for (j = 0; j < SABER_N; j++) {
@@ -255,7 +215,7 @@ void InnerProdInTime_ntt(const uint8_t *bytes,
                          uint16_t res[SABER_N])
 {
     int j;
-    uint16_t b[SABER_N];
+    uint16_t b[2 * SABER_N];
 
     for (j = 0; j < SABER_L; j++) {
         BS2POLp(bytes + j * (SABER_EP * SABER_N / 8), b);

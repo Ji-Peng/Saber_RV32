@@ -21,7 +21,7 @@ void poly_basemul(int32_t a[SABER_N], const int32_t b[SABER_N]);
 
 void poly_add(uint16_t res[SABER_N], int32_t in[SABER_N]);
 
-void poly_mul_acc_ntt(const uint16_t a[SABER_N], const uint16_t b[SABER_N],
+void poly_mul_acc_ntt(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],
                       uint16_t res[SABER_N]);
 
 void InnerProd_ntt(const int16_t b[SABER_L][SABER_N],
