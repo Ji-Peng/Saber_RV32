@@ -250,6 +250,7 @@ void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
     uint16_t a[2 * SABER_N], s[SABER_N];
     for (i = 0; i < SABER_L; i++) {
         GenSecretInTime(s, seed_s, i);
+        // pack to sk
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
             // i=0, j=0, init=1

@@ -13,7 +13,7 @@
 void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
                         uint8_t sk[SABER_INDCPA_SECRETKEYBYTES])
 {
-    uint16_t s[SABER_L][SABER_N];
+    // uint16_t s[SABER_L][SABER_N];
     uint16_t b[SABER_L][SABER_N] = {0};
 
     uint8_t seed_A[SABER_SEEDBYTES];
@@ -40,7 +40,7 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
     }
 
     // POLVECq2BS(sk, s);
-    pack_sk(sk, s);
+    // pack_sk(sk, s);
     // printf("POLVECq2BS\n");
     POLVECp2BS(pk, b);
     // printf("POLVECp2BS\n");
