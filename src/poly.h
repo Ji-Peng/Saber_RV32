@@ -16,6 +16,8 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
              uint32_t init);
 void GenSecret(uint16_t s[SABER_L][SABER_N],
                const uint8_t seed[SABER_NOISE_SEEDBYTES]);
+void GenSecretInTime(uint16_t s[SABER_N],
+                     const uint8_t seed[SABER_NOISE_SEEDBYTES], int32_t index);
 
 void poly_basemul(int32_t a[SABER_N], const int32_t b[SABER_N]);
 
@@ -33,7 +35,7 @@ void InnerProdInTime_ntt(const uint8_t *bytes,
 void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
                          const int16_t s[SABER_L][SABER_N],
                          int16_t res[SABER_L][SABER_N], int16_t transpose);
-void MatrixVectorMulKP_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
                            uint16_t b[SABER_L][SABER_N]);
 void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext);

@@ -12,7 +12,6 @@ Vadim Lyubashevsky, John M. Schanck, Peter Schwabe & Damien stehle
 
 #include "SABER_params.h"
 
-void cbd(uint16_t s[SABER_N], const uint8_t buf[SABER_POLYCOINBYTES],
-         int32_t num);
+void cbd(uint16_t s[SABER_N], uint8_t *buf, int32_t num);
 
 #endif

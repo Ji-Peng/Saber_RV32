@@ -22,8 +22,7 @@ static uint64_t load_littleendian(const uint8_t *x, int bytes)
     return r;
 }
 
-void cbd(uint16_t s[SABER_N], const uint8_t buf[SABER_POLYCOINBYTES],
-         int32_t num)
+void cbd(uint16_t s[SABER_N], uint8_t *buf, int32_t num)
 {
 #if SABER_MU == 6
     uint32_t t, d, a[4], b[4];

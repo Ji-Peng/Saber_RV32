@@ -24,6 +24,9 @@ const int32_t mul_table[64] = {
     1009639,  -1009639, 538875,   -538875,  -2102677, 2102677,  1585701,
     -1585701};
 
+// keccak states
+static uint64_t keccak_state[25];
+
 void MatrixVectorMul(const uint16_t A[SABER_L][SABER_L][SABER_N],
                      const uint16_t s[SABER_L][SABER_N],
                      uint16_t res[SABER_L][SABER_N], int16_t transpose)
@@ -59,27 +62,25 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
     uint8_t buf[SHAKE128_RATE];
     // can generate 50 coefficients
     static uint8_t leftovers[82];
-    // keccak states
-    static uint64_t s[25];
     // state = 0 or 1, 0: store leftovers; 1: load leftovers
     static uint32_t state;
 
     // init: clear states and absorb seed
     if (init == 1) {
         for (i = 0; i < 25; i++)
-            s[i] = 0;
-        keccak_absorb(s, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
+            keccak_state[i] = 0;
+        keccak_absorb(keccak_state, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
         state = 0;
     }
     // squeeze output and generate 103 coefficients
-    keccak_squeezeblocks(buf, 1, s, SHAKE128_RATE);
+    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
     // 96coeff = 156bytes
     BS2POLq(buf, poly, 96);
     // 7coeff = 91bits(12bytes)
     BS2POLq7(buf + 156, poly + 96);
 
     // squeeze output and generate 103 coefficients
-    keccak_squeezeblocks(buf, 1, s, SHAKE128_RATE);
+    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
     // 96coeff = 156bytes
     BS2POLq(buf, poly + 103, 96);
     // 7coeff = 91bits(12bytes)
@@ -88,7 +89,7 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
     // 0: save to leftovers or 1: load from leftovers
     if (state == 0) {
         // squeeze output and generate 50 coefficients
-        keccak_squeezeblocks(buf, 1, s, SHAKE128_RATE);
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
         // 48coeff = 78bytes
         BS2POLq(buf, poly + 206, 48);
         // 2coeff = 26bits(4bytes)
@@ -111,8 +112,84 @@ void GenSecret(uint16_t s[SABER_L][SABER_N],
     shake128(buf, sizeof(buf), seed, SABER_NOISE_SEEDBYTES);
 
     for (i = 0; i < SABER_L; i++) {
-        cbd(s[i], buf + i * SABER_POLYCOINBYTES);
+        cbd(s[i], buf + i * SABER_POLYCOINBYTES, SABER_N);
     }
+}
+
+void GenSecretInTime(uint16_t s[SABER_N],
+                     const uint8_t seed[SABER_NOISE_SEEDBYTES], int32_t index)
+{
+    int32_t i;
+
+    if (index == 0) {
+        // init
+        for (i = 0; i < 25; i++)
+            keccak_state[i] = 0;
+        keccak_absorb(keccak_state, SHAKE128_RATE, seed, SABER_NOISE_SEEDBYTES,
+                      0x1F);
+    }
+
+#if SABER_MU == 6
+    uint8_t buf[SHAKE128_RATE];
+    static uint8_t leftovers[48];
+    if (index == 0) {
+        // 1buf = 224coeff
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        cbd(s, buf, 224);
+        // 1buf = 32coeff + 48B leftover
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        cbd(s + 224, buf, 32);
+        memcpy(leftovers, buf + SHAKE128_RATE - sizeof(leftovers),
+               sizeof(leftovers));
+    } else if (index == 1) {
+        // 1leftover = 48B = 64coeff
+        cbd(s, leftovers, 64);
+        // 1buf = 192coeff + 24B leftover
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        cbd(s + 64, buf, 192);
+        memcpy(leftovers, buf + SHAKE128_RATE - 24, 24);
+    } else {
+        // 24B leftover = 32coeff
+        cbd(s, leftovers, 32);
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        cbd(s + 32, buf, 224);
+    }
+#elif SABER_MU == 8
+    uint8_t buf[SHAKE128_RATE];
+    static uint8_t leftovers[88];
+    if (index == 0) {
+        // 1buf = 168coeff
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        cbd(s, buf, 168);
+        // 1buf = 88coeff + 80B leftover
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        cbd(s + 168, buf, 88);
+        memcpy(leftovers, buf + SHAKE128_RATE - 80, 80);
+    } else if (index == 1) {
+        // 1leftover = 80B = 80coeff
+        cbd(s, leftovers, 80);
+        // 1buf = 168coeff
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        cbd(s + 80, buf, 168);
+        // 1buf = 8coeff + 88B leftover
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        cbd(s + 248, buf, 8);
+        memcpy(leftovers, buf + SHAKE128_RATE - 88, 88);
+    } else {
+        // 1leftover = 88B = 88coeff
+        cbd(s, leftovers, 88);
+        // 1buf = 168coeff
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        cbd(s + 88, buf, 168);
+    }
+
+#elif SABER_MU == 10
+    uint8_t buf[SHAKE128_RATE * 2];
+    keccak_squeezeblocks(buf, 2, keccak_state, SHAKE128_RATE);
+    cbd(s, buf, SABER_N);
+#else
+#    error "Unsupported SABER parameter."
+#endif
 }
 
 /*************************************************
@@ -165,19 +242,20 @@ void poly_mul_acc_ntt(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],
     // printf("--poly_add\n");
 }
 
-void MatrixVectorMulKP_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
                            uint16_t b[SABER_L][SABER_N])
 {
     int i, j;
     // length N is ok, 2N for reuse a in poly_mul_acc_ntt
-    uint16_t a[2 * SABER_N];
+    uint16_t a[2 * SABER_N], s[SABER_N];
     for (i = 0; i < SABER_L; i++) {
+        GenSecretInTime(s, seed_s, i);
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
             // i=0, j=0, init=1
-            GenPoly(a, seed, 1 - i - j);
+            GenPoly(a, seed_a, 1 - i - j);
             // printf("-GenPoly\n");
-            poly_mul_acc_ntt(a, s[i], b[j]);
+            poly_mul_acc_ntt(a, s, b[j]);
             // printf("-poly_mul_acc_ntt\n");
         }
     }

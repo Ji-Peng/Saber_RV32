@@ -24,13 +24,13 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
     // printf("randombytes\n");
     shake128(seed_A, SABER_SEEDBYTES, seed_A,
              SABER_SEEDBYTES);  // for not revealing system RNG state
-    // printf("shake128\n");             
+    // printf("shake128\n");
     randombytes(seed_s, SABER_NOISE_SEEDBYTES);
     // printf("randombytes\n");
 
-    GenSecret(s, seed_s);
+    // GenSecret(s, seed_s);
     // printf("GenSecret\n");
-    MatrixVectorMulKP_ntt(seed_A, s, b);
+    MatrixVectorMulKP_ntt(seed_A, seed_s, b);
     // printf("MatrixVectorMulKP_ntt\n");
 
     for (i = 0; i < SABER_L; i++) {

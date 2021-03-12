@@ -115,7 +115,7 @@ static int test_kem_cpa(void)
         for (i = 0; i < SABER_KEYBYTES; i++) {
             if (message1[i] != message2[i]) {
                 printf("i=%d, %d, %d\n", i, message1[i], message2[i]);
-                printf("ERROR\n");
+                printf(" ----- ERROR CPA ------\n\n");
                 break;
             }
         }
