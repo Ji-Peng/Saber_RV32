@@ -24,9 +24,6 @@ const int32_t mul_table[64] = {
     1009639,  -1009639, 538875,   -538875,  -2102677, 2102677,  1585701,
     -1585701};
 
-// keccak states
-static uint64_t keccak_state[25];
-
 void MatrixVectorMul(const uint16_t A[SABER_L][SABER_L][SABER_N],
                      const uint16_t s[SABER_L][SABER_N],
                      uint16_t res[SABER_L][SABER_N], int16_t transpose)
@@ -64,7 +61,8 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
     static uint8_t leftovers[82];
     // state = 0 or 1, 0: store leftovers; 1: load leftovers
     static uint32_t state;
-
+    // keccak states
+    static uint64_t keccak_state[25];
     // init: clear states and absorb seed
     if (init == 1) {
         for (i = 0; i < 25; i++)
@@ -120,6 +118,8 @@ void GenSecretInTime(uint16_t s[SABER_N],
                      const uint8_t seed[SABER_NOISE_SEEDBYTES], int32_t index)
 {
     int32_t i;
+    // keccak states
+    static uint64_t keccak_state[25];
 
     if (index == 0) {
         // init

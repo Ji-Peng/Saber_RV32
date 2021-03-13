@@ -131,6 +131,6 @@ int main(void)
 {
     disable_watchdog();
     test_kem_cpa();
-    test_kem_cca();
+    // test_kem_cca();
     return 0;
 }
