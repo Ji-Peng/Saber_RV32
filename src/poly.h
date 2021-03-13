@@ -36,6 +36,7 @@ void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
                          const int16_t s[SABER_L][SABER_N],
                          int16_t res[SABER_L][SABER_N], int16_t transpose);
 void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
+                           uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
                            uint16_t b[SABER_L][SABER_N]);
 void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext);

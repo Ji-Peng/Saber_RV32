@@ -21,17 +21,12 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
     int i, j;
 
     randombytes(seed_A, SABER_SEEDBYTES);
-    // printf("randombytes\n");
-    shake128(seed_A, SABER_SEEDBYTES, seed_A,
-             SABER_SEEDBYTES);  // for not revealing system RNG state
-    // printf("shake128\n");
+    // for not revealing system RNG state
+    shake128(seed_A, SABER_SEEDBYTES, seed_A, SABER_SEEDBYTES);
     randombytes(seed_s, SABER_NOISE_SEEDBYTES);
-    // printf("randombytes\n");
 
     // GenSecret(s, seed_s);
-    // printf("GenSecret\n");
-    MatrixVectorMulKP_ntt(seed_A, seed_s, b);
-    // printf("MatrixVectorMulKP_ntt\n");
+    MatrixVectorMulKP_ntt(seed_A, seed_s, sk, b);
 
     for (i = 0; i < SABER_L; i++) {
         for (j = 0; j < SABER_N; j++) {
@@ -39,13 +34,9 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
         }
     }
 
-    // POLVECq2BS(sk, s);
     // pack_sk(sk, s);
-    // printf("POLVECq2BS\n");
     POLVECp2BS(pk, b);
-    // printf("POLVECp2BS\n");
     memcpy(pk + SABER_POLYVECCOMPRESSEDBYTES, seed_A, sizeof(seed_A));
-    // printf("memcpy\n");
 }
 
 void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
@@ -82,15 +73,9 @@ void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
     uint16_t s[SABER_L][SABER_N];
     uint16_t v[SABER_N] = {0};
     uint16_t cm[SABER_N];
-    int i, j;
+    int i;
 
-    // BS2POLVECq(sk, s);
     unpack_sk(sk, s);
-    for (i = 0; i < SABER_L; i++) {
-        for (j = 0; j < SABER_N; j++) {
-            s[i][j] = ((int16_t)(s[i][j] << 3)) >> 3;
-        }
-    }
 
     InnerProdInTime_ntt(ciphertext, s, v);
 

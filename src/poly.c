@@ -243,6 +243,7 @@ void poly_mul_acc_ntt(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],
 }
 
 void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
+                           uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
                            uint16_t b[SABER_L][SABER_N])
 {
     int i, j;
@@ -251,13 +252,12 @@ void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
     for (i = 0; i < SABER_L; i++) {
         GenSecretInTime(s, seed_s, i);
         // pack to sk
+        pack_sk(sk + i * SABER_SKPOLYBYTES, s);
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
             // i=0, j=0, init=1
             GenPoly(a, seed_a, 1 - i - j);
-            // printf("-GenPoly\n");
             poly_mul_acc_ntt(a, s, b[j]);
-            // printf("-poly_mul_acc_ntt\n");
         }
     }
 }

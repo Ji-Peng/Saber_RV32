@@ -31,8 +31,7 @@ void BS2POLp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
 void POLp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
              const uint16_t data[SABER_N]);
 
-void pack_sk(uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
-             const uint16_t data[SABER_L][SABER_N]);
+void pack_sk(uint8_t bytes[SABER_SKPOLYBYTES], const uint16_t data[SABER_N]);
 void unpack_sk(const uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
                uint16_t data[SABER_L][SABER_N]);
 #endif
