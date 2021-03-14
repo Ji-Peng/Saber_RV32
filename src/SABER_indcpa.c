@@ -13,7 +13,6 @@
 void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
                         uint8_t sk[SABER_INDCPA_SECRETKEYBYTES])
 {
-    // uint16_t s[SABER_L][SABER_N];
     uint16_t b[SABER_L][SABER_N] = {0};
 
     uint8_t seed_A[SABER_SEEDBYTES];
@@ -25,7 +24,6 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
     shake128(seed_A, SABER_SEEDBYTES, seed_A, SABER_SEEDBYTES);
     randombytes(seed_s, SABER_NOISE_SEEDBYTES);
 
-    // GenSecret(s, seed_s);
     MatrixVectorMulKP_ntt(seed_A, seed_s, sk, b);
 
     for (i = 0; i < SABER_L; i++) {
@@ -34,7 +32,6 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
         }
     }
 
-    // pack_sk(sk, s);
     POLVECp2BS(pk, b);
     memcpy(pk + SABER_POLYVECCOMPRESSEDBYTES, seed_A, sizeof(seed_A));
 }
