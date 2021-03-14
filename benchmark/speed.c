@@ -13,7 +13,7 @@
 #include "poly_mul.h"
 #include "rng.h"
 
-#define NTESTS 1000
+#define NTESTS 1
 
 static void test_ntt(void)
 {
@@ -84,23 +84,23 @@ static void test_poly_mul(void)
 //     }
 //     printf("unpack_sk cycles is %s\n", ullu(sum / NTESTS));
 
-//     // sum = 0;
-//     // for (int i = 0; i < NTESTS; i++) {
-//     //     t1 = cpucycles();
-//     //     POLVECq2BS(sk2, s2);
-//     //     t2 = cpucycles();
-//     //     sum += (t2 - t1);
-//     // }
-//     // printf("POLVECq2BS cycles is %s\n", ullu(sum / NTESTS));
+//     sum = 0;
+//     for (int i = 0; i < NTESTS; i++) {
+//         t1 = cpucycles();
+//         POLVECq2BS(sk2, s2);
+//         t2 = cpucycles();
+//         sum += (t2 - t1);
+//     }
+//     printf("POLVECq2BS cycles is %s\n", ullu(sum / NTESTS));
 
-//     // sum = 0;
-//     // for (int i = 0; i < NTESTS; i++) {
-//     //     t1 = cpucycles();
-//     //     BS2POLVECq(sk2, s2);
-//     //     t2 = cpucycles();
-//     //     sum += (t2 - t1);
-//     // }
-//     // printf("BS2POLVECq cycles is %s\n", ullu(sum / NTESTS));
+//     sum = 0;
+//     for (int i = 0; i < NTESTS; i++) {
+//         t1 = cpucycles();
+//         BS2POLVECq(sk2, s2);
+//         t2 = cpucycles();
+//         sum += (t2 - t1);
+//     }
+//     printf("BS2POLVECq cycles is %s\n", ullu(sum / NTESTS));
 //     printf("---------TEST END----------\n");
 // }
 

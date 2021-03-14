@@ -92,7 +92,7 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
         BS2POLq(buf, poly + 206, 48);
         // 2coeff = 26bits(4bytes)
         BS2POLq2(buf + 78, poly + 254);
-        memcpy(leftovers, buf + 82, sizeof(leftovers));
+        memcpy(leftovers, &buf[82], 82);
     } else {
         // use leftovers to generate 50 coefficients
         BS2POLq(leftovers, poly + 206, 48);

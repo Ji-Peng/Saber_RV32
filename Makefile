@@ -34,12 +34,13 @@ COMMON_SRCS = $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.S)
 HOST_SRCS = $(wildcard $(HOST_DIR)/*.c)
 
 #  -mstrict-align -mtune=size 
+# -fstack-usage 
 RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
-					-ffunction-sections -fdata-sections -fstack-usage \
+					-ffunction-sections -fdata-sections \
 					-I$(BSP_DIR)/install/include -I$(COMMON_DIR) -I$(SRC_DIR) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-					-O3
+					-O3 -g
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
 					-DHOST \
 					-fomit-frame-pointer -fno-tree-vectorize -march=native \
@@ -58,7 +59,7 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x2400 \
+					-Xlinker --defsym=__stack_size=0x2800 \
 					-Xlinker --defsym=__heap_max=1
 
 
@@ -70,7 +71,7 @@ host: host_out/kem
 
 # out/PQCgenKAT_kem.elf out/test_kex.elf  out/speed.elf
 .PHONY: all
-all: out/kem.elf out/speed.elf
+all: out/kem.elf
 
 # $(RISCV_GCC) -o $(basename $@) $(RISCV_CFLAGS) \
 # 	$(filter %.c,$^) $(filter %.S,$^) -I$(COMMON_DIR) -I$(SRC_DIR) $(RISCV_LDFLAGS)
@@ -92,8 +93,8 @@ out/%.elf: \
 	$(RISCV_SIZE) $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
-	cat *.su > $(basename $@).stack
-	rm *.su
+	# cat *.su > $(basename $@).stack
+	# rm *.su
 
 host_out/kem: \
 		benchmark/kem.c \
