@@ -35,7 +35,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-					-Os
+					-O3 -fstack-usage
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls \
 					-fomit-frame-pointer -march=native \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
@@ -68,8 +68,9 @@ host_out/kem: \
 	mkdir -p $(dir $@)
 	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
 
+# out/PQCgenKAT_kem.elf out/test_kex.elf
 .PHONY: all
-all: out/kem.elf out/PQCgenKAT_kem.elf out/test_kex.elf
+all: out/kem.elf
 
 # $(RISCV_GCC) -o $(basename $@) $(RISCV_CFLAGS) \
 # 	$(filter %.c,$^) $(filter %.S,$^) -I$(COMMON_DIR) -I$(SRC_DIR) $(RISCV_LDFLAGS)
@@ -91,6 +92,8 @@ out/%.elf: \
 	$(RISCV_SIZE) $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
+	cat *.su > $(basename $@).stack
+	rm *.su
 
 .PHONY: clean-software
 clean-software:
