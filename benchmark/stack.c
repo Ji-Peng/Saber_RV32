@@ -3,6 +3,8 @@
 #include <string.h>
 
 #include "api.h"
+#include "pol_mul.h"
+#include "poly.h"
 
 // the address of a is 0x800035bf
 // the top address of stack is 0x80004000
@@ -19,6 +21,9 @@ uint8_t sk[CRYPTO_SECRETKEYBYTES];
 // uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
 uint8_t *pk = sk;
 uint8_t *ct = sk;
+uint16_t *a = (uint16_t *)sk;
+uint16_t *b = (uint16_t *)(sk + 2 * SABER_N);
+uint16_t *res = (uint16_t *)(sk + 4 * SABER_N);
 uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
 unsigned int stack_keygen, stack_encaps, stack_decaps;
 
@@ -73,6 +78,29 @@ static int test_stack(void)
     printf("key gen stack usage %u\n", stack_keygen);
     printf("encaps stack usage %u\n", stack_encaps);
     printf("decaps stack usage %u\n", stack_decaps);
+    return 0;
+}
+
+static int test_polmul_stack(void)
+{
+    volatile unsigned char a;
+    FILL_STACK()
+    poly_mul_acc(a, b, res);
+    CHECK_STACK() if (c >= canary_size)
+    {
+        printf("c >= canary_size\n");
+        return -1;
+    }
+    printf("poly_mul_acc stack usage %u\n", c);
+
+    FILL_STACK()
+    poly_mul_acc(a, b, res);
+    CHECK_STACK() if (c >= canary_size)
+    {
+        printf("c >= canary_size\n");
+        return -1;
+    }
+    printf("poly_mul_acc stack usage %u\n", c);
     return 0;
 }
 

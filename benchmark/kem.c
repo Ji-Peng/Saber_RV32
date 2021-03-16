@@ -12,13 +12,14 @@
 #ifndef HOST
 #    include "metal/watchdog.h"
 #endif
+#include "cpucycles.h"
 
 static int test_kem_cca(void);
 static int test_kem_cpa(void);
 static int speed_cpa(void);
 static int speed_cca(void);
 
-#define NTESTS 10
+#define NTESTS 1
 
 static void disable_watchdog(void)
 {

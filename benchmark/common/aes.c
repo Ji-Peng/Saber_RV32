@@ -29,6 +29,7 @@
 #include "aes.h"
 
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 static inline uint32_t br_dec32le(const unsigned char *src)
