@@ -22,7 +22,7 @@ static void test_ntt_self(void);
 static int speed_cpa(void);
 static int speed_cca(void);
 
-#define NTESTS 1000
+#define NTESTS 1
 
 static void disable_watchdog(void)
 {
@@ -223,12 +223,50 @@ static int speed_cca(void)
     return 0;
 }
 
+static int test_polmul(void)
+{
+    uint8_t seed_A[SABER_SEEDBYTES];
+    uint8_t seed_s[SABER_NOISE_SEEDBYTES];
+    uint8_t sk[SABER_INDCPA_SECRETKEYBYTES];
+    uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES];
+    uint8_t ciphertext[SABER_BYTES_CCA_DEC];
+
+    uint16_t a[2 * SABER_N];
+    uint16_t b[SABER_L][SABER_N];
+    int j;
+    uint64_t t1, t2, sum1, sum2, sum3, sum4;
+    sum1 = sum2 = sum3 = sum4 = 0;
+
+    for (j = 0; j < NTESTS; j++) {
+        t1 = cpucycles();
+        MatrixVectorMulKP_ntt(seed_A, seed_s, sk, b);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+
+        t1 = cpucycles();
+        MatrixVectorMulEnc_ntt(seed_A, b, ciphertext);
+        t2 = cpucycles();
+        sum2 += (t2 - t1);
+
+        t1 = cpucycles();
+        InnerProdInTime_ntt(pk, b, a);
+        t2 = cpucycles();
+        sum3 += (t2 - t1);
+
+        t1 = cpucycles();
+        poly_mul_acc_ntt(a, b, b);
+        t2 = cpucycles();
+        sum4 += (t2 - t1);
+    }
+}
+
 int main(void)
 {
     disable_watchdog();
-    test_kem_cpa();
-    test_kem_cca();
-    speed_cpa();
-    speed_cca();
+    // test_kem_cpa();
+    // test_kem_cca();
+    // speed_cpa();
+    // speed_cca();
+    test_polmul();
     return 0;
 }
