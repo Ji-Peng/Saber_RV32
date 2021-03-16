@@ -23,9 +23,6 @@ uint8_t canary = 0x42;
 // uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
 // unsigned int stack_keygen, stack_encaps, stack_decaps;
 
-// test MatrixVectorMul and InnerProd
-uint16_t A[SABER_L][SABER_L][SABER_N];
-
 #define FILL_STACK()               \
     p = &a;                        \
     while (p > (&a - canary_size)) \
@@ -80,35 +77,65 @@ uint16_t A[SABER_L][SABER_L][SABER_N];
 //     return 0;
 // }
 
-static int test_polmul_stack(void)
+// test MatrixVectorMul and InnerProd
+// uint16_t A[SABER_L][SABER_L][SABER_N];
+
+// static int test_polmul_stack(void)
+// {
+//     volatile unsigned char a;
+//     FILL_STACK()
+//     MatrixVectorMul(A, A, A, 1);
+//     CHECK_STACK()
+//     if (c >= canary_size) {
+//         printf("c >= canary_size\n");
+//         return -1;
+//     }
+//     printf("MatrixVectorMul stack usage %u\n", c);
+
+//     FILL_STACK()
+//     InnerProd(A, A, A);
+//     CHECK_STACK()
+//     if (c >= canary_size) {
+//         printf("c >= canary_size\n");
+//         return -1;
+//     }
+//     printf("InnerProd stack usage %u\n", c);
+
+//     FILL_STACK()
+//     poly_mul_acc(A, A, A);
+//     CHECK_STACK()
+//     if (c >= canary_size) {
+//         printf("c >= canary_size\n");
+//         return -1;
+//     }
+//     printf("poly_mul_acc stack usage %u\n", c);
+//     return 0;
+// }
+
+uint16_t A[SABER_L][SABER_L][SABER_N];
+uint8_t seed[SABER_SEEDBYTES];
+
+static int test_GenMatrix_stack(void)
 {
     volatile unsigned char a;
     FILL_STACK()
-    MatrixVectorMul(A, A, A, 1);
+    GenMatrix(A, seed);
     CHECK_STACK()
     if (c >= canary_size) {
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("MatrixVectorMul stack usage %u\n", c);
+    printf("GenMatrix stack usage %u\n", c);
 
     FILL_STACK()
-    InnerProd(A, A, A);
+    GenSecret(A[0], seed);
     CHECK_STACK()
     if (c >= canary_size) {
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("InnerProd stack usage %u\n", c);
+    printf("GenSecret stack usage %u\n", c);
 
-    FILL_STACK()
-    poly_mul_acc(A, A, A);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        printf("c >= canary_size\n");
-        return -1;
-    }
-    printf("poly_mul_acc stack usage %u\n", c);
     return 0;
 }
 
@@ -116,6 +143,6 @@ int main(void)
 {
     canary_size = MAX_SIZE;
     printf("==========stack test==========\n");
-    test_polmul_stack();
+    test_GenMatrix_stack();
     return 0;
 }

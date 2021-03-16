@@ -236,6 +236,31 @@ static int test_polmul(void)
     return 0;
 }
 
+static int test_GenMatrix(void)
+{
+    uint16_t A[SABER_L][SABER_L][SABER_N];
+    uint8_t seed[SABER_SEEDBYTES];
+    uint64_t t1, t2, sum1, sum2;
+    int j;
+    sum1 = sum2 = 0;
+
+    for (j = 0; j < NTESTS; j++) {
+        t1 = cpucycles();
+        GenMatrix(A, seed);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+
+        t1 = cpucycles();
+        GenSecret(A[0], seed);
+        t2 = cpucycles();
+        sum2 += (t2 - t1);
+    }
+    printf("GenMatrix cycles %s\n", ullu(sum1 / NTESTS));
+    printf("GenSecret cycles %s\n", ullu(sum2 / NTESTS));
+
+    return 0;
+}
+
 int main(void)
 {
     disable_watchdog();
@@ -243,6 +268,7 @@ int main(void)
     // test_kem_cca();
     // speed_cpa();
     // speed_cca();
-    test_polmul();
+    // test_polmul();
+    test_GenMatrix();
     return 0;
 }

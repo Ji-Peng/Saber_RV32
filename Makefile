@@ -38,7 +38,7 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x2800 \
+					-Xlinker --defsym=__stack_size=0x1600 \
 					-Xlinker --defsym=__heap_max=1
 
 
@@ -49,7 +49,7 @@ host: host_out/kem
 
 # out/PQCgenKAT_kem.elf out/test_kex.elf out/kem.elf out/stack.elf
 .PHONY: all
-all: out/kem.elf
+all: out/stack.elf
 
 out/%.elf: \
 		benchmark/%.c \
