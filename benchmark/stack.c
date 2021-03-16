@@ -95,46 +95,72 @@ uint8_t canary = 0x42;
 //     return 0;
 // }
 
-uint8_t seed[SABER_SEEDBYTES];
-uint16_t skpv[SABER_K][SABER_N];
-uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
+// uint8_t seed[SABER_SEEDBYTES];
+// uint16_t skpv[SABER_K][SABER_N];
+// uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
 
-static int test_matrixvector_stack(void)
+// static int test_matrixvector_stack(void)
+// {
+//     volatile unsigned char a;
+//     FILL_STACK()
+//     MatrixVectorMul_keypair(seed, skpv, skpv, SABER_Q - 1);
+//     CHECK_STACK()
+//     if (c >= canary_size) {
+//         printf("c >= canary_size\n");
+//         return -1;
+//     }
+//     printf("MatrixVectorMul_keypair stack usage %u\n", c);
+
+//     FILL_STACK()
+//     MatrixVectorMul_encryption(seed, skpv, ct, SABER_Q - 1);
+//     CHECK_STACK()
+//     if (c >= canary_size) {
+//         printf("c >= canary_size\n");
+//         return -1;
+//     }
+//     printf("MatrixVectorMul_encryption stack usage %u\n", c);
+
+//     FILL_STACK()
+//     VectorMul(ct, skpv, skpv[SABER_K - 1]);
+//     CHECK_STACK()
+//     if (c >= canary_size) {
+//         printf("c >= canary_size\n");
+//         return -1;
+//     }
+//     printf("VectorMul stack usage %u\n", c);
+//     return 0;
+// }
+
+uint16_t temp_ar[SABER_N];
+uint16_t r[SABER_K][SABER_N];
+uint8_t seed[SABER_SEEDBYTES];
+
+static int test_Genpoly_stack(void)
 {
     volatile unsigned char a;
     FILL_STACK()
-    MatrixVectorMul_keypair(seed, skpv, skpv, SABER_Q - 1);
+    GenMatrix_poly(temp_ar, seed, 0);
     CHECK_STACK()
     if (c >= canary_size) {
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("MatrixVectorMul_keypair stack usage %u\n", c);
+    printf("GenMatrix_poly stack usage %u\n", c);
 
     FILL_STACK()
-    MatrixVectorMul_encryption(seed, skpv, ct, SABER_Q - 1);
+    GenSecret(r, seed);
     CHECK_STACK()
     if (c >= canary_size) {
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("MatrixVectorMul_encryption stack usage %u\n", c);
-
-    FILL_STACK()
-    VectorMul(ct, skpv, skpv[SABER_K - 1]);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        printf("c >= canary_size\n");
-        return -1;
-    }
-    printf("VectorMul stack usage %u\n", c);
-    return 0;
+    printf("GenSecret stack usage %u\n", c);
 }
 
 int main(void)
 {
     canary_size = MAX_SIZE;
     printf("==========stack test==========\n");
-    test_matrixvector_stack();
+    test_Genpoly_stack();
     return 0;
 }

@@ -255,6 +255,45 @@ static int speed_MatrixVectorMul(void)
     return 0;
 }
 
+static int speed_GenInTime(void)
+{
+    uint16_t temp_ar[SABER_N];
+    uint64_t t1, t2, sum1;
+    int i, j, k;
+    uint8_t seed[SABER_SEEDBYTES];
+    sum1 = 0;
+
+    for (k = 0; k < NTESTS; k++) {
+        for (i = 0; i < SABER_K; i++) {
+            for (j = 0; j < SABER_K; j++) {
+                t1 = cpucycles();
+                GenMatrix_poly(temp_ar, seed, i + j);
+                t2 = cpucycles();
+                sum1 += (t2 - t1);
+            }
+        }
+    }
+    printf("GenMatrix_poly*9 %s\n", ullu(sum1 / NTESTS));
+    return 0;
+}
+
+static int speed_GenS(void)
+{
+    uint16_t r[SABER_K][SABER_N];
+    uint8_t seed[SABER_SEEDBYTES];
+    uint64_t t1, t2, sum1;
+    int j;
+    sum1 = 0;
+    for (j = 0; j < NTESTS; j++) {
+        t1 = cpucycles();
+        GenSecret(r, seed);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+    }
+    printf("GenSecret %s\n", ullu(sum1 / NTESTS));
+    return 0;
+}
+
 int main(void)
 {
     disable_watchdog();
@@ -263,6 +302,8 @@ int main(void)
     // speed_cpa();
     // speed_cca();
     // speed_polmul();
-    speed_MatrixVectorMul();
+    // speed_MatrixVectorMul();
+    // speed_GenInTime();
+    speed_GenS();
     return 0;
 }
