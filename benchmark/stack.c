@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "api.h"
-#include "rng.h"
 
 // the address of a is 0x800035bf
 // the top address of stack is 0x80004000
