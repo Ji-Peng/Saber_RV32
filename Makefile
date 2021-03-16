@@ -47,13 +47,13 @@ HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
 					-O3 -g
 
-#					-Xlinker --defsym=__stack_size=0x2800 for kem.elf && 0x1a40 for stack.elf \
-#					-Xlinker --defsym=__heap_max=1
+# stack_size=0x2800 for kem.elf && 0x1a40 for stack(overall stack)
+# 0x1260 for stack(polymul)
 RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x2800 \
+					-Xlinker --defsym=__stack_size=0x1260 \
 					-Xlinker --defsym=__heap_max=1
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
@@ -64,7 +64,7 @@ host: host_out/kem
 
 # out/PQCgenKAT_kem.elf out/test_kex.elf  out/speed.elf out/kem.elf
 .PHONY: all
-all: out/kem.elf
+all: out/stack.elf
 
 out/%.elf: \
 		benchmark/%.c \
