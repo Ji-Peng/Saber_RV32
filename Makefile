@@ -21,20 +21,10 @@ RISCV_SIZE    := $(CROSS_COMPILE)-size
 ARCH_FLAGS = -march=rv32imac -mabi=ilp32 -mcmodel=medlow
 SPEC=nano
 MTIME_RATE_HZ_DEF=32768
-# RISCV_CFLAGS  	+= 	-O0 -g \
-# 					-Wall -Wextra -Wimplicit-function-declaration \
-#               		-Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes \
-#               		-Wundef -Wshadow \
-# 					-I$(abspath $(BSP_DIR)/install/include/) \
-# 					-fno-common -ffunction-sections -fdata-sections --specs=$(SPEC).specs \
-# 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-# 					$(ARCH_FLAGS)
 PROGRAM_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.S)
 COMMON_SRCS = $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.S)
 HOST_SRCS = $(wildcard $(HOST_DIR)/*.c)
 
-#  -mstrict-align -mtune=size 
-# -fstack-usage 
 RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-ffunction-sections -fdata-sections \
 					-I$(BSP_DIR)/install/include -I$(COMMON_DIR) -I$(SRC_DIR) \
@@ -53,7 +43,7 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x1260 \
+					-Xlinker --defsym=__stack_size=0x1800 \
 					-Xlinker --defsym=__heap_max=1
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
