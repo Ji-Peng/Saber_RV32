@@ -13,6 +13,7 @@
 #    include "metal/watchdog.h"
 #endif
 #include "cpucycles.h"
+#include "poly_mul.h"
 
 static int test_kem_cca(void);
 static int test_kem_cpa(void);
@@ -210,9 +211,9 @@ static int speed_cca(void)
 static int test_polmul(void)
 {
     uint16_t A[SABER_L][SABER_L][SABER_N];
-    uint64_t t1, t2, sum1, sum2;
+    uint64_t t1, t2, sum1, sum2, sum3;
     int j;
-    sum1 = sum2 = 0;
+    sum1 = sum2 = sum3 = 0;
     for (j = 0; j < NTESTS; j++) {
         t1 = cpucycles();
         MatrixVectorMul(A, A, A, 1);
@@ -223,6 +224,11 @@ static int test_polmul(void)
         InnerProd(A, A, A);
         t2 = cpucycles();
         sum2 += (t2 - t1);
+
+        t1 = cpucycles();
+        poly_mul_acc(A, A, A);
+        t2 = cpucycles();
+        sum3 += (t2 - t1);
     }
     printf("MatrixVectorMul cycles %s\n", ullu(sum1 / NTESTS));
     printf("InnerProd       cycles %s\n", ullu(sum2 / NTESTS));

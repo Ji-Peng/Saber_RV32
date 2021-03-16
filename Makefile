@@ -33,12 +33,12 @@ HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
 					-O0 -g
 
-# stack_size=0x1600 for test stack
+# stack_size=0x1600 for test stack 0x2800 for kem
 RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x1600 \
+					-Xlinker --defsym=__stack_size=0x2800 \
 					-Xlinker --defsym=__heap_max=1
 
 
@@ -47,9 +47,9 @@ RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-
 .PHONY: host
 host: host_out/kem
 
-# out/PQCgenKAT_kem.elf out/test_kex.elf out/kem.elf
+# out/PQCgenKAT_kem.elf out/test_kex.elf out/kem.elf out/stack.elf
 .PHONY: all
-all: out/stack.elf
+all: out/kem.elf
 
 out/%.elf: \
 		benchmark/%.c \
