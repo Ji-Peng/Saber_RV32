@@ -22,7 +22,7 @@ static void test_ntt_self(void);
 static int speed_cpa(void);
 static int speed_cca(void);
 
-#define NTESTS 1
+#define NTESTS 1000
 
 static void disable_watchdog(void)
 {
@@ -227,12 +227,13 @@ static int test_polmul(void)
 {
     uint8_t seed_A[SABER_SEEDBYTES];
     uint8_t seed_s[SABER_NOISE_SEEDBYTES];
-    uint8_t sk[SABER_INDCPA_SECRETKEYBYTES];
     uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES];
+    uint8_t sk[SABER_INDCPA_SECRETKEYBYTES];
     uint8_t ciphertext[SABER_BYTES_CCA_DEC];
 
     uint16_t a[2 * SABER_N];
     uint16_t b[SABER_L][SABER_N];
+    uint16_t c[SABER_N];
     int j;
     uint64_t t1, t2, sum1, sum2, sum3, sum4;
     sum1 = sum2 = sum3 = sum4 = 0;
@@ -254,10 +255,15 @@ static int test_polmul(void)
         sum3 += (t2 - t1);
 
         t1 = cpucycles();
-        poly_mul_acc_ntt(a, b, b);
+        poly_mul_acc_ntt(a, (uint16_t *)b, c);
         t2 = cpucycles();
         sum4 += (t2 - t1);
     }
+    printf("MatrixVectorMulKP_ntt       %s\n", ullu(sum1 / NTESTS));
+    printf("MatrixVectorMulEnc_ntt      %s\n", ullu(sum2 / NTESTS));
+    printf("InnerProdInTime_ntt         %s\n", ullu(sum3 / NTESTS));
+    printf("poly_mul_acc_ntt            %s\n", ullu(sum4 / NTESTS));
+    return 0;
 }
 
 int main(void)
