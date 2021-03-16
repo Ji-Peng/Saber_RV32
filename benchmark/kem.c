@@ -232,6 +232,7 @@ static int test_polmul(void)
     }
     printf("MatrixVectorMul cycles %s\n", ullu(sum1 / NTESTS));
     printf("InnerProd       cycles %s\n", ullu(sum2 / NTESTS));
+    printf("poly_mul_acc    cycles %s\n", ullu(sum3 / NTESTS));
     return 0;
 }
 
