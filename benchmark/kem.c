@@ -12,6 +12,7 @@
 #ifndef HOST
 #    include "metal/watchdog.h"
 #endif
+#include "poly_mul.h"
 
 #define NTESTS 1000
 
@@ -208,12 +209,29 @@ static int speed_cca(void)
     return 0;
 }
 
+static int speed_polmul(void)
+{
+    uint16_t a[SABER_N], b[SABER_N], c[SABER_N];
+    int j;
+    uint64_t t1, t2, sum;
+    sum = 0;
+    for (j = 0; j < NTESTS; j++) {
+        t1 = cpucycles();
+        pol_mul(a, b, c);
+        t2 = cpucycles();
+        sum += (t2 - t1);
+    }
+    printf("pol_mul %s\n", ullu(sum / NTESTS));
+    return 0;
+}
+
 int main(void)
 {
     disable_watchdog();
     // test_kem_cpa();
     // test_kem_cca();
-    speed_cpa();
-    speed_cca();
+    // speed_cpa();
+    // speed_cca();
+    speed_polmul();
     return 0;
 }
