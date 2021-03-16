@@ -20,32 +20,20 @@ RISCV_SIZE    := $(CROSS_COMPILE)-size
 ARCH_FLAGS = -march=rv32imac -mabi=ilp32 -mcmodel=medlow
 SPEC=nano
 MTIME_RATE_HZ_DEF=32768
-# RISCV_CFLAGS  	+= 	-O0 -g \
-# 					-Wall -Wextra -Wimplicit-function-declaration \
-#               		-Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes \
-#               		-Wundef -Wshadow \
-# 					-I$(abspath $(BSP_DIR)/install/include/) \
-# 					-fno-common -ffunction-sections -fdata-sections --specs=$(SPEC).specs \
-# 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-# 					$(ARCH_FLAGS)
 PROGRAM_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.S)
 COMMON_SRCS = $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.S)
+
+# -fstack-usage
 RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-ffunction-sections -fdata-sections \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-					-O3 -fstack-usage
+					-O3 
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls \
 					-fomit-frame-pointer -march=native \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
 					-O3
-# RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group \
-# 					-Wl,-Map,$(basename $@).map \
-# 					-T$(abspath $(filter %.lds,$^)) -Xlinker --defsym=__heap_max=0x1 \
-# 					 -nostartfiles -nostdlib -Wl,--gc-sections \
-# 					$(ARCH_FLAGS) \
-# 					-L$(sort $(dir $(abspath $(filter %.a,$^))))
 
 #					-Xlinker --defsym=__stack_size=0x2000 \
 #					-Xlinker --defsym=__heap_max=1
@@ -53,9 +41,8 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x2560 \
+					-Xlinker --defsym=__stack_size=0x1a40 \
 					-Xlinker --defsym=__heap_max=1
-
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
 
@@ -68,9 +55,9 @@ host_out/kem: \
 	mkdir -p $(dir $@)
 	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
 
-# out/PQCgenKAT_kem.elf out/test_kex.elf
+# out/PQCgenKAT_kem.elf out/test_kex.elf out/kem.elf
 .PHONY: all
-all: out/kem.elf
+all: out/stack.elf
 
 # $(RISCV_GCC) -o $(basename $@) $(RISCV_CFLAGS) \
 # 	$(filter %.c,$^) $(filter %.S,$^) -I$(COMMON_DIR) -I$(SRC_DIR) $(RISCV_LDFLAGS)
@@ -92,8 +79,9 @@ out/%.elf: \
 	$(RISCV_SIZE) $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
-	cat *.su > $(basename $@).stack
-	rm *.su
+
+# cat *.su > $(basename $@).stack
+# rm *.su
 
 .PHONY: clean-software
 clean-software:
