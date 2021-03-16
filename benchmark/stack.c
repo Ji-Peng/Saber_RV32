@@ -78,26 +78,63 @@ uint8_t canary = 0x42;
 //     return 0;
 // }
 
-uint16_t A[SABER_N], B[SABER_N], C[SABER_N];
+// uint16_t A[SABER_N], B[SABER_N], C[SABER_N];
 
-static int test_polmul_stack(void)
+// static int test_polmul_stack(void)
+// {
+//     volatile unsigned char a;
+//     // Alice generates a public key
+//     FILL_STACK()
+//     pol_mul(A, B, C);
+//     CHECK_STACK()
+//     if (c >= canary_size) {
+//         printf("c >= canary_size\n");
+//         return -1;
+//     }
+//     printf("pol_mul stack usage %u\n", c);
+//     return 0;
+// }
+
+uint8_t seed[SABER_SEEDBYTES];
+uint16_t skpv[SABER_K][SABER_N];
+uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
+
+static int test_matrixvector_stack(void)
 {
     volatile unsigned char a;
-    // Alice generates a public key
     FILL_STACK()
-    pol_mul(A, B, C);
+    MatrixVectorMul_keypair(seed, skpv, skpv, SABER_Q - 1);
     CHECK_STACK()
     if (c >= canary_size) {
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("pol_mul stack usage %u\n", c);
+    printf("MatrixVectorMul_keypair stack usage %u\n", c);
+
+    FILL_STACK()
+    MatrixVectorMul_encryption(seed, skpv, ct, SABER_Q - 1);
+    CHECK_STACK()
+    if (c >= canary_size) {
+        printf("c >= canary_size\n");
+        return -1;
+    }
+    printf("MatrixVectorMul_encryption stack usage %u\n", c);
+
+    FILL_STACK()
+    VectorMul(ct, skpv, skpv[SABER_K - 1]);
+    CHECK_STACK()
+    if (c >= canary_size) {
+        printf("c >= canary_size\n");
+        return -1;
+    }
+    printf("VectorMul stack usage %u\n", c);
     return 0;
 }
+
 int main(void)
 {
     canary_size = MAX_SIZE;
     printf("==========stack test==========\n");
-    test_polmul_stack();
+    test_matrixvector_stack();
     return 0;
 }
