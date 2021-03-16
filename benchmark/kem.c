@@ -225,6 +225,36 @@ static int speed_polmul(void)
     return 0;
 }
 
+static int speed_MatrixVectorMul(void)
+{
+    uint8_t seed[SABER_SEEDBYTES];
+    uint16_t skpv[SABER_K][SABER_N];
+    uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
+    int j;
+    uint64_t t1, t2, sum1, sum2, sum3;
+    sum1 = sum2 = sum3 = 0;
+    for (j = 0; j < NTESTS; j++) {
+        t1 = cpucycles();
+        MatrixVectorMul_keypair(seed, skpv, skpv, SABER_Q - 1);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+
+        t1 = cpucycles();
+        MatrixVectorMul_encryption(seed, skpv, ct, SABER_Q - 1);
+        t2 = cpucycles();
+        sum2 += (t2 - t1);
+
+        t1 = cpucycles();
+        VectorMul(ct, skpv, skpv[SABER_K - 1]);
+        t2 = cpucycles();
+        sum3 += (t2 - t1);
+    }
+    printf("MatrixVectorMul_keypair    %s\n", ullu(sum1 / NTESTS));
+    printf("MatrixVectorMul_encryption %s\n", ullu(sum2 / NTESTS));
+    printf("VectorMul                  %s\n", ullu(sum3 / NTESTS));
+    return 0;
+}
+
 int main(void)
 {
     disable_watchdog();
@@ -232,6 +262,7 @@ int main(void)
     // test_kem_cca();
     // speed_cpa();
     // speed_cca();
-    speed_polmul();
+    // speed_polmul();
+    speed_MatrixVectorMul();
     return 0;
 }
