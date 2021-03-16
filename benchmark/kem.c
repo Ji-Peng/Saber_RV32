@@ -19,7 +19,7 @@ static int test_kem_cpa(void);
 static int speed_cpa(void);
 static int speed_cca(void);
 
-#define NTESTS 1
+#define NTESTS 1000
 
 static void disable_watchdog(void)
 {
@@ -207,12 +207,35 @@ static int speed_cca(void)
     return 0;
 }
 
+static int test_polmul(void)
+{
+    uint16_t A[SABER_L][SABER_L][SABER_N];
+    uint64_t t1, t2, sum1, sum2;
+    int j;
+    sum1 = sum2 = 0;
+    for (j = 0; j < NTESTS; j++) {
+        t1 = cpucycles();
+        MatrixVectorMul(A, A, A, 1);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+
+        t1 = cpucycles();
+        InnerProd(A, A, A);
+        t2 = cpucycles();
+        sum2 += (t2 - t1);
+    }
+    printf("MatrixVectorMul cycles %s\n", ullu(sum1 / NTESTS));
+    printf("InnerProd       cycles %s\n", ullu(sum2 / NTESTS));
+    return 0;
+}
+
 int main(void)
 {
     disable_watchdog();
     // test_kem_cpa();
     // test_kem_cca();
-    speed_cpa();
-    speed_cca();
+    // speed_cpa();
+    // speed_cca();
+    test_polmul();
     return 0;
 }
