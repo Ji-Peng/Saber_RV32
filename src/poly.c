@@ -131,20 +131,26 @@ void GenSecretInTime(uint16_t s[SABER_N],
 
 #if SABER_MU == 6
     uint8_t buf[SHAKE128_RATE];
-    static uint8_t leftovers[48];
+    static uint8_t leftovers[72];
     if (index == 0) {
         // 1buf = 224coeff
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
         cbd(s, buf, 224);
-        // 1buf = 32coeff + 48B leftover
+        // 1buf = 32coeff + 72B leftover
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
         cbd(s + 224, buf, 32);
         memcpy(leftovers, buf + SHAKE128_RATE - sizeof(leftovers),
                sizeof(leftovers));
     } else if (index == 1) {
-        // 1leftover = 48B = 64coeff
+        // 1leftover = 72B = 96coeff
+        cbd(s, leftovers, 96);
+        // 1buf = 160coeff + 48B leftover
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        cbd(s + 96, buf, 160);
+        memcpy(leftovers, buf + SHAKE128_RATE - 48, 48);
+    } else if (index == 2) {
+        // 48B leftover = 64coeff
         cbd(s, leftovers, 64);
-        // 1buf = 192coeff + 24B leftover
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
         cbd(s + 64, buf, 192);
         memcpy(leftovers, buf + SHAKE128_RATE - 24, 24);
@@ -154,6 +160,7 @@ void GenSecretInTime(uint16_t s[SABER_N],
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
         cbd(s + 32, buf, 224);
     }
+
 #elif SABER_MU == 8
     uint8_t buf[SHAKE128_RATE];
     static uint8_t leftovers[88];
@@ -184,9 +191,11 @@ void GenSecretInTime(uint16_t s[SABER_N],
     }
 
 #elif SABER_MU == 10
-    uint8_t buf[SHAKE128_RATE * 2];
-    keccak_squeezeblocks(buf, 2, keccak_state, SHAKE128_RATE);
-    cbd(s, buf, SABER_N);
+    uint8_t buf[SHAKE128_RATE];
+    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+    cbd(s, buf, SABER_N / 2);
+    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+    cbd(s + SABER_N / 2, buf, SABER_N / 2);
 #else
 #    error "Unsupported SABER parameter."
 #endif

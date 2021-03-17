@@ -20,7 +20,7 @@ static int test_kem_cpa(void);
 static int speed_cpa(void);
 static int speed_cca(void);
 
-#define NTESTS 100
+#define NTESTS 1000
 
 static void disable_watchdog(void)
 {
@@ -82,7 +82,6 @@ static int test_kem_cpa(void)
     } else {
         printf("kem_cpa ERROR\n");
     }
-    printf("-----------TEST CPA CORRECTNESS-------------\n");
     return 0;
 }
 
@@ -126,9 +125,10 @@ static int test_kem_cca(void)
     } else {
         printf("kem_cca ERROR\n");
     }
-    printf("-----------TEST CCA CORRECTNESS-------------\n");
     return 0;
 }
+
+#ifndef HOST
 
 static int speed_cpa(void)
 {
@@ -291,14 +291,16 @@ static int test_GenMatrix(void)
     return 0;
 }
 
+#endif
+
 int main(void)
 {
     disable_watchdog();
     test_kem_cpa();
     test_kem_cca();
-    speed_cpa();
-    speed_cca();
-    test_polmul();
-    test_GenMatrix();
+    // speed_cpa();
+    // speed_cca();
+    // test_polmul();
+    // test_GenMatrix();
     return 0;
 }
