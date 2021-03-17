@@ -57,17 +57,12 @@ void ntt(const uint16_t in[256], int32_t out[256])
     k = 0;
     len = 128;
     zeta = root_table[k++];
-    // printf("---ntt start\n");
     // a sepearate first layer for storing results to output polynomial
     for (j = 0; j < len; j++) {
         t = fqmul(zeta, (int32_t)(int16_t)in[j + len]);
-        // printf("---%d fqmul\n",j);
         out[j + len] = (int32_t)(int16_t)in[j] - t;
-        // printf("---%d out[j+len]\n",j);
         out[j] = (int32_t)(int16_t)in[j] + t;
-        // printf("---%d out[j]\n",j);
     }
-    // printf("---ntt middle\n");
     // remaining five layers
     for (len = 64; len >= 4; len >>= 1) {
         for (start = 0; start < 256; start = j + len) {
@@ -79,7 +74,6 @@ void ntt(const uint16_t in[256], int32_t out[256])
             }
         }
     }
-    // printf("---ntt end\n");
 }
 
 /*************************************************

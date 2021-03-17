@@ -17,12 +17,10 @@
 
 static int test_kem_cca(void);
 static int test_kem_cpa(void);
-static void test_ntt(void);
-static void test_ntt_self(void);
 static int speed_cpa(void);
 static int speed_cca(void);
 
-#define NTESTS 1000
+#define NTESTS 100
 
 static void disable_watchdog(void)
 {
@@ -293,27 +291,14 @@ static int test_GenMatrix(void)
     return 0;
 }
 
-static int test_kem_keypair(void)
-{
-    uint8_t pk[CRYPTO_PUBLICKEYBYTES];
-    uint8_t sk[CRYPTO_SECRETKEYBYTES];
-    unsigned char entropy_input[48];
-    int i;
-
-    for (i = 0; i < 48; i++)
-        entropy_input[i] = i;
-    randombytes_init(entropy_input, NULL);
-    crypto_kem_keypair(pk, sk);
-}
-
 int main(void)
 {
     disable_watchdog();
-    // test_kem_cpa();
-    // test_kem_cca();
-    // speed_cpa();
-    // speed_cca();
-    // test_polmul();
+    test_kem_cpa();
+    test_kem_cca();
+    speed_cpa();
+    speed_cca();
+    test_polmul();
     test_GenMatrix();
     return 0;
 }
