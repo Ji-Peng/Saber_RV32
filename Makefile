@@ -1,11 +1,14 @@
 # The configuration defaults to Debug. Valid choices are: debug and release
 CONFIGURATION ?= debug
 # BSP_DIR sets the path to the target-specific board support package.
-BSP_DIR = $(abspath bsp)
+BSP_DIR = bsp
 # SRC_DIR sets the path to the program source directory
 SRC_DIR = src
 COMMON_DIR = benchmark/common
+HOST_DIR = benchmark/host
 
+# for host
+HOST_GCC = /usr/bin/gcc
 # Allow users to select a different cross compiler.
 CROSS_COMPILE ?= riscv64-unknown-elf
 RISCV_GCC     := $(CROSS_COMPILE)-gcc
@@ -18,48 +21,40 @@ RISCV_SIZE    := $(CROSS_COMPILE)-size
 ARCH_FLAGS = -march=rv32imac -mabi=ilp32 -mcmodel=medlow
 SPEC=nano
 MTIME_RATE_HZ_DEF=32768
-# RISCV_CFLAGS  	+= 	-O0 -g \
-# 					-Wall -Wextra -Wimplicit-function-declaration \
-#               		-Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes \
-#               		-Wundef -Wshadow \
-# 					-I$(abspath $(BSP_DIR)/install/include/) \
-# 					-fno-common -ffunction-sections -fdata-sections --specs=$(SPEC).specs \
-# 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-# 					$(ARCH_FLAGS)
 PROGRAM_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.S)
 COMMON_SRCS = $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.S)
+HOST_SRCS = $(wildcard $(HOST_DIR)/*.c)
+
 RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-ffunction-sections -fdata-sections \
-					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
+					-I$(BSP_DIR)/install/include -I$(COMMON_DIR) -I$(SRC_DIR) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
 					-O3 -g
+HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
+					-DHOST \
+					-fomit-frame-pointer -fno-tree-vectorize -march=native \
+					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
+					-O3 -g
 
-# RISCV_LDFLAGS 	+= 	-Wl,--start-group  -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group \
-# 					-Wl,-Map,$(basename $@).map \
-# 					-T$(abspath $(filter %.lds,$^)) -Xlinker --defsym=__heap_max=0x1 \
-# 					 -nostartfiles -nostdlib -Wl,--gc-sections \
-# 					$(ARCH_FLAGS) \
-# 					-L$(sort $(dir $(abspath $(filter %.a,$^))))
-
-#					-Xlinker --defsym=__stack_size=0x2000 \
-#					-Xlinker --defsym=__heap_max=1
+# stack_size=0x2800 for kem.elf && 0x1a40 for stack(overall stack)
+# 0x1260 for stack(polymul)
 RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x2600 \
+					-Xlinker --defsym=__stack_size=0x1800 \
 					-Xlinker --defsym=__heap_max=1
-
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
 
-.PHONY: all
-all: out/kem.elf out/PQCgenKAT_kem.elf out/test_kex.elf
+# host_out/speed
+.PHONY: host
+host: host_out/kem
 
-# $(RISCV_GCC) -o $(basename $@) $(RISCV_CFLAGS) \
-# 	$(filter %.c,$^) $(filter %.S,$^) -I$(COMMON_DIR) -I$(SRC_DIR) $(RISCV_LDFLAGS)
-# mv $(basename $@) $@
+# out/PQCgenKAT_kem.elf out/test_kex.elf  out/speed.elf out/kem.elf
+.PHONY: all
+all: out/stack.elf
 
 out/%.elf: \
 		benchmark/%.c \
@@ -78,9 +73,25 @@ out/%.elf: \
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
 
+# cat *.su > $(basename $@).stack
+# rm *.su
+
+host_out/kem: \
+		benchmark/kem.c \
+		$(COMMON_SRCS) $(PROGRAM_SRCS)
+	mkdir -p $(dir $@)
+	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
+
+host_out/speed: \
+		benchmark/host/speed_host.c \
+		$(COMMON_SRCS) $(PROGRAM_SRCS) $(HOST_SRCS)
+	mkdir -p $(dir $@)
+	$(HOST_GCC) $(HOST_CFLAGS) -o $@ $(filter %.c,$^)
+
 .PHONY: clean-software
 clean-software:
 	rm -rf out
+	rm -rf host_out
 
 .PHONY: clean
 clean: clean-software

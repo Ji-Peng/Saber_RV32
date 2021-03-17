@@ -1,7 +1,13 @@
 out/
+host_out/
 scripts/
 freedom-metal/
 bsp/*
 !bsp/install/
 bsp/install/*
 !bsp/install/include
+.vscode/
+src/test.c
+help/help
+help/test
+help/test.c

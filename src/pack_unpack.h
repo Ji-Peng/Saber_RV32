@@ -9,22 +9,29 @@
 void POLT2BS(uint8_t bytes[SABER_SCALEBYTES_KEM], const uint16_t data[SABER_N]);
 void BS2POLT(const uint8_t bytes[SABER_SCALEBYTES_KEM], uint16_t data[SABER_N]);
 
-void POLVECq2BS(uint8_t bytes[SABER_POLYVECBYTES],
-                const uint16_t data[SABER_L][SABER_N]);
+// void POLVECq2BS(uint8_t bytes[SABER_POLYVECBYTES],
+//                 const uint16_t data[SABER_L][SABER_N]);
 void POLVECp2BS(uint8_t bytes[SABER_POLYVECCOMPRESSEDBYTES],
                 const uint16_t data[SABER_L][SABER_N]);
 
-void BS2POLVECq(const uint8_t bytes[SABER_POLYVECBYTES],
-                uint16_t data[SABER_L][SABER_N]);
+// void BS2POLVECq(const uint8_t bytes[SABER_POLYVECBYTES],
+//                 uint16_t data[SABER_L][SABER_N]);
 void BS2POLVECp(const uint8_t bytes[SABER_POLYVECCOMPRESSEDBYTES],
                 uint16_t data[SABER_L][SABER_N]);
 
 void BS2POLmsg(const uint8_t bytes[SABER_KEYBYTES], uint16_t data[SABER_N]);
 void POLmsg2BS(uint8_t bytes[SABER_KEYBYTES], const uint16_t data[SABER_N]);
 
-void BS2POLq(const unsigned char *bytes, uint16_t data[SABER_N]);
-void BS2POLp(uint16_t pol_index, const unsigned char *bytes, uint16_t pol[]);
+void BS2POLq(const uint8_t *bytes, uint16_t *data, int32_t coeff_num);
+void BS2POLq7(const uint8_t *bytes, uint16_t *data);
+void BS2POLq2(const uint8_t *bytes, uint16_t *data);
 
+void BS2POLp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
+             uint16_t data[SABER_N]);
 void POLp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
-                    const uint16_t data[SABER_N]);
+             const uint16_t data[SABER_N]);
+
+void pack_sk(uint8_t bytes[SABER_SKPOLYBYTES], const uint16_t data[SABER_N]);
+void unpack_sk(const uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
+               uint16_t data[SABER_L][SABER_N]);
 #endif

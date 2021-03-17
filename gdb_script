@@ -1,0 +1,11 @@
+define reg_all
+    info all-registers
+end
+
+define reg
+    info all-registers $arg0
+end
+
+define disa
+    disassemble $arg0
+end
