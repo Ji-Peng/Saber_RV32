@@ -27,7 +27,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-					-O3
+					-O3 -fstack-usage
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls \
 					-fomit-frame-pointer -march=native \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
@@ -49,7 +49,7 @@ host: host_out/kem
 
 # out/PQCgenKAT_kem.elf out/test_kex.elf out/kem.elf out/stack.elf
 .PHONY: all
-all: out/stack.elf
+all: out/kem.elf
 
 out/%.elf: \
 		benchmark/%.c \
@@ -67,9 +67,8 @@ out/%.elf: \
 	$(RISCV_SIZE) $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
-
-# cat *.su > $(basename $@).stack
-# rm *.su
+	cat *.su > $(basename $@).stack
+	rm *.su
 
 host_out/kem: \
 		benchmark/kem.c \
