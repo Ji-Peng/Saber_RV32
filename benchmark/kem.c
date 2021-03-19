@@ -217,7 +217,87 @@ static int speed_cca(void)
     printf("crypto_kem_dec      %s\n", ullu(sum3 / NTESTS));
     printf("overall             %s\n", ullu((sum1 + sum2 + sum3) / NTESTS));
     printf("NTESTS              %d\n", NTESTS);
-    printf("-----------TEST CCA SPEED-------------\n");
+    return 0;
+}
+
+static int speed_cca_kp(void)
+{
+    uint8_t pk[CRYPTO_PUBLICKEYBYTES];
+    uint8_t sk[CRYPTO_SECRETKEYBYTES];
+
+    unsigned char entropy_input[48];
+
+    int i, j;
+    uint64_t t1, t2, sum1;
+    sum1 = 0;
+
+    for (i = 0; i < 48; i++)
+        entropy_input[i] = i + 1;
+    randombytes_init(entropy_input, NULL);
+
+    for (j = 0; j < NTESTS; j++) {
+        // Generation of secret key sk and public key pk pair
+        t1 = cpucycles();
+        crypto_kem_keypair(pk, sk);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+    }
+    printf("crypto_kem_keypair  %s\n", ullu(sum1 / NTESTS));
+    return 0;
+}
+
+static int speed_cca_enc(void)
+{
+    uint8_t pk[CRYPTO_PUBLICKEYBYTES];
+    uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
+    uint8_t ss_a[CRYPTO_BYTES];
+
+    unsigned char entropy_input[48];
+
+    int i, j;
+    uint64_t t1, t2, sum2;
+    sum2 = 0;
+
+    for (i = 0; i < 48; i++)
+        entropy_input[i] = i + 1;
+    randombytes_init(entropy_input, NULL);
+
+    for (j = 0; j < NTESTS; j++) {
+        // Key-Encapsulation call; input: pk; output: ciphertext c,
+        // shared-secret ss_a;
+        t1 = cpucycles();
+        crypto_kem_enc(ct, ss_a, pk);
+        t2 = cpucycles();
+        sum2 += (t2 - t1);
+    }
+    printf("crypto_kem_enc      %s\n", ullu(sum2 / NTESTS));
+    return 0;
+}
+
+static int speed_cca_dec(void)
+{
+    uint8_t sk[CRYPTO_SECRETKEYBYTES];
+    uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
+    uint8_t ss_b[CRYPTO_BYTES];
+
+    unsigned char entropy_input[48];
+
+    int i, j;
+    uint64_t t1, t2, sum3;
+    sum3 = 0;
+
+    for (i = 0; i < 48; i++)
+        entropy_input[i] = i + 1;
+    randombytes_init(entropy_input, NULL);
+
+    for (j = 0; j < NTESTS; j++) {
+        // Key-Decapsulation call; input: sk, c; output: shared-secret ss_b;
+        t1 = cpucycles();
+        crypto_kem_dec(ss_b, ct, sk);
+        t2 = cpucycles();
+        sum3 += (t2 - t1);
+    }
+    printf("crypto_kem_dec      %s\n", ullu(sum3 / NTESTS));
     return 0;
 }
 
@@ -299,7 +379,10 @@ int main(void)
     // test_kem_cpa();
     // test_kem_cca();
     speed_cpa();
-    speed_cca();
+    speed_cca_kp();
+    speed_cca_enc();
+    speed_cca_dec();
+    // speed_cca();
     test_polmul();
     test_GenMatrix();
     return 0;
