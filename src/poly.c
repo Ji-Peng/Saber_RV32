@@ -206,8 +206,7 @@ void GenSecretInTime(uint16_t s[SABER_N],
  *
  * Description: Multiplication of two polynomials in NTT domain
  *
- * Arguments:   - r: pointer to output polynomial
- *              - a: pointer to first input polynomial
+ * Arguments:   - a: pointer to first input polynomial and also output
  *              - b: pointer to second input polynomial
  **************************************************/
 void poly_basemul(int32_t a[SABER_N], const int32_t b[SABER_N])
@@ -232,7 +231,7 @@ void poly_add(uint16_t res[SABER_N], int32_t in[SABER_N])
 
 /**
  * Name: poly_mul_acc_ntt
- * Description: res += a * b using ntt
+ * Description: res += a * b using ntt，a, b in standard domain
  */
 void poly_mul_acc_ntt(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],
                       uint16_t res[SABER_N])
@@ -240,15 +239,25 @@ void poly_mul_acc_ntt(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],
     int32_t t[SABER_N];
     int32_t *p = (int32_t *)a;
     ntt(a, t);
-    // printf("--ntt\n");
     ntt(b, p);
-    // printf("--ntt\n");
     poly_basemul(p, t);
-    // printf("--poly_basemul\n");
     invntt(p, t);
-    // printf("--invntt\n");
     poly_add(res, t);
-    // printf("--poly_add\n");
+}
+
+/**
+ * Name: poly_mul_acc_ntt
+ * Description: res += a * b using ntt，a in standard domain, b in ntt domain
+ */
+void poly_mul_acc_ntt_fast(uint16_t a[SABER_N], const uint16_t b[2 * SABER_N],
+                           uint16_t res[SABER_N])
+{
+    int32_t t[SABER_N];
+    int32_t *pb = (int32_t *)b;
+    ntt(a, t);
+    poly_basemul(t, pb);
+    invntt(t, t);
+    poly_add(res, t);
 }
 
 void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
@@ -256,17 +265,19 @@ void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
                            uint16_t b[SABER_L][SABER_N])
 {
     int i, j;
-    // length N is ok, 2N for reuse a in poly_mul_acc_ntt
-    uint16_t a[2 * SABER_N], s[SABER_N];
+    uint16_t t1[2 * SABER_N], t2[SABER_N];
     for (i = 0; i < SABER_L; i++) {
-        GenSecretInTime(s, seed_s, i);
-        // pack to sk
-        pack_sk(sk + i * SABER_SKPOLYBYTES, s);
+        // t2=si
+        GenSecretInTime(t2, seed_s, i);
+        // pack si to sk
+        pack_sk(sk + i * SABER_SKPOLYBYTES, t2);
+        // trans si to ntt domain, which is saved in t1
+        ntt(t2, (int32_t *)t1);
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
-            // i=0, j=0, init=1
-            GenPoly(a, seed_a, 1 - i - j);
-            poly_mul_acc_ntt(a, s, b[j]);
+            // i=0, j=0, init=1, t2=aij
+            GenPoly(t2, seed_a, 1 - i - j);
+            poly_mul_acc_ntt_fast(t2, t1, b[j]);
         }
     }
 }

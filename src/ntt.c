@@ -45,7 +45,8 @@ int32_t fqmul(int32_t a, int32_t b)
  * Name:        ntt
  *
  * Description: Number-theoretic transform (NTT).
- *              input is in standard order, output is in bitreversed order
+ * input is in standard order, output is in bitreversed order
+ * input and output can not be same address because different data type
  *
  * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
  **************************************************/

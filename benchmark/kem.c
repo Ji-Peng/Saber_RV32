@@ -376,14 +376,14 @@ static int test_GenMatrix(void)
 int main(void)
 {
     disable_watchdog();
-    // test_kem_cpa();
-    // test_kem_cca();
-    speed_cpa();
-    speed_cca_kp();
-    speed_cca_enc();
-    speed_cca_dec();
+    test_kem_cpa();
+    test_kem_cca();
+    // speed_cpa();
+    // speed_cca_kp();
+    // speed_cca_enc();
+    // speed_cca_dec();
     // speed_cca();
-    test_polmul();
-    test_GenMatrix();
+    // test_polmul();
+    // test_GenMatrix();
     return 0;
 }
