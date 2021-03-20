@@ -201,6 +201,18 @@ void GenSecretInTime(uint16_t s[SABER_N],
 #endif
 }
 
+void GenSecret_ntt(int32_t s[SABER_L][SABER_N],
+                   const uint8_t seed[SABER_NOISE_SEEDBYTES])
+{
+    uint16_t t[SABER_N];
+    int i;
+
+    for (i = 0; i < SABER_L; i++) {
+        GenSecretInTime(t, seed, i);
+        ntt(t, s[i]);
+    }
+}
+
 /*************************************************
  * Name:        poly_basemul
  *
@@ -249,7 +261,7 @@ void poly_mul_acc_ntt(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],
  * Name: poly_mul_acc_ntt
  * Description: res += a * b using ntt，a in standard domain, b in ntt domain
  */
-void poly_mul_acc_ntt_fast(uint16_t a[SABER_N], const uint16_t b[2 * SABER_N],
+void poly_mul_acc_ntt_fast(uint16_t a[SABER_N], const int32_t b[SABER_N],
                            uint16_t res[SABER_N])
 {
     int32_t t[SABER_N];
@@ -265,14 +277,15 @@ void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
                            uint16_t b[SABER_L][SABER_N])
 {
     int i, j;
-    uint16_t t1[2 * SABER_N], t2[SABER_N];
+    uint16_t t2[SABER_N];
+    int32_t t1[SABER_N];
     for (i = 0; i < SABER_L; i++) {
         // t2=si
         GenSecretInTime(t2, seed_s, i);
         // pack si to sk
         pack_sk(sk + i * SABER_SKPOLYBYTES, t2);
         // trans si to ntt domain, which is saved in t1
-        ntt(t2, (int32_t *)t1);
+        ntt(t2, t1);
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
             // i=0, j=0, init=1, t2=aij
@@ -306,6 +319,33 @@ void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
 }
 
 /**
+ * @description: s in ntt domain
+ */
+void MatrixVectorMulEnc_ntt_fast(const uint8_t *seed,
+                                 int32_t s[SABER_L][SABER_N],
+                                 uint8_t *ciphertext)
+{
+    int i, j;
+    uint16_t a[SABER_N], res[SABER_N];
+    for (i = 0; i < SABER_L; i++) {
+        // clear a and res
+        for (j = 0; j < SABER_N; j++) {
+            a[j] = 0;
+            res[j] = 0;
+        }
+        // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
+        for (j = 0; j < SABER_L; j++) {
+            GenPoly(a, seed, 1 - i - j);
+            poly_mul_acc_ntt_fast(a, s[j], res);
+        }
+        for (j = 0; j < SABER_N; j++) {
+            res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
+        }
+        POLp2BS(ciphertext + i * (SABER_EP * SABER_N / 8), res);
+    }
+}
+
+/**
  * Name: InnerProd just-in-time
  * Description: inner product using ntt
  */
@@ -319,5 +359,22 @@ void InnerProdInTime_ntt(const uint8_t *bytes,
     for (j = 0; j < SABER_L; j++) {
         BS2POLp(bytes + j * (SABER_EP * SABER_N / 8), b);
         poly_mul_acc_ntt(b, s[j], res);
+    }
+}
+
+/**
+ * Name: InnerProd just-in-time
+ * Description: inner product using ntt, s in ntt domain
+ */
+void InnerProdInTime_ntt_fast(const uint8_t *bytes,
+                              const int32_t s[SABER_L][SABER_N],
+                              uint16_t res[SABER_N])
+{
+    int j;
+    uint16_t b[SABER_N];
+
+    for (j = 0; j < SABER_L; j++) {
+        BS2POLp(bytes + j * (SABER_EP * SABER_N / 8), b);
+        poly_mul_acc_ntt_fast(b, s[j], res);
     }
 }

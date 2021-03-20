@@ -37,21 +37,35 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
            SABER_SEEDBYTES * sizeof(uint8_t));
 }
 
+// fast matrix-vector mul and innerproduct
+// #define ENC_FAST
+
 void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
                     const uint8_t seed_sp[SABER_NOISE_SEEDBYTES],
                     const uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
                     uint8_t ciphertext[SABER_BYTES_CCA_DEC])
 {
+#ifdef ENC_FAST
+    // save s in ntt domain for fast computation
+    int32_t sp[SABER_L][SABER_N];
+#elif
     uint16_t sp[SABER_L][SABER_N];
+#endif
     uint16_t vp[SABER_N] = {0};
     uint16_t message_bit;
     int i, j;
     const uint8_t *seed_A = pk + SABER_POLYVECCOMPRESSEDBYTES;
 
+#ifdef ENC_FAST
+    GenSecret_ntt(sp, seed_sp);
+    MatrixVectorMulEnc_ntt_fast(seed_A, sp, ciphertext);
+    InnerProdInTime_ntt_fast(pk, sp, vp);
+#elif
     GenSecret(sp, seed_sp);
     MatrixVectorMulEnc_ntt(seed_A, sp, ciphertext);
 
     InnerProdInTime_ntt(pk, sp, vp);
+#endif
 
     for (j = 0; j < SABER_KEYBYTES; j++)
         for (i = 0; i < 8; i++) {
