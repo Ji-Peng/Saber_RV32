@@ -35,23 +35,24 @@ void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
 void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
                            uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
                            uint16_t b[SABER_L][SABER_N]);
-#ifdef SLOWGENA_FASTMUL
-void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
-             int32_t x, int32_t y);
 
-#else
+#if defined(FASTGENA_SLOWMUL) || defined(FASTGENA_FASTMUL)
 void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
              uint32_t init);
+
+#elif defined(SLOWGENA_FASTMUL)
+void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
+             int32_t x, int32_t y);
 #endif
 
-#ifdef FASTGENA_SLOWMUL
+#if defined(FASTGENA_SLOWMUL)
 void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext);
 void InnerProdInTimeEnc_ntt(const uint8_t *bytes,
                             const uint16_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext,
                             const uint8_t m[SABER_KEYBYTES]);
-#else
+#elif defined(FASTGENA_FASTMUL) || defined(SLOWGENA_FASTMUL)
 void MatrixVectorMulEnc_ntt(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext);
 void InnerProdInTimeEnc_ntt(const uint8_t *bytes,

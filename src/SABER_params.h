@@ -24,13 +24,10 @@
 // #define SLOWGENA_FASTMUL
 
 // check computation strategy
-#ifndef FASTGENA_SLOWMUL
-#    ifndef FASTGENA_FASTMUL
-#        ifndef SLOWGENA_FASTMUL
-#            error \
-                "Please define FASTGENA_SLOWMUL or FASTGENA_FASTMUL or SLOWGENA_FASTMUL"
-#        endif
-#    endif
+#if !defined(FASTGENA_SLOWMUL) && !defined(FASTGENA_FASTMUL) && \
+    !defined(SLOWGENA_FASTMUL)
+#    error \
+        "Please define FASTGENA_SLOWMUL or FASTGENA_FASTMUL or SLOWGENA_FASTMUL"
 #endif
 
 #define SABER_EQ 13
