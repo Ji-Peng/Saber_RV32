@@ -19,8 +19,8 @@
 #endif
 
 // three different strategies
-#define FASTGENA_SLOWMUL
-// #define FASTGENA_FASTMUL
+// #define FASTGENA_SLOWMUL
+#define FASTGENA_FASTMUL
 // #define SLOWGENA_FASTMUL
 
 // check computation strategy

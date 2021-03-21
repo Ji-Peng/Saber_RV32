@@ -29,13 +29,6 @@ void InnerProd_ntt(const int16_t b[SABER_L][SABER_N],
 void InnerProdInTime_ntt(const uint8_t *bytes,
                          const uint16_t s[SABER_L][SABER_N],
                          uint16_t res[SABER_N]);
-void InnerProdInTimeEnc_ntt(const uint8_t *bytes,
-                            const uint16_t s[SABER_L][SABER_N],
-                            uint8_t *ciphertext,
-                            const uint8_t m[SABER_KEYBYTES]);
-void InnerProdInTime_ntt_fast(const uint8_t *bytes,
-                              const int32_t s[SABER_L][SABER_N],
-                              uint16_t res[SABER_N]);
 void MatrixVectorMul_ntt(const int16_t A[SABER_L][SABER_L][SABER_N],
                          const int16_t s[SABER_L][SABER_N],
                          int16_t res[SABER_L][SABER_N], int16_t transpose);
@@ -54,9 +47,17 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
 #ifdef FASTGENA_SLOWMUL
 void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext);
+void InnerProdInTimeEnc_ntt(const uint8_t *bytes,
+                            const uint16_t s[SABER_L][SABER_N],
+                            uint8_t *ciphertext,
+                            const uint8_t m[SABER_KEYBYTES]);
 #else
 void MatrixVectorMulEnc_ntt(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext);
+void InnerProdInTimeEnc_ntt(const uint8_t *bytes,
+                            const int32_t s[SABER_L][SABER_N],
+                            uint8_t *ciphertext,
+                            const uint8_t m[SABER_KEYBYTES]);
 #endif
 
 #endif

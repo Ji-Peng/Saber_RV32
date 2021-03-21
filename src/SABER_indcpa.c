@@ -51,22 +51,13 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
     GenSecret(sp, seed_sp);
     MatrixVectorMulEnc_ntt(seed_A, sp, ciphertext);
     InnerProdInTimeEnc_ntt(pk, sp, ciphertext, m);
-#elif FASTGENA_FASTMUL
+#elif defined(FASTGENA_FASTMUL)
     // save s in ntt domain for fast computation
     int32_t sp[SABER_L][SABER_N];
     GenSecret_ntt(sp, seed_sp);
     MatrixVectorMulEnc_ntt(seed_A, sp, ciphertext);
-    InnerProdInTime_ntt_fast(pk, sp, vp);
-    for (j = 0; j < SABER_KEYBYTES; j++) {
-        for (i = 0; i < 8; i++) {
-            message_bit = ((m[j] >> i) & 0x01);
-            message_bit = (message_bit << (SABER_EP - 1));
-            vp[j * 8 + i] =
-                (vp[j * 8 + i] - message_bit + h1) >> (SABER_EP - SABER_ET);
-        }
-    }
+    InnerProdInTimeEnc_ntt(pk, sp, ciphertext, m);
 
-    POLT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
 #else
 #endif
 }
