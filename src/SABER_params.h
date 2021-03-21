@@ -18,15 +18,20 @@
 #    define SABER_ET 6
 #endif
 
-// strategy1: FastGenA&SlowMul
-#define FastGenA
-#define SlowMul
-// strategy2: FastGenA&FastMul
-// #define FastGenA
-// #define FastMul
-// strategy3: SlowGenA&FastMul
-// #define SlowGenA
-// #define FastMul
+// three different strategies
+#define FASTGENA_SLOWMUL
+// #define FASTGENA_FASTMUL
+// #define SLOWGENA_FASTMUL
+
+// check computation strategy
+#ifndef FASTGENA_SLOWMUL
+#    ifndef FASTGENA_FASTMUL
+#        ifndef SLOWGENA_FASTMUL
+#            error \
+                "Please define FASTGENA_SLOWMUL or FASTGENA_FASTMUL or SLOWGENA_FASTMUL"
+#        endif
+#    endif
+#endif
 
 #define SABER_EQ 13
 #define SABER_EP 10
@@ -52,7 +57,7 @@
 // #define SABER_INDCPA_SECRETKEYBYTES (SABER_POLYVECBYTES)
 
 #define SABER_SKPOLYBYTES 4 * SABER_N / 8
-#define SABER_INDCPA_SECRETKEYBYTES SABER_L * SABER_SKPOLYBYTES
+#define SABER_INDCPA_SECRETKEYBYTES SABER_L* SABER_SKPOLYBYTES
 
 #define SABER_PUBLICKEYBYTES (SABER_INDCPA_PUBLICKEYBYTES)
 #define SABER_SECRETKEYBYTES                                     \
