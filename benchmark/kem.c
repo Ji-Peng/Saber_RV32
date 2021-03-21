@@ -9,6 +9,7 @@
 #ifndef HOST
 #    include "metal/watchdog.h"
 #endif
+#include "fips202.h"
 #include "ntt.h"
 #include "poly.h"
 #include "reduce.h"
@@ -371,13 +372,60 @@ static int test_GenMatrix(void)
     return 0;
 }
 
+static int test_keccake(void)
+{
+    uint64_t keccak_state[25];
+    uint8_t seed[32], buf[168];
+    int i;
+    uint64_t t1, t2, sum1, sum2;
+    sum1 = sum2 = 0;
+
+    for (i = 0; i < 25; i++) {
+        keccak_state[i] = 0;
+    }
+
+    for (i = 0; i < NTESTS; i++) {
+        t1 = cpucycles();
+        keccak_absorb(keccak_state, SHAKE128_RATE, seed, 32, 0x1F);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+
+        t1 = cpucycles();
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        t2 = cpucycles();
+        sum2 += (t2 - t1);
+    }
+
+    printf("keccak_absorb           %s\n", ullu(sum1 / NTESTS));
+    printf("keccak_squeezeblocks    %s\n", ullu(sum2 / NTESTS));
+    return 0;
+}
+
+static int test_ntt(void)
+{
+    int i;
+    uint64_t t1, t2, sum1;
+    uint16_t in[SABER_N];
+    int32_t out[SABER_N];
+    sum1 = 0;
+
+    for (i = 0; i < NTESTS; i++) {
+        t1 = cpucycles();
+        ntt(in, out);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+    }
+    printf("ntt           %s\n", ullu(sum1 / NTESTS));
+    return 0;
+}
+
 #endif
 
 int main(void)
 {
     disable_watchdog();
-    test_kem_cpa();
-    test_kem_cca();
+    // test_kem_cpa();
+    // test_kem_cca();
     // speed_cpa();
     // speed_cca_kp();
     // speed_cca_enc();
@@ -385,5 +433,7 @@ int main(void)
     // speed_cca();
     // test_polmul();
     // test_GenMatrix();
+    test_keccake();
+    test_ntt();
     return 0;
 }

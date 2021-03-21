@@ -48,7 +48,7 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
 #ifdef ENC_FAST
     // save s in ntt domain for fast computation
     int32_t sp[SABER_L][SABER_N];
-#elif
+#else
     uint16_t sp[SABER_L][SABER_N];
 #endif
     uint16_t vp[SABER_N] = {0};
@@ -60,7 +60,7 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
     GenSecret_ntt(sp, seed_sp);
     MatrixVectorMulEnc_ntt_fast(seed_A, sp, ciphertext);
     InnerProdInTime_ntt_fast(pk, sp, vp);
-#elif
+#else
     GenSecret(sp, seed_sp);
     MatrixVectorMulEnc_ntt(seed_A, sp, ciphertext);
 
