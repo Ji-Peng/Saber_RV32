@@ -29,6 +29,10 @@ void InnerProd_ntt(const int16_t b[SABER_L][SABER_N],
 void InnerProdInTime_ntt(const uint8_t *bytes,
                          const uint16_t s[SABER_L][SABER_N],
                          uint16_t res[SABER_N]);
+void InnerProdInTimeEnc_ntt(const uint8_t *bytes,
+                            const uint16_t s[SABER_L][SABER_N],
+                            uint8_t *ciphertext,
+                            const uint8_t m[SABER_KEYBYTES]);
 void InnerProdInTime_ntt_fast(const uint8_t *bytes,
                               const int32_t s[SABER_L][SABER_N],
                               uint16_t res[SABER_N]);
