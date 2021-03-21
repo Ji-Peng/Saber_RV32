@@ -18,9 +18,15 @@
 #    define SABER_ET 6
 #endif
 
-#define FastGenASlowMul
-// #define FastGenAFastMul
-// #define SlowGenAFastMul
+// strategy1: FastGenA&SlowMul
+#define FastGenA
+#define SlowMul
+// strategy2: FastGenA&FastMul
+// #define FastGenA
+// #define FastMul
+// strategy3: SlowGenA&FastMul
+// #define SlowGenA
+// #define FastMul
 
 #define SABER_EQ 13
 #define SABER_EP 10
