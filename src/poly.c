@@ -49,58 +49,6 @@ void InnerProd(const uint16_t b[SABER_L][SABER_N],
     }
 }
 
-/**
- * @description: Generate polynomial on the fly
- */
-void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
-             uint32_t init)
-{
-    int32_t i;
-    uint8_t buf[SHAKE128_RATE];
-    // can generate 50 coefficients
-    static uint8_t leftovers[82];
-    // state = 0 or 1, 0: store leftovers; 1: load leftovers
-    static uint32_t state;
-    // keccak states
-    static uint64_t keccak_state[25];
-    // init: clear states and absorb seed
-    if (init == 1) {
-        for (i = 0; i < 25; i++)
-            keccak_state[i] = 0;
-        keccak_absorb(keccak_state, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
-        state = 0;
-    }
-    // squeeze output and generate 103 coefficients
-    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-    // 96coeff = 156bytes
-    BS2POLq(buf, poly, 96);
-    // 7coeff = 91bits(12bytes)
-    BS2POLq7(buf + 156, poly + 96);
-
-    // squeeze output and generate 103 coefficients
-    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-    // 96coeff = 156bytes
-    BS2POLq(buf, poly + 103, 96);
-    // 7coeff = 91bits(12bytes)
-    BS2POLq7(buf + 156, poly + 199);
-
-    // 0: save to leftovers or 1: load from leftovers
-    if (state == 0) {
-        // squeeze output and generate 50 coefficients
-        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        // 48coeff = 78bytes
-        BS2POLq(buf, poly + 206, 48);
-        // 2coeff = 26bits(4bytes)
-        BS2POLq2(buf + 78, poly + 254);
-        memcpy(leftovers, &buf[82], 82);
-    } else {
-        // use leftovers to generate 50 coefficients
-        BS2POLq(leftovers, poly + 206, 48);
-        BS2POLq2(leftovers + 78, poly + 254);
-    }
-    state = !state;
-}
-
 void GenSecret(uint16_t s[SABER_L][SABER_N],
                const uint8_t seed[SABER_NOISE_SEEDBYTES])
 {
@@ -272,6 +220,112 @@ void poly_mul_acc_ntt_fast(uint16_t a[SABER_N], const int32_t b[SABER_N],
     poly_add(res, t);
 }
 
+#ifdef SLOWGENA_FASTMUL
+/**
+ * @description: Generate polynomial matrix A on the fly
+ */
+void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
+             int32_t x, int32_t y)
+{
+    int32_t i;
+    uint8_t buf[SHAKE128_RATE];
+    // can generate 50 coefficients
+    static uint8_t leftovers[82];
+    // state = 0 or 1, 0: store leftovers; 1: load leftovers
+    static uint32_t state;
+    // keccak states
+    static uint64_t keccak_state[25];
+    // init: clear states and absorb seed
+    if (init == 1) {
+        for (i = 0; i < 25; i++)
+            keccak_state[i] = 0;
+        keccak_absorb(keccak_state, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
+        state = 0;
+    }
+    // squeeze output and generate 103 coefficients
+    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+    // 96coeff = 156bytes
+    BS2POLq(buf, poly, 96);
+    // 7coeff = 91bits(12bytes)
+    BS2POLq7(buf + 156, poly + 96);
+
+    // squeeze output and generate 103 coefficients
+    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+    // 96coeff = 156bytes
+    BS2POLq(buf, poly + 103, 96);
+    // 7coeff = 91bits(12bytes)
+    BS2POLq7(buf + 156, poly + 199);
+
+    // 0: save to leftovers or 1: load from leftovers
+    if (state == 0) {
+        // squeeze output and generate 50 coefficients
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        // 48coeff = 78bytes
+        BS2POLq(buf, poly + 206, 48);
+        // 2coeff = 26bits(4bytes)
+        BS2POLq2(buf + 78, poly + 254);
+        memcpy(leftovers, &buf[82], 82);
+    } else {
+        // use leftovers to generate 50 coefficients
+        BS2POLq(leftovers, poly + 206, 48);
+        BS2POLq2(leftovers + 78, poly + 254);
+    }
+    state = !state;
+}
+#else
+/**
+ * @description: Generate polynomial on the fly
+ */
+void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
+             uint32_t init)
+{
+    int32_t i;
+    uint8_t buf[SHAKE128_RATE];
+    // can generate 50 coefficients
+    static uint8_t leftovers[82];
+    // state = 0 or 1, 0: store leftovers; 1: load leftovers
+    static uint32_t state;
+    // keccak states
+    static uint64_t keccak_state[25];
+    // init: clear states and absorb seed
+    if (init == 1) {
+        for (i = 0; i < 25; i++)
+            keccak_state[i] = 0;
+        keccak_absorb(keccak_state, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
+        state = 0;
+    }
+    // squeeze output and generate 103 coefficients
+    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+    // 96coeff = 156bytes
+    BS2POLq(buf, poly, 96);
+    // 7coeff = 91bits(12bytes)
+    BS2POLq7(buf + 156, poly + 96);
+
+    // squeeze output and generate 103 coefficients
+    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+    // 96coeff = 156bytes
+    BS2POLq(buf, poly + 103, 96);
+    // 7coeff = 91bits(12bytes)
+    BS2POLq7(buf + 156, poly + 199);
+
+    // 0: save to leftovers or 1: load from leftovers
+    if (state == 0) {
+        // squeeze output and generate 50 coefficients
+        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
+        // 48coeff = 78bytes
+        BS2POLq(buf, poly + 206, 48);
+        // 2coeff = 26bits(4bytes)
+        BS2POLq2(buf + 78, poly + 254);
+        memcpy(leftovers, &buf[82], 82);
+    } else {
+        // use leftovers to generate 50 coefficients
+        BS2POLq(leftovers, poly + 206, 48);
+        BS2POLq2(leftovers + 78, poly + 254);
+    }
+    state = !state;
+}
+#endif
+
 void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
                            uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
                            uint16_t b[SABER_L][SABER_N])
@@ -288,13 +342,18 @@ void MatrixVectorMulKP_ntt(const uint8_t *seed_a, const uint8_t *seed_s,
         ntt(t2, t1);
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
+#ifdef SLOWGENA_FASTMUL
+            GenPoly(t2, seed_a, i, j);
+#else
             // i=0, j=0, init=1, t2=aij
             GenPoly(t2, seed_a, 1 - i - j);
+#endif
             poly_mul_acc_ntt_fast(t2, t1, b[j]);
         }
     }
 }
 
+#ifdef FASTGENA_SLOWMUL
 void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
                             uint8_t *ciphertext)
 {
@@ -318,12 +377,9 @@ void MatrixVectorMulEnc_ntt(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
     }
 }
 
-/**
- * @description: s in ntt domain
- */
-void MatrixVectorMulEnc_ntt_fast(const uint8_t *seed,
-                                 int32_t s[SABER_L][SABER_N],
-                                 uint8_t *ciphertext)
+#elif FASTGENA_FASTMUL
+void MatrixVectorMulEnc_ntt(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
+                            uint8_t *ciphertext)
 {
     int i, j;
     uint16_t a[SABER_N], res[SABER_N];
@@ -345,6 +401,9 @@ void MatrixVectorMulEnc_ntt_fast(const uint8_t *seed,
     }
 }
 
+#else
+
+#endif
 /**
  * Name: InnerProd just-in-time
  * Description: inner product using ntt
