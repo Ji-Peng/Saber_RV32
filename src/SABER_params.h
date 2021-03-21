@@ -18,6 +18,10 @@
 #    define SABER_ET 6
 #endif
 
+#define FastGenASlowMul
+// #define FastGenAFastMul
+// #define SlowGenAFastMul
+
 #define SABER_EQ 13
 #define SABER_EP 10
 #define SABER_N 256
