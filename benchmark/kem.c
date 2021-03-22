@@ -339,10 +339,10 @@ static int TestPolyMul(void)
         t2 = cpucycles();
         sum4 += (t2 - t1);
     }
-    printf("MatrixVectorMulKP       %s\n", ullu(sum1 / NTESTS));
-    printf("MatrixVectorMulEnc      %s\n", ullu(sum2 / NTESTS));
-    printf("InnerProdInTime         %s\n", ullu(sum3 / NTESTS));
-    printf("PolyMulAcc            %s\n", ullu(sum4 / NTESTS));
+    printf("MatrixVectorMulKP   %s\n", ullu(sum1 / NTESTS));
+    printf("MatrixVectorMulEnc  %s\n", ullu(sum2 / NTESTS));
+    printf("InnerProdInTime     %s\n", ullu(sum3 / NTESTS));
+    printf("PolyMulAcc          %s\n", ullu(sum4 / NTESTS));
     return 0;
 }
 
@@ -369,7 +369,7 @@ static int TestGen(void)
         }
     }
     printf("GenAInTime*9        %s\n", ullu(sum1 / NTESTS));
-    printf("GenSecretInTime  %s\n", ullu(sum2 / NTESTS));
+    printf("GenSecretInTime     %s\n", ullu(sum2 / NTESTS));
     return 0;
 }
 
@@ -397,8 +397,8 @@ static int TestKeccak(void)
         sum2 += (t2 - t1);
     }
 
-    printf("keccak_absorb           %s\n", ullu(sum1 / NTESTS));
-    printf("keccak_squeezeblocks    %s\n", ullu(sum2 / NTESTS));
+    printf("keccak_absorb       %s\n", ullu(sum1 / NTESTS));
+    printf("keccak_squeeze      %s\n", ullu(sum2 / NTESTS));
     return 0;
 }
 
@@ -416,7 +416,7 @@ static int TestNTT(void)
         t2 = cpucycles();
         sum1 += (t2 - t1);
     }
-    printf("NTT           %s\n", ullu(sum1 / NTESTS));
+    printf("NTT                 %s\n", ullu(sum1 / NTESTS));
     return 0;
 }
 
