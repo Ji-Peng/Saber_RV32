@@ -24,7 +24,7 @@ void GenSecret(uint16_t s[SABER_L][SABER_N],
     }
 }
 
-void GenSecretInTime(uint16_t s[SABER_N],
+void GenSInTime(uint16_t s[SABER_N],
                      const uint8_t seed[SABER_NOISE_SEEDBYTES], int32_t index)
 {
     int32_t i;
@@ -118,7 +118,7 @@ void GenSecretNTT(int32_t s[SABER_L][SABER_N],
     int i;
 
     for (i = 0; i < SABER_L; i++) {
-        GenSecretInTime(t, seed, i);
+        GenSInTime(t, seed, i);
         NTT(t, s[i]);
     }
 }

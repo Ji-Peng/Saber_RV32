@@ -53,8 +53,8 @@ void PolyAdd(uint16_t res[SABER_N], int32_t in[SABER_N])
  * Description: res += a * b using ntt，a, b in standard domain
  */
 __attribute__((noinline)) void PolyMulAcc(uint16_t a[2 * SABER_N],
-                                                const uint16_t b[SABER_N],
-                                                uint16_t res[SABER_N])
+                                          const uint16_t b[SABER_N],
+                                          uint16_t res[SABER_N])
 {
     int32_t t[SABER_N];
     int32_t *p = (int32_t *)a;
@@ -70,8 +70,8 @@ __attribute__((noinline)) void PolyMulAcc(uint16_t a[2 * SABER_N],
  * Description: res += a * b using ntt，a in standard domain, b in ntt domain
  */
 __attribute__((noinline)) void PolyMulAccFast(uint16_t a[SABER_N],
-                                                     const int32_t b[SABER_N],
-                                                     uint16_t res[SABER_N])
+                                              const int32_t b[SABER_N],
+                                              uint16_t res[SABER_N])
 {
     int32_t t[SABER_N];
     int32_t *pb = (int32_t *)b;
@@ -82,15 +82,15 @@ __attribute__((noinline)) void PolyMulAccFast(uint16_t a[SABER_N],
 }
 
 void MatrixVectorMulKP(const uint8_t *seed_a, const uint8_t *seed_s,
-                           uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
-                           uint16_t b[SABER_L][SABER_N])
+                       uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
+                       uint16_t b[SABER_L][SABER_N])
 {
     int i, j;
-    uint16_t t2[SABER_N];
     int32_t t1[SABER_N];
+    uint16_t t2[SABER_N];
     for (i = 0; i < SABER_L; i++) {
         // t2=si
-        GenSecretInTime(t2, seed_s, i);
+        GenSInTime(t2, seed_s, i);
         // pack si to sk
         PackSk(sk + i * SABER_SKPOLYBYTES, t2);
         // trans si to ntt domain, which is saved in t1
@@ -110,7 +110,7 @@ void MatrixVectorMulKP(const uint8_t *seed_a, const uint8_t *seed_s,
 
 #ifdef FASTGENA_SLOWMUL
 void MatrixVectorMulEnc(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
-                            uint8_t *ciphertext)
+                        uint8_t *ciphertext)
 {
     int i, j;
     uint16_t a[2 * SABER_N], res[SABER_N];
@@ -137,9 +137,8 @@ void MatrixVectorMulEnc(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
  * Description: inner product using ntt
  */
 void InnerProdInTimeEnc(const uint8_t *bytes,
-                            const uint16_t s[SABER_L][SABER_N],
-                            uint8_t *ciphertext,
-                            const uint8_t m[SABER_KEYBYTES])
+                        const uint16_t s[SABER_L][SABER_N], uint8_t *ciphertext,
+                        const uint8_t m[SABER_KEYBYTES])
 {
     int i, j;
     uint16_t b[2 * SABER_N], vp[SABER_N] = {0};
@@ -163,7 +162,7 @@ void InnerProdInTimeEnc(const uint8_t *bytes,
 
 #elif defined(FASTGENA_FASTMUL)
 void MatrixVectorMulEnc(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
-                            uint8_t *ciphertext)
+                        uint8_t *ciphertext)
 {
     int i, j;
     uint16_t a[SABER_N], res[SABER_N];
@@ -189,10 +188,8 @@ void MatrixVectorMulEnc(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
  * Name: InnerProd just-in-time
  * Description: inner product using ntt, s in ntt domain
  */
-void InnerProdInTimeEnc(const uint8_t *bytes,
-                            const int32_t s[SABER_L][SABER_N],
-                            uint8_t *ciphertext,
-                            const uint8_t m[SABER_KEYBYTES])
+void InnerProdInTimeEnc(const uint8_t *bytes, const int32_t s[SABER_L][SABER_N],
+                        uint8_t *ciphertext, const uint8_t m[SABER_KEYBYTES])
 {
     int i, j;
     uint16_t b[SABER_N], vp[SABER_N] = {0};
@@ -221,9 +218,8 @@ void InnerProdInTimeEnc(const uint8_t *bytes,
  * Name: InnerProd just-in-time
  * Description: inner product using ntt
  */
-void InnerProdInTime(const uint8_t *bytes,
-                         const uint16_t s[SABER_L][SABER_N],
-                         uint16_t res[SABER_N])
+void InnerProdInTime(const uint8_t *bytes, const uint16_t s[SABER_L][SABER_N],
+                     uint16_t res[SABER_N])
 {
     int j;
     uint16_t b[2 * SABER_N];

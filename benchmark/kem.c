@@ -22,7 +22,7 @@ static int TestCPA(void);
 static int SpeedCPA(void);
 static int SpeedCCA(void);
 
-#define NTESTS 1
+#define NTESTS 1000
 
 static void DisableWatchDog(void)
 {
@@ -363,13 +363,13 @@ static int TestGen(void)
                 sum1 += (t2 - t1);
             }
             t1 = cpucycles();
-            GenSecretInTime(poly, seed, i);
+            GenSInTime(poly, seed, i);
             t2 = cpucycles();
             sum2 += (t2 - t1);
         }
     }
     printf("GenAInTime*9        %s\n", ullu(sum1 / NTESTS));
-    printf("GenSecretInTime     %s\n", ullu(sum2 / NTESTS));
+    printf("GenSInTime     %s\n", ullu(sum2 / NTESTS));
     return 0;
 }
 
