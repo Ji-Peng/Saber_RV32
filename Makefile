@@ -67,13 +67,12 @@ out/%.elf: \
 		$(filter %.c,$^) $(filter %.S,$^) \
 		$(RISCV_LDLIBS) -o $(basename $@)
 	mv $(basename $@) $@
-	touch -c $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
+	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
 
-# $(RISCV_OBJDUMP) --source --all-headers --demangle --line-numbers --wide $@ > $(basename $@).lst
 # $(RISCV_SIZE) $@
-
-# $(RISCV_OBJDUMP) -d $@ > $(basename $@).s
+# $(RISCV_OBJDUMP) --source --all-headers --demangle --line-numbers --wide $@ > $(basename $@).lst
+# touch -c $@
 # cat *.su > $(basename $@).stack
 # rm *.su
 
