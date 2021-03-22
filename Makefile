@@ -65,11 +65,11 @@ out/%.elf: \
 	mkdir -p $(dir $@)
 	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_LDFLAGS) \
 		$(filter %.c,$^) $(filter %.S,$^) \
-		$(RISCV_LDLIBS) -o $(basename $@)
-	mv $(basename $@) $@
+		$(RISCV_LDLIBS) -o $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
 
+# mv $(basename $@) $@
 # $(RISCV_SIZE) $@
 # $(RISCV_OBJDUMP) --source --all-headers --demangle --line-numbers --wide $@ > $(basename $@).lst
 # touch -c $@

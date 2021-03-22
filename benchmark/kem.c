@@ -12,6 +12,7 @@
 #include "fips202.h"
 #include "ntt.h"
 #include "poly.h"
+#include "poly_mul.h"
 #include "reduce.h"
 #include "rng.h"
 #include "verify.h"
