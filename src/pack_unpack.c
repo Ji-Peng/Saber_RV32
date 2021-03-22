@@ -149,34 +149,6 @@ void BS2POLq(const uint8_t *bytes, uint16_t *data, int32_t coeff_num)
     }
 }
 
-/**
- * @description: 91bits(12bytes) = 7coeffcients
- */
-void BS2POLq7(const uint8_t *bytes, uint16_t *data)
-{
-    data[0] = (bytes[0] & (0xff)) | ((bytes[1] & 0x1f) << 8);
-    data[1] = (bytes[1] >> 5 & (0x07)) | ((bytes[2] & 0xff) << 3) |
-              ((bytes[3] & 0x03) << 11);
-    data[2] = (bytes[3] >> 2 & (0x3f)) | ((bytes[4] & 0x7f) << 6);
-    data[3] = (bytes[4] >> 7 & (0x01)) | ((bytes[5] & 0xff) << 1) |
-              ((bytes[6] & 0x0f) << 9);
-    data[4] = (bytes[6] >> 4 & (0x0f)) | ((bytes[7] & 0xff) << 4) |
-              ((bytes[8] & 0x01) << 12);
-    data[5] = (bytes[8] >> 1 & (0x7f)) | ((bytes[9] & 0x3f) << 7);
-    data[6] = (bytes[9] >> 6 & (0x03)) | ((bytes[10] & 0xff) << 2) |
-              ((bytes[11] & 0x07) << 10);
-}
-
-/**
- * @description: 26bits(4bytes) = 2coeffcients
- */
-void BS2POLq2(const uint8_t *bytes, uint16_t *data)
-{
-    data[0] = (bytes[0] & (0xff)) | ((bytes[1] & 0x1f) << 8);
-    data[1] = (bytes[1] >> 5 & (0x07)) | ((bytes[2] & 0xff) << 3) |
-              ((bytes[3] & 0x03) << 11);
-}
-
 void POLp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
              const uint16_t data[SABER_N])
 {
