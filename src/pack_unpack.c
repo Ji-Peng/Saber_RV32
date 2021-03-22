@@ -120,10 +120,10 @@ void BS2POLT(const uint8_t bytes[SABER_SCALEBYTES_KEM], uint16_t data[SABER_N])
  * @description: 12*13bytes=156bytes <==> 12*8=96coefficients or 6*13=78bytes
  * <==> 6*8=48coefficients
  */
-void BS2POLq(const uint8_t *bytes, uint16_t *data, int32_t coeff_num)
+void BS2POLq(const uint8_t *bytes, uint16_t *data)
 {
     int32_t j, offset_byte, offset_data;
-    for (j = 0; j < coeff_num / 8; j++) {
+    for (j = 0; j < SABER_N / 8; j++) {
         offset_byte = 13 * j;
         offset_data = 8 * j;
         data[offset_data + 0] = (bytes[offset_byte + 0] & (0xff)) |

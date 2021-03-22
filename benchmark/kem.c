@@ -426,6 +426,7 @@ int main(void)
     disable_watchdog();
     test_kem_cpa();
     test_kem_cca();
+#ifndef HOST
     // speed_cpa();
     // speed_cca_kp();
     // speed_cca_enc();
@@ -435,5 +436,6 @@ int main(void)
     // test_GenMatrix();
     // test_keccake();
     // test_ntt();
+#endif
     return 0;
 }

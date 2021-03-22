@@ -18,9 +18,9 @@
 #    define SABER_ET 6
 #endif
 
-// three different strategies
-// #define FASTGENA_SLOWMUL
-#define FASTGENA_FASTMUL
+// three different strategies. you can only choose one strategy!
+#define FASTGENA_SLOWMUL
+// #define FASTGENA_FASTMUL
 // #define SLOWGENA_FASTMUL
 
 // check computation strategy

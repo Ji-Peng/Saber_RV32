@@ -193,8 +193,9 @@ void poly_add(uint16_t res[SABER_N], int32_t in[SABER_N])
  * Name: poly_mul_acc_ntt
  * Description: res += a * b using ntt，a, b in standard domain
  */
-void poly_mul_acc_ntt(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],
-                      uint16_t res[SABER_N])
+__attribute__((noinline)) void poly_mul_acc_ntt(uint16_t a[2 * SABER_N],
+                                                const uint16_t b[SABER_N],
+                                                uint16_t res[SABER_N])
 {
     int32_t t[SABER_N];
     int32_t *p = (int32_t *)a;
@@ -209,8 +210,9 @@ void poly_mul_acc_ntt(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],
  * Name: poly_mul_acc_ntt
  * Description: res += a * b using ntt，a in standard domain, b in ntt domain
  */
-void poly_mul_acc_ntt_fast(uint16_t a[SABER_N], const int32_t b[SABER_N],
-                           uint16_t res[SABER_N])
+__attribute__((noinline)) void poly_mul_acc_ntt_fast(uint16_t a[SABER_N],
+                                                     const int32_t b[SABER_N],
+                                                     uint16_t res[SABER_N])
 {
     int32_t t[SABER_N];
     int32_t *pb = (int32_t *)b;
@@ -228,13 +230,15 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
              uint32_t init)
 {
     int32_t i;
-    uint8_t buf[SHAKE128_RATE];
-    // can generate 50 coefficients
-    static uint8_t leftovers[82];
-    // state = 0 or 1, 0: store leftovers; 1: load leftovers
-    static uint32_t state;
+    // 416B = 1poly, 3*168-416=88
+    uint8_t buf[3 * SHAKE128_RATE];
+    // 80+168*2=416B=1poly, so save 80B leftovers is enough
+    static uint8_t leftovers[80];
     // keccak states
     static uint64_t keccak_state[25];
+    // 0: squeeze 3blocks and generate 1 poly;
+    // 1: squeeze 2blocks and recover leftovers && gen 1 poly;
+    static int32_t state;
     // init: clear states and absorb seed
     if (init == 1) {
         for (i = 0; i < 25; i++)
@@ -242,33 +246,21 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
         keccak_absorb(keccak_state, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
         state = 0;
     }
-    // squeeze output and generate 103 coefficients
-    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-    // 96coeff = 156bytes
-    BS2POLq(buf, poly, 96);
-    // 7coeff = 91bits(12bytes)
-    BS2POLq7(buf + 156, poly + 96);
-
-    // squeeze output and generate 103 coefficients
-    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-    // 96coeff = 156bytes
-    BS2POLq(buf, poly + 103, 96);
-    // 7coeff = 91bits(12bytes)
-    BS2POLq7(buf + 156, poly + 199);
-
-    // 0: save to leftovers or 1: load from leftovers
     if (state == 0) {
-        // squeeze output and generate 50 coefficients
-        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        // 48coeff = 78bytes
-        BS2POLq(buf, poly + 206, 48);
-        // 2coeff = 26bits(4bytes)
-        BS2POLq2(buf + 78, poly + 254);
-        memcpy(leftovers, &buf[82], 82);
+        // squeeze 3blocks
+        keccak_squeezeblocks(buf, 3, keccak_state, SHAKE128_RATE);
+        // 416B = 1poly
+        BS2POLq(buf, poly);
+        // save leftovers
+        memcpy(leftovers, buf + sizeof(buf) - sizeof(leftovers),
+               sizeof(leftovers));
     } else {
-        // use leftovers to generate 50 coefficients
-        BS2POLq(leftovers, poly + 206, 48);
-        BS2POLq2(leftovers + 78, poly + 254);
+        // squeeze 2blocks
+        keccak_squeezeblocks(buf, 2, keccak_state, SHAKE128_RATE);
+        // get leftovers
+        memcpy(buf + 2 * SHAKE128_RATE, leftovers, sizeof(leftovers));
+        // generate 1poly
+        BS2POLq(buf, poly);
     }
     state = !state;
 }
@@ -279,50 +271,20 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
 void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
              int32_t x, int32_t y)
 {
-    int32_t i;
+    int i;
+    uint64_t states[25];
     uint8_t buf[SHAKE128_RATE];
-    // can generate 50 coefficients
-    static uint8_t leftovers[82];
-    // state = 0 or 1, 0: store leftovers; 1: load leftovers
-    static uint32_t state;
-    // keccak states
-    static uint64_t keccak_state[25];
+    // extended seed
+    uint8_t xseed[SABER_SEEDBYTES + 2];
     // init: clear states and absorb seed
-    if (init == 1) {
-        for (i = 0; i < 25; i++)
-            keccak_state[i] = 0;
-        keccak_absorb(keccak_state, SHAKE128_RATE, seed, SABER_SEEDBYTES, 0x1F);
-        state = 0;
+    for (i = 0; i < 25; i++) {
+        states[i] = 0;
     }
-    // squeeze output and generate 103 coefficients
-    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-    // 96coeff = 156bytes
-    BS2POLq(buf, poly, 96);
-    // 7coeff = 91bits(12bytes)
-    BS2POLq7(buf + 156, poly + 96);
-
-    // squeeze output and generate 103 coefficients
-    keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-    // 96coeff = 156bytes
-    BS2POLq(buf, poly + 103, 96);
-    // 7coeff = 91bits(12bytes)
-    BS2POLq7(buf + 156, poly + 199);
-
-    // 0: save to leftovers or 1: load from leftovers
-    if (state == 0) {
-        // squeeze output and generate 50 coefficients
-        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        // 48coeff = 78bytes
-        BS2POLq(buf, poly + 206, 48);
-        // 2coeff = 26bits(4bytes)
-        BS2POLq2(buf + 78, poly + 254);
-        memcpy(leftovers, &buf[82], 82);
-    } else {
-        // use leftovers to generate 50 coefficients
-        BS2POLq(leftovers, poly + 206, 48);
-        BS2POLq2(leftovers + 78, poly + 254);
-    }
-    state = !state;
+    memcpy(xseed, seed, SABER_SEEDBYTES);
+    xseed[SABER_SEEDBYTES + 0] = x;
+    xseed[SABER_SEEDBYTES + 1] = y;
+    keccak_absorb(states, SHAKE128_RATE, xseed, SABER_SEEDBYTES + 2, 0x1F);
+    keccak_squeezeblocks(buf, 1, states, SHAKE128_RATE);
 }
 
 #endif
