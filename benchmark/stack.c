@@ -93,40 +93,40 @@ uint8_t canary = 0x42;
 // {
 //     volatile unsigned char a;
 //     FILL_STACK()
-//     MatrixVectorMulKP_ntt(seed_A, seed_s, sk, b);
+//     MatrixVectorMulKP(seed_A, seed_s, sk, b);
 //     CHECK_STACK()
 //     if (c >= canary_size) {
 //         printf("c >= canary_size\n");
 //         return -1;
 //     }
-//     printf("MatrixVectorMulKP_ntt %u\n", c);
+//     printf("MatrixVectorMulKP %u\n", c);
 
 //     FILL_STACK()
-//     MatrixVectorMulEnc_ntt(seed_A, b, ciphertext);
+//     MatrixVectorMulEnc(seed_A, b, ciphertext);
 //     CHECK_STACK()
 //     if (c >= canary_size) {
 //         printf("c >= canary_size\n");
 //         return -1;
 //     }
-//     printf("MatrixVectorMulEnc_ntt %u\n", c);
+//     printf("MatrixVectorMulEnc %u\n", c);
 
 //     FILL_STACK()
-//     InnerProdInTime_ntt(pk, b, A);
+//     InnerProdInTime(pk, b, A);
 //     CHECK_STACK()
 //     if (c >= canary_size) {
 //         printf("c >= canary_size\n");
 //         return -1;
 //     }
-//     printf("InnerProdInTime_ntt %u\n", c);
+//     printf("InnerProdInTime %u\n", c);
 
 //     FILL_STACK()
-//     poly_mul_acc_ntt(A, (uint16_t *)b, C);
+//     PolyMulAcc(A, (uint16_t *)b, C);
 //     CHECK_STACK()
 //     if (c >= canary_size) {
 //         printf("c >= canary_size\n");
 //         return -1;
 //     }
-//     printf("poly_mul_acc_ntt %u\n", c);
+//     printf("PolyMulAcc %u\n", c);
 //     return 0;
 // }
 
@@ -137,13 +137,13 @@ static int test_GenMatrix_stack(void)
 {
     volatile unsigned char a;
     FILL_STACK()
-    GenPoly(poly, seed, 0);
+    GenAInTime(poly, seed, 0);
     CHECK_STACK()
     if (c >= canary_size) {
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("GenPoly %u\n", c);
+    printf("GenAInTime %u\n", c);
 
     FILL_STACK()
     GenSecretInTime(poly, seed, 0);

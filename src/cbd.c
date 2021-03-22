@@ -13,7 +13,7 @@ Vadim Lyubashevsky, John M. Schanck, Peter Schwabe & Damien stehle
 #include "SABER_params.h"
 #include "api.h"
 
-static uint64_t load_littleendian(const uint8_t *x, int bytes)
+static uint64_t LoadLittleEndian(const uint8_t *x, int bytes)
 {
     int i;
     uint64_t r = x[0];
@@ -22,14 +22,14 @@ static uint64_t load_littleendian(const uint8_t *x, int bytes)
     return r;
 }
 
-void cbd(uint16_t s[SABER_N], uint8_t *buf, int32_t num)
+void CBD(uint16_t s[SABER_N], uint8_t *buf, int32_t num)
 {
 #if SABER_MU == 6
     uint32_t t, d, a[4], b[4];
     int i, j;
 
     for (i = 0; i < num / 4; i++) {
-        t = load_littleendian(buf + 3 * i, 3);
+        t = LoadLittleEndian(buf + 3 * i, 3);
         d = 0;
         for (j = 0; j < 3; j++)
             d += (t >> j) & 0x249249;
@@ -53,7 +53,7 @@ void cbd(uint16_t s[SABER_N], uint8_t *buf, int32_t num)
     int i, j;
 
     for (i = 0; i < num / 4; i++) {
-        t = load_littleendian(buf + 4 * i, 4);
+        t = LoadLittleEndian(buf + 4 * i, 4);
         d = 0;
         for (j = 0; j < 4; j++)
             d += (t >> j) & 0x11111111;
@@ -77,7 +77,7 @@ void cbd(uint16_t s[SABER_N], uint8_t *buf, int32_t num)
     int i, j;
 
     for (i = 0; i < num / 4; i++) {
-        t = load_littleendian(buf + 5 * i, 5);
+        t = LoadLittleEndian(buf + 5 * i, 5);
         d = 0;
         for (j = 0; j < 5; j++)
             d += (t >> j) & 0x0842108421UL;

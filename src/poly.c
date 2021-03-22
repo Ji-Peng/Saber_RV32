@@ -20,7 +20,7 @@ void GenSecret(uint16_t s[SABER_L][SABER_N],
     shake128(buf, sizeof(buf), seed, SABER_NOISE_SEEDBYTES);
 
     for (i = 0; i < SABER_L; i++) {
-        cbd(s[i], buf + i * SABER_POLYCOINBYTES, SABER_N);
+        CBD(s[i], buf + i * SABER_POLYCOINBYTES, SABER_N);
     }
 }
 
@@ -45,30 +45,30 @@ void GenSecretInTime(uint16_t s[SABER_N],
     if (index == 0) {
         // 1buf = 224coeff
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        cbd(s, buf, 224);
+        CBD(s, buf, 224);
         // 1buf = 32coeff + 72B leftover
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        cbd(s + 224, buf, 32);
+        CBD(s + 224, buf, 32);
         memcpy(leftovers, buf + SHAKE128_RATE - sizeof(leftovers),
                sizeof(leftovers));
     } else if (index == 1) {
         // 1leftover = 72B = 96coeff
-        cbd(s, leftovers, 96);
+        CBD(s, leftovers, 96);
         // 1buf = 160coeff + 48B leftover
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        cbd(s + 96, buf, 160);
+        CBD(s + 96, buf, 160);
         memcpy(leftovers, buf + SHAKE128_RATE - 48, 48);
     } else if (index == 2) {
         // 48B leftover = 64coeff
-        cbd(s, leftovers, 64);
+        CBD(s, leftovers, 64);
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        cbd(s + 64, buf, 192);
+        CBD(s + 64, buf, 192);
         memcpy(leftovers, buf + SHAKE128_RATE - 24, 24);
     } else {
         // 24B leftover = 32coeff
-        cbd(s, leftovers, 32);
+        CBD(s, leftovers, 32);
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        cbd(s + 32, buf, 224);
+        CBD(s + 32, buf, 224);
     }
 
 #elif SABER_MU == 8
@@ -77,41 +77,41 @@ void GenSecretInTime(uint16_t s[SABER_N],
     if (index == 0) {
         // 1buf = 168coeff
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        cbd(s, buf, 168);
+        CBD(s, buf, 168);
         // 1buf = 88coeff + 80B leftover
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        cbd(s + 168, buf, 88);
+        CBD(s + 168, buf, 88);
         memcpy(leftovers, buf + SHAKE128_RATE - 80, 80);
     } else if (index == 1) {
         // 1leftover = 80B = 80coeff
-        cbd(s, leftovers, 80);
+        CBD(s, leftovers, 80);
         // 1buf = 168coeff
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        cbd(s + 80, buf, 168);
+        CBD(s + 80, buf, 168);
         // 1buf = 8coeff + 88B leftover
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        cbd(s + 248, buf, 8);
+        CBD(s + 248, buf, 8);
         memcpy(leftovers, buf + SHAKE128_RATE - 88, 88);
     } else {
         // 1leftover = 88B = 88coeff
-        cbd(s, leftovers, 88);
+        CBD(s, leftovers, 88);
         // 1buf = 168coeff
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        cbd(s + 88, buf, 168);
+        CBD(s + 88, buf, 168);
     }
 
 #elif SABER_MU == 10
     uint8_t buf[SHAKE128_RATE];
     keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-    cbd(s, buf, SABER_N / 2);
+    CBD(s, buf, SABER_N / 2);
     keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-    cbd(s + SABER_N / 2, buf, SABER_N / 2);
+    CBD(s + SABER_N / 2, buf, SABER_N / 2);
 #else
 #    error "Unsupported SABER parameter."
 #endif
 }
 
-void GenSecret_ntt(int32_t s[SABER_L][SABER_N],
+void GenSecretNTT(int32_t s[SABER_L][SABER_N],
                    const uint8_t seed[SABER_NOISE_SEEDBYTES])
 {
     uint16_t t[SABER_N];
@@ -119,7 +119,7 @@ void GenSecret_ntt(int32_t s[SABER_L][SABER_N],
 
     for (i = 0; i < SABER_L; i++) {
         GenSecretInTime(t, seed, i);
-        ntt(t, s[i]);
+        NTT(t, s[i]);
     }
 }
 
@@ -127,7 +127,7 @@ void GenSecret_ntt(int32_t s[SABER_L][SABER_N],
 /**
  * @description: Generate polynomial on the fly
  */
-void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
+void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
              uint32_t init)
 {
     int32_t i;
@@ -151,7 +151,7 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
         // squeeze 3blocks
         keccak_squeezeblocks(buf, 3, keccak_state, SHAKE128_RATE);
         // 416B = 1poly
-        BS2POLq(buf, poly);
+        BS2Polq(buf, poly);
         // save leftovers
         memcpy(leftovers, buf + sizeof(buf) - sizeof(leftovers),
                sizeof(leftovers));
@@ -161,7 +161,7 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
         // get leftovers
         memcpy(buf + 2 * SHAKE128_RATE, leftovers, sizeof(leftovers));
         // generate 1poly
-        BS2POLq(buf, poly);
+        BS2Polq(buf, poly);
     }
     state = !state;
 }
@@ -169,7 +169,7 @@ void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
 /**
  * @description: Generate polynomial matrix A on the fly
  */
-void GenPoly(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
+void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
              int32_t x, int32_t y)
 {
     int i;

@@ -21,9 +21,9 @@ static void test_ntt(void)
     int32_t out1[256], out2[256];
     uint64_t t1, t2;
     t1 = cpucycles();
-    ntt(in, out1);
+    NTT(in, out1);
     t2 = cpucycles();
-    printf("ntt cycles is %s\n", ullu(t2 - t1));
+    printf("NTT cycles is %s\n", ullu(t2 - t1));
 }
 
 static void test_poly_mul(void)
@@ -36,19 +36,19 @@ static void test_poly_mul(void)
     sum = 0;
     for (int i = 0; i < NTESTS; i++) {
         t1 = cpucycles();
-        poly_mul_acc(a, b, res);
+        PolyMulAcc(a, b, res);
         t2 = cpucycles();
         sum += (t2 - t1);
     }
-    printf("poly_mul_acc cycles is %s\n", ullu(sum / NTESTS));
+    printf("PolyMulAcc cycles is %s\n", ullu(sum / NTESTS));
     sum = 0;
     for (int i = 0; i < NTESTS; i++) {
         t1 = cpucycles();
-        poly_mul_acc_ntt(a, b, res);
+        PolyMulAcc(a, b, res);
         t2 = cpucycles();
         sum += (t2 - t1);
     }
-    printf("poly_mul_acc_ntt cycles is %s\n", ullu(sum / NTESTS));
+    printf("PolyMulAcc cycles is %s\n", ullu(sum / NTESTS));
     printf("NTESTS is %d\n", NTESTS);
     printf("---------TEST END----------\n");
 }

@@ -12,7 +12,7 @@
 #include "poly_mul.h"
 #include "rng.h"
 
-static int test_ntt(void);
+static int TestNTT(void);
 static int test_ntt2(void);
 void test_poly_mul(void);
 
@@ -20,7 +20,7 @@ void test_poly_mul(void);
 
 uint64_t t[NTESTS];
 
-static int test_ntt(void)
+static int TestNTT(void)
 {
     uint16_t A[SABER_L][SABER_L][SABER_N];
     uint16_t s[SABER_L][SABER_N];
@@ -32,12 +32,12 @@ static int test_ntt(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
-    randombytes(seed_A, SABER_SEEDBYTES);
+    RandomBytes(seed_A, SABER_SEEDBYTES);
     shake128(seed_A, SABER_SEEDBYTES, seed_A,
              SABER_SEEDBYTES);  // for not revealing system RNG state
-    randombytes(seed_s, SABER_NOISE_SEEDBYTES);
+    RandomBytes(seed_s, SABER_NOISE_SEEDBYTES);
 
     GenSecret(s, seed_s);
 
@@ -64,9 +64,9 @@ static int test_ntt2(void)
 
     for (i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
-        ntt(in, out1);
+        NTT(in, out1);
     }
-    print_results("ntt: ", t, NTESTS);
+    print_results("NTT: ", t, NTESTS);
 
     return 0;
 }
@@ -78,18 +78,18 @@ void test_poly_mul(void)
     int16_t res[SABER_N];
     uint64_t t1, t2;
     t1 = cpucycles();
-    poly_mul_acc((uint16_t*)a, (uint16_t*)b, (uint16_t*)res);
+    PolyMulAcc((uint16_t*)a, (uint16_t*)b, (uint16_t*)res);
     t2 = cpucycles();
-    printf("poly_mul_acc cycles is %lu\n", (t2 - t1));
+    printf("PolyMulAcc cycles is %lu\n", (t2 - t1));
     t1 = cpucycles();
-    poly_mul_acc_ntt(a, b, res);
+    PolyMulAcc(a, b, res);
     t2 = cpucycles();
-    printf("poly_mul_acc_ntt cycles is %lu\n", (t2 - t1));
+    printf("PolyMulAcc cycles is %lu\n", (t2 - t1));
 }
 
 int main(void)
 {
-    test_ntt();
+    TestNTT();
     test_ntt2();
     test_poly_mul();
 }

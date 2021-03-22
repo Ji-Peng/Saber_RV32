@@ -15,8 +15,8 @@
 #define RmodM 1081347       // R mod M
 #define NINV 906456         // R^2 * (1/64) mod M
 
-int32_t montgomery_reduce(int64_t a);
+int32_t MontReduce(int64_t a);
 
-int32_t barrett_reduce(int32_t a);
+int32_t BarrettReduce(int32_t a);
 
 #endif

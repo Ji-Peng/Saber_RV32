@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /*************************************************
- * Name:        montgomery_reduce
+ * Name:        MontReduce
  *
  * Description: Montgomery reduction; given a 64-bit integer a, computes
  *              32-bit integer congruent to a * R^-1 mod M, where R=2^32
@@ -13,7 +13,7 @@
  *
  * Returns:     integer in {-M+1,...,M-1} congruent to a * R^-1 modulo M.
  **************************************************/
-int32_t montgomery_reduce(int64_t a)
+int32_t MontReduce(int64_t a)
 {
     int32_t t;
 
@@ -23,7 +23,7 @@ int32_t montgomery_reduce(int64_t a)
 }
 
 /*************************************************
- * Name:        barrett_reduce
+ * Name:        BarrettReduce
  *
  * Description: Barrett reduction; given a 32-bit integer a, computes
  * centered representative congruent to a mod M in
@@ -33,7 +33,7 @@ int32_t montgomery_reduce(int64_t a)
  *
  * Returns:     integer in {-(M-1)/2,...,(M-1)/2} congruent to a modulo M.
  **************************************************/
-int32_t barrett_reduce(int32_t a)
+int32_t BarrettReduce(int32_t a)
 {
     int32_t t;
     const int32_t v = (((int64_t)1 << 48) + M / 2) / M;
@@ -45,15 +45,15 @@ int32_t barrett_reduce(int32_t a)
 
 // int main(void)
 // {
-//     printf("%d\n", montgomery_reduce((int64_t)M * RmodM));
-//     printf("%d\n", montgomery_reduce((int64_t)(M - 1) * RmodM));
-//     printf("%d\n", montgomery_reduce((int64_t)(2 * M) * RmodM));
-//     printf("%d\n", montgomery_reduce((int64_t)(2 * M - 1) * RmodM));
-//     printf("%d\n", montgomery_reduce((int64_t)(3 * M) * RmodM));
-//     printf("%d\n", montgomery_reduce((int64_t)(3 * M - 1) * RmodM));
-//     printf("%d\n", barrett_reduce(M));
-//     printf("%d\n", barrett_reduce(M - 1));
-//     printf("%d\n", barrett_reduce(2 * M));
-//     printf("%d\n", barrett_reduce(2 * M - 1));
-//     printf("%d\n", barrett_reduce(M/2+3));
+//     printf("%d\n", MontReduce((int64_t)M * RmodM));
+//     printf("%d\n", MontReduce((int64_t)(M - 1) * RmodM));
+//     printf("%d\n", MontReduce((int64_t)(2 * M) * RmodM));
+//     printf("%d\n", MontReduce((int64_t)(2 * M - 1) * RmodM));
+//     printf("%d\n", MontReduce((int64_t)(3 * M) * RmodM));
+//     printf("%d\n", MontReduce((int64_t)(3 * M - 1) * RmodM));
+//     printf("%d\n", BarrettReduce(M));
+//     printf("%d\n", BarrettReduce(M - 1));
+//     printf("%d\n", BarrettReduce(2 * M));
+//     printf("%d\n", BarrettReduce(2 * M - 1));
+//     printf("%d\n", BarrettReduce(M/2+3));
 // }

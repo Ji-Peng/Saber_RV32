@@ -29,7 +29,7 @@
 uint64_t clock1, clock2;
 uint64_t clock_kp_mv, clock_cl_mv, clock_kp_sm, clock_cl_sm;
 
-static int test_kem_cca(void)
+static int TestCCA(void)
 {
     uint8_t pk[SABER_PUBLICKEYBYTES];
     uint8_t sk[SABER_SECRETKEYBYTES];
@@ -57,7 +57,7 @@ static int test_kem_cca(void)
         // entropy_input[i] = rand()%256;
         entropy_input[i] = i;
     }
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     printf("SABER_INDCPA_PUBLICKEYBYTES=%d\n", SABER_INDCPA_PUBLICKEYBYTES);
     printf("SABER_INDCPA_SECRETKEYBYTES=%d\n", SABER_INDCPA_SECRETKEYBYTES);
@@ -136,6 +136,6 @@ unsigned char message_dec[])
 */
 int main(void)
 {
-    test_kem_cca();
+    TestCCA();
     return 0;
 }

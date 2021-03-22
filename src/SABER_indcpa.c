@@ -19,12 +19,12 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
     uint8_t seed_s[SABER_NOISE_SEEDBYTES];
     int i, j;
 
-    randombytes(seed_A, SABER_SEEDBYTES);
+    RandomBytes(seed_A, SABER_SEEDBYTES);
     // for not revealing system RNG state
     shake128(seed_A, SABER_SEEDBYTES, seed_A, SABER_SEEDBYTES);
-    randombytes(seed_s, SABER_NOISE_SEEDBYTES);
+    RandomBytes(seed_s, SABER_NOISE_SEEDBYTES);
 
-    MatrixVectorMulKP_ntt(seed_A, seed_s, sk, b);
+    MatrixVectorMulKP(seed_A, seed_s, sk, b);
 
     for (i = 0; i < SABER_L; i++) {
         for (j = 0; j < SABER_N; j++) {
@@ -32,7 +32,7 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
         }
     }
 
-    POLVECp2BS(pk, b);
+    PolVecp2BS(pk, b);
     memcpy(pk + SABER_POLYVECCOMPRESSEDBYTES, seed_A,
            SABER_SEEDBYTES * sizeof(uint8_t));
 }
@@ -49,14 +49,14 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
 #ifdef FASTGENA_SLOWMUL
     uint16_t sp[SABER_L][SABER_N];
     GenSecret(sp, seed_sp);
-    MatrixVectorMulEnc_ntt(seed_A, sp, ciphertext);
-    InnerProdInTimeEnc_ntt(pk, sp, ciphertext, m);
+    MatrixVectorMulEnc(seed_A, sp, ciphertext);
+    InnerProdInTimeEnc(pk, sp, ciphertext, m);
 #elif defined(FASTGENA_FASTMUL)
     // save s in ntt domain for fast computation
     int32_t sp[SABER_L][SABER_N];
-    GenSecret_ntt(sp, seed_sp);
-    MatrixVectorMulEnc_ntt(seed_A, sp, ciphertext);
-    InnerProdInTimeEnc_ntt(pk, sp, ciphertext, m);
+    GenSecretNTT(sp, seed_sp);
+    MatrixVectorMulEnc(seed_A, sp, ciphertext);
+    InnerProdInTimeEnc(pk, sp, ciphertext, m);
 
 #else
 #endif
@@ -71,15 +71,15 @@ void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
     uint16_t cm[SABER_N];
     int i;
 
-    unpack_sk(sk, s);
+    UnpackSk(sk, s);
 
-    InnerProdInTime_ntt(ciphertext, s, v);
+    InnerProdInTime(ciphertext, s, v);
 
-    BS2POLT(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, cm);
+    BS2PolT(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, cm);
 
     for (i = 0; i < SABER_N; i++) {
         v[i] = (v[i] + h2 - (cm[i] << (SABER_EP - SABER_ET))) >> (SABER_EP - 1);
     }
 
-    POLmsg2BS(m, v);
+    PolMsg2BS(m, v);
 }

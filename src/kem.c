@@ -23,7 +23,7 @@ int crypto_kem_keypair(unsigned char *pk, unsigned char *sk)
 
     // Remaining part of sk contains a pseudo-random number. This is output when
     // check in crypto_kem_dec() fails.
-    randombytes(sk + SABER_SECRETKEYBYTES - SABER_KEYBYTES, SABER_KEYBYTES);
+    RandomBytes(sk + SABER_SECRETKEYBYTES - SABER_KEYBYTES, SABER_KEYBYTES);
     return (0);
 }
 
@@ -33,7 +33,7 @@ int crypto_kem_enc(unsigned char *c, unsigned char *k, const unsigned char *pk)
     unsigned char kr[64];
     unsigned char buf[64];
 
-    randombytes(buf, 32);
+    RandomBytes(buf, 32);
 
     // BUF[0:31] <-- random message (will be used as the key for
     // client) Note: hash doesnot release system RNG output
@@ -80,12 +80,12 @@ int crypto_kem_dec(unsigned char *k, const unsigned char *c,
 
     indcpa_kem_enc(buf, kr + 32, pk, cmp);
 
-    fail = verify(c, cmp, SABER_BYTES_CCA_DEC);
+    fail = Verify(c, cmp, SABER_BYTES_CCA_DEC);
 
     // overwrite coins in kr with h(c)
     sha3_256(kr + 32, c, SABER_BYTES_CCA_DEC);
 
-    cmov(kr, sk + SABER_SECRETKEYBYTES - SABER_KEYBYTES, SABER_KEYBYTES, fail);
+    CMov(kr, sk + SABER_SECRETKEYBYTES - SABER_KEYBYTES, SABER_KEYBYTES, fail);
 
     // hash concatenation of pre-k and h(c) to k
     sha3_256(k, kr, 64);

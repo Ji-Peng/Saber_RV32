@@ -17,14 +17,14 @@
 #include "rng.h"
 #include "verify.h"
 
-static int test_kem_cca(void);
-static int test_kem_cpa(void);
-static int speed_cpa(void);
-static int speed_cca(void);
+static int TestCCA(void);
+static int TestCPA(void);
+static int SpeedCPA(void);
+static int SpeedCCA(void);
 
-#define NTESTS 1000
+#define NTESTS 1
 
-static void disable_watchdog(void)
+static void DisableWatchDog(void)
 {
 #ifndef HOST
     int result = 1;
@@ -41,7 +41,7 @@ static void disable_watchdog(void)
 #endif
 }
 
-static int test_kem_cpa(void)
+static int TestCPA(void)
 {
     uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES];
     uint8_t sk[SABER_INDCPA_SECRETKEYBYTES];
@@ -53,7 +53,7 @@ static int test_kem_cpa(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
     printf("-----------TEST CPA CORRECTNESS-------------\n");
     for (j = 0; j < NTESTS; j++) {
         memset(message1, 0, sizeof(message1));
@@ -87,7 +87,7 @@ static int test_kem_cpa(void)
     return 0;
 }
 
-static int test_kem_cca(void)
+static int TestCCA(void)
 {
     uint8_t pk[CRYPTO_PUBLICKEYBYTES];
     uint8_t sk[CRYPTO_SECRETKEYBYTES];
@@ -100,7 +100,7 @@ static int test_kem_cca(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
     printf("-----------TEST CCA CORRECTNESS-------------\n");
     for (j = 0; j < NTESTS; j++) {
         // Generation of secret key sk and public key pk pair
@@ -132,7 +132,7 @@ static int test_kem_cca(void)
 
 #ifndef HOST
 
-static int speed_cpa(void)
+static int SpeedCPA(void)
 {
     uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES];
     uint8_t sk[SABER_INDCPA_SECRETKEYBYTES];
@@ -146,7 +146,7 @@ static int speed_cpa(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     memset(message1, 0, sizeof(message1));
     memset(message2, 0, sizeof(message2));
@@ -178,7 +178,7 @@ static int speed_cpa(void)
     return 0;
 }
 
-static int speed_cca(void)
+static int SpeedCCA(void)
 {
     uint8_t pk[CRYPTO_PUBLICKEYBYTES];
     uint8_t sk[CRYPTO_SECRETKEYBYTES];
@@ -193,7 +193,7 @@ static int speed_cca(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     printf("-----------TEST CCA SPEED-------------\n");
     for (j = 0; j < NTESTS; j++) {
@@ -222,7 +222,7 @@ static int speed_cca(void)
     return 0;
 }
 
-static int speed_cca_kp(void)
+static int SpeedCCAKP(void)
 {
     uint8_t pk[CRYPTO_PUBLICKEYBYTES];
     uint8_t sk[CRYPTO_SECRETKEYBYTES];
@@ -235,7 +235,7 @@ static int speed_cca_kp(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     for (j = 0; j < NTESTS; j++) {
         // Generation of secret key sk and public key pk pair
@@ -248,7 +248,7 @@ static int speed_cca_kp(void)
     return 0;
 }
 
-static int speed_cca_enc(void)
+static int SpeedCCAEnc(void)
 {
     uint8_t pk[CRYPTO_PUBLICKEYBYTES];
     uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
@@ -262,7 +262,7 @@ static int speed_cca_enc(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     for (j = 0; j < NTESTS; j++) {
         // Key-Encapsulation call; input: pk; output: ciphertext c,
@@ -276,7 +276,7 @@ static int speed_cca_enc(void)
     return 0;
 }
 
-static int speed_cca_dec(void)
+static int SpeedCCADec(void)
 {
     uint8_t sk[CRYPTO_SECRETKEYBYTES];
     uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
@@ -290,7 +290,7 @@ static int speed_cca_dec(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     for (j = 0; j < NTESTS; j++) {
         // Key-Decapsulation call; input: sk, c; output: shared-secret ss_b;
@@ -303,7 +303,7 @@ static int speed_cca_dec(void)
     return 0;
 }
 
-static int test_polmul(void)
+static int TestPolyMul(void)
 {
     uint8_t seed_A[SABER_SEEDBYTES];
     uint8_t seed_s[SABER_NOISE_SEEDBYTES];
@@ -320,33 +320,33 @@ static int test_polmul(void)
 
     for (j = 0; j < NTESTS; j++) {
         t1 = cpucycles();
-        MatrixVectorMulKP_ntt(seed_A, seed_s, sk, b);
+        MatrixVectorMulKP(seed_A, seed_s, sk, b);
         t2 = cpucycles();
         sum1 += (t2 - t1);
 
         t1 = cpucycles();
-        MatrixVectorMulEnc_ntt(seed_A, b, ciphertext);
+        MatrixVectorMulEnc(seed_A, b, ciphertext);
         t2 = cpucycles();
         sum2 += (t2 - t1);
 
         t1 = cpucycles();
-        InnerProdInTime_ntt(pk, b, a);
+        InnerProdInTime(pk, b, a);
         t2 = cpucycles();
         sum3 += (t2 - t1);
 
         t1 = cpucycles();
-        poly_mul_acc_ntt(a, (uint16_t *)b, c);
+        PolyMulAcc(a, (uint16_t *)b, c);
         t2 = cpucycles();
         sum4 += (t2 - t1);
     }
-    printf("MatrixVectorMulKP_ntt       %s\n", ullu(sum1 / NTESTS));
-    printf("MatrixVectorMulEnc_ntt      %s\n", ullu(sum2 / NTESTS));
-    printf("InnerProdInTime_ntt         %s\n", ullu(sum3 / NTESTS));
-    printf("poly_mul_acc_ntt            %s\n", ullu(sum4 / NTESTS));
+    printf("MatrixVectorMulKP       %s\n", ullu(sum1 / NTESTS));
+    printf("MatrixVectorMulEnc      %s\n", ullu(sum2 / NTESTS));
+    printf("InnerProdInTime         %s\n", ullu(sum3 / NTESTS));
+    printf("PolyMulAcc            %s\n", ullu(sum4 / NTESTS));
     return 0;
 }
 
-static int test_GenMatrix(void)
+static int TestGen(void)
 {
     uint16_t poly[SABER_N];
     uint8_t seed[SABER_SEEDBYTES];
@@ -358,7 +358,7 @@ static int test_GenMatrix(void)
         for (i = 0; i < SABER_L; i++) {
             for (j = 0; j < SABER_L; j++) {
                 t1 = cpucycles();
-                GenPoly(poly, seed, 1 - i - j);
+                GenAInTime(poly, seed, 1 - i - j);
                 t2 = cpucycles();
                 sum1 += (t2 - t1);
             }
@@ -368,12 +368,12 @@ static int test_GenMatrix(void)
             sum2 += (t2 - t1);
         }
     }
-    printf("GenPoly*9        %s\n", ullu(sum1 / NTESTS));
+    printf("GenAInTime*9        %s\n", ullu(sum1 / NTESTS));
     printf("GenSecretInTime  %s\n", ullu(sum2 / NTESTS));
     return 0;
 }
 
-static int test_keccake(void)
+static int TestKeccak(void)
 {
     uint64_t keccak_state[25];
     uint8_t seed[32], buf[168];
@@ -402,7 +402,7 @@ static int test_keccake(void)
     return 0;
 }
 
-static int test_ntt(void)
+static int TestNTT(void)
 {
     int i;
     uint64_t t1, t2, sum1;
@@ -412,11 +412,11 @@ static int test_ntt(void)
 
     for (i = 0; i < NTESTS; i++) {
         t1 = cpucycles();
-        ntt(in, out);
+        NTT(in, out);
         t2 = cpucycles();
         sum1 += (t2 - t1);
     }
-    printf("ntt           %s\n", ullu(sum1 / NTESTS));
+    printf("NTT           %s\n", ullu(sum1 / NTESTS));
     return 0;
 }
 
@@ -424,19 +424,19 @@ static int test_ntt(void)
 
 int main(void)
 {
-    disable_watchdog();
-    test_kem_cpa();
-    test_kem_cca();
+    DisableWatchDog();
+    TestCPA();
+    TestCCA();
 #ifndef HOST
-    // speed_cpa();
-    // speed_cca_kp();
-    // speed_cca_enc();
-    // speed_cca_dec();
-    // speed_cca();
-    // test_polmul();
-    // test_GenMatrix();
-    // test_keccake();
-    // test_ntt();
+    SpeedCPA();
+    SpeedCCAKP();
+    SpeedCCAEnc();
+    SpeedCCADec();
+    SpeedCCA();
+    TestPolyMul();
+    TestGen();
+    TestKeccak();
+    TestNTT();
 #endif
     return 0;
 }
