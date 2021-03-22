@@ -66,14 +66,11 @@ void indcpa_kem_dec(const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
                     const uint8_t ciphertext[SABER_BYTES_CCA_DEC],
                     uint8_t m[SABER_KEYBYTES])
 {
-    uint16_t s[SABER_L][SABER_N];
     uint16_t v[SABER_N] = {0};
     uint16_t cm[SABER_N];
     int i;
 
-    UnpackSk(sk, s);
-
-    InnerProdInTime(ciphertext, s, v);
+    InnerProdInTimeDec(ciphertext, sk, v);
 
     BS2PolT(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, cm);
 

@@ -160,6 +160,21 @@ void InnerProdInTimeEnc(const uint8_t *bytes,
     PolT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
 }
 
+void InnerProdInTimeDec(const uint8_t *bytes,
+                        const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
+                        uint16_t res[SABER_N])
+{
+    int j;
+    uint16_t b[2 * SABER_N];
+    uint16_t s[SABER_N];
+
+    for (j = 0; j < SABER_L; j++) {
+        BS2Polp(bytes + j * (SABER_EP * SABER_N / 8), b);
+        UnpackSk(sk + j * SABER_SKPOLYBYTES, s);
+        PolyMulAcc(b, s, res);
+    }
+}
+
 #elif defined(FASTGENA_FASTMUL)
 void MatrixVectorMulEnc(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
                         uint8_t *ciphertext)
@@ -214,18 +229,3 @@ void InnerProdInTimeEnc(const uint8_t *bytes, const int32_t s[SABER_L][SABER_N],
 #else
 
 #endif
-/**
- * Name: InnerProd just-in-time
- * Description: inner product using ntt
- */
-void InnerProdInTime(const uint8_t *bytes, const uint16_t s[SABER_L][SABER_N],
-                     uint16_t res[SABER_N])
-{
-    int j;
-    uint16_t b[2 * SABER_N];
-
-    for (j = 0; j < SABER_L; j++) {
-        BS2Polp(bytes + j * (SABER_EP * SABER_N / 8), b);
-        PolyMulAcc(b, s[j], res);
-    }
-}

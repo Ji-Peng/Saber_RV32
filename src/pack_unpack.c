@@ -12,15 +12,15 @@ void PolT2BS(uint8_t bytes[SABER_SCALEBYTES_KEM], const uint16_t data[SABER_N])
         offsetByte = 3 * j;
         offsetData = 8 * j;
         bytes[offsetByte + 0] = (data[offsetData + 0] & 0x7) |
-                                 ((data[offsetData + 1] & 0x7) << 3) |
-                                 ((data[offsetData + 2] & 0x3) << 6);
+                                ((data[offsetData + 1] & 0x7) << 3) |
+                                ((data[offsetData + 2] & 0x3) << 6);
         bytes[offsetByte + 1] = ((data[offsetData + 2] >> 2) & 0x01) |
-                                 ((data[offsetData + 3] & 0x7) << 1) |
-                                 ((data[offsetData + 4] & 0x7) << 4) |
-                                 (((data[offsetData + 5]) & 0x01) << 7);
+                                ((data[offsetData + 3] & 0x7) << 1) |
+                                ((data[offsetData + 4] & 0x7) << 4) |
+                                (((data[offsetData + 5]) & 0x01) << 7);
         bytes[offsetByte + 2] = ((data[offsetData + 5] >> 1) & 0x03) |
-                                 ((data[offsetData + 6] & 0x7) << 2) |
-                                 ((data[offsetData + 7] & 0x7) << 5);
+                                ((data[offsetData + 6] & 0x7) << 2) |
+                                ((data[offsetData + 7] & 0x7) << 5);
     }
 #elif SABER_ET == 4
     for (j = 0; j < SABER_N / 2; j++) {
@@ -34,11 +34,11 @@ void PolT2BS(uint8_t bytes[SABER_SCALEBYTES_KEM], const uint16_t data[SABER_N])
         offsetByte = 3 * j;
         offsetData = 4 * j;
         bytes[offsetByte + 0] = (data[offsetData + 0] & 0x3f) |
-                                 ((data[offsetData + 1] & 0x03) << 6);
+                                ((data[offsetData + 1] & 0x03) << 6);
         bytes[offsetByte + 1] = ((data[offsetData + 1] >> 2) & 0x0f) |
-                                 ((data[offsetData + 2] & 0x0f) << 4);
+                                ((data[offsetData + 2] & 0x0f) << 4);
         bytes[offsetByte + 2] = ((data[offsetData + 2] >> 4) & 0x03) |
-                                 ((data[offsetData + 3] & 0x3f) << 2);
+                                ((data[offsetData + 3] & 0x3f) << 2);
     }
 #else
 #    error "Unsupported SABER parameter."
@@ -55,31 +55,44 @@ void BS2PolT(const uint8_t bytes[SABER_SCALEBYTES_KEM], uint16_t data[SABER_N])
         data[offsetData + 0] = (bytes[offsetByte + 0]) & 0x07;
         data[offsetData + 1] = ((bytes[offsetByte + 0]) >> 3) & 0x07;
         data[offsetData + 2] = (((bytes[offsetByte + 0]) >> 6) & 0x03) |
-                                (((bytes[offsetByte + 1]) & 0x01) << 2);
+                               (((bytes[offsetByte + 1]) & 0x01) << 2);
         data[offsetData + 3] = ((bytes[offsetByte + 1]) >> 1) & 0x07;
         data[offsetData + 4] = ((bytes[offsetByte + 1]) >> 4) & 0x07;
         data[offsetData + 5] = (((bytes[offsetByte + 1]) >> 7) & 0x01) |
-                                (((bytes[offsetByte + 2]) & 0x03) << 1);
+                               (((bytes[offsetByte + 2]) & 0x03) << 1);
         data[offsetData + 6] = ((bytes[offsetByte + 2] >> 2) & 0x07);
         data[offsetData + 7] = ((bytes[offsetByte + 2] >> 5) & 0x07);
     }
 #elif SABER_ET == 4
-    for (j = 0; j < SABER_N / 2; j++) {
-        offsetByte = j;
-        offsetData = 2 * j;
-        data[offsetData] = bytes[offsetByte] & 0x0f;
+    for (j = 0; j < SABER_N / 8; j++) {
+        offsetByte = 4 * j;
+        offsetData = 8 * j;
+        data[offsetData + 0] = bytes[offsetByte] & 0x0f;
         data[offsetData + 1] = (bytes[offsetByte] >> 4) & 0x0f;
+        data[offsetData + 2] = bytes[offsetByte + 1] & 0x0f;
+        data[offsetData + 3] = (bytes[offsetByte + 1] >> 4) & 0x0f;
+        data[offsetData + 4] = bytes[offsetByte + 2] & 0x0f;
+        data[offsetData + 5] = (bytes[offsetByte + 2] >> 4) & 0x0f;
+        data[offsetData + 6] = bytes[offsetByte + 3] & 0x0f;
+        data[offsetData + 7] = (bytes[offsetByte + 3] >> 4) & 0x0f;
     }
 #elif SABER_ET == 6
-    for (j = 0; j < SABER_N / 4; j++) {
-        offsetByte = 3 * j;
-        offsetData = 4 * j;
+    for (j = 0; j < SABER_N / 8; j++) {
+        offsetByte = 6 * j;
+        offsetData = 8 * j;
         data[offsetData + 0] = bytes[offsetByte + 0] & 0x3f;
         data[offsetData + 1] = ((bytes[offsetByte + 0] >> 6) & 0x03) |
-                                ((bytes[offsetByte + 1] & 0x0f) << 2);
+                               ((bytes[offsetByte + 1] & 0x0f) << 2);
         data[offsetData + 2] = ((bytes[offsetByte + 1] & 0xff) >> 4) |
-                                ((bytes[offsetByte + 2] & 0x03) << 4);
+                               ((bytes[offsetByte + 2] & 0x03) << 4);
         data[offsetData + 3] = ((bytes[offsetByte + 2] & 0xff) >> 2);
+
+        data[offsetData + 4] = bytes[offsetByte + 3] & 0x3f;
+        data[offsetData + 5] = ((bytes[offsetByte + 3] >> 6) & 0x03) |
+                               ((bytes[offsetByte + 4] & 0x0f) << 2);
+        data[offsetData + 6] = ((bytes[offsetByte + 4] & 0xff) >> 4) |
+                               ((bytes[offsetByte + 5] & 0x03) << 4);
+        data[offsetData + 7] = ((bytes[offsetByte + 5] & 0xff) >> 2);
     }
 #else
 #    error "Unsupported SABER parameter."
@@ -97,25 +110,25 @@ void BS2Polq(const uint8_t *bytes, uint16_t *data)
         offsetByte = 13 * j;
         offsetData = 8 * j;
         data[offsetData + 0] = (bytes[offsetByte + 0] & (0xff)) |
-                                ((bytes[offsetByte + 1] & 0x1f) << 8);
+                               ((bytes[offsetByte + 1] & 0x1f) << 8);
         data[offsetData + 1] = (bytes[offsetByte + 1] >> 5 & (0x07)) |
-                                ((bytes[offsetByte + 2] & 0xff) << 3) |
-                                ((bytes[offsetByte + 3] & 0x03) << 11);
+                               ((bytes[offsetByte + 2] & 0xff) << 3) |
+                               ((bytes[offsetByte + 3] & 0x03) << 11);
         data[offsetData + 2] = (bytes[offsetByte + 3] >> 2 & (0x3f)) |
-                                ((bytes[offsetByte + 4] & 0x7f) << 6);
+                               ((bytes[offsetByte + 4] & 0x7f) << 6);
         data[offsetData + 3] = (bytes[offsetByte + 4] >> 7 & (0x01)) |
-                                ((bytes[offsetByte + 5] & 0xff) << 1) |
-                                ((bytes[offsetByte + 6] & 0x0f) << 9);
+                               ((bytes[offsetByte + 5] & 0xff) << 1) |
+                               ((bytes[offsetByte + 6] & 0x0f) << 9);
         data[offsetData + 4] = (bytes[offsetByte + 6] >> 4 & (0x0f)) |
-                                ((bytes[offsetByte + 7] & 0xff) << 4) |
-                                ((bytes[offsetByte + 8] & 0x01) << 12);
+                               ((bytes[offsetByte + 7] & 0xff) << 4) |
+                               ((bytes[offsetByte + 8] & 0x01) << 12);
         data[offsetData + 5] = (bytes[offsetByte + 8] >> 1 & (0x7f)) |
-                                ((bytes[offsetByte + 9] & 0x3f) << 7);
+                               ((bytes[offsetByte + 9] & 0x3f) << 7);
         data[offsetData + 6] = (bytes[offsetByte + 9] >> 6 & (0x03)) |
-                                ((bytes[offsetByte + 10] & 0xff) << 2) |
-                                ((bytes[offsetByte + 11] & 0x07) << 10);
+                               ((bytes[offsetByte + 10] & 0xff) << 2) |
+                               ((bytes[offsetByte + 11] & 0x07) << 10);
         data[offsetData + 7] = (bytes[offsetByte + 11] >> 3 & (0x1f)) |
-                                ((bytes[offsetByte + 12] & 0xff) << 5);
+                               ((bytes[offsetByte + 12] & 0xff) << 5);
     }
 }
 
@@ -128,11 +141,11 @@ void Polp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
         offsetData = 4 * j;
         bytes[offsetByte + 0] = (data[offsetData + 0] & (0xff));
         bytes[offsetByte + 1] = ((data[offsetData + 0] >> 8) & 0x03) |
-                                 ((data[offsetData + 1] & 0x3f) << 2);
+                                ((data[offsetData + 1] & 0x3f) << 2);
         bytes[offsetByte + 2] = ((data[offsetData + 1] >> 6) & 0x0f) |
-                                 ((data[offsetData + 2] & 0x0f) << 4);
+                                ((data[offsetData + 2] & 0x0f) << 4);
         bytes[offsetByte + 3] = ((data[offsetData + 2] >> 4) & 0x3f) |
-                                 ((data[offsetData + 3] & 0x03) << 6);
+                                ((data[offsetData + 3] & 0x03) << 6);
         bytes[offsetByte + 4] = ((data[offsetData + 3] >> 2) & 0xff);
     }
 }
@@ -145,13 +158,13 @@ void BS2Polp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
         offsetByte = 5 * j;
         offsetData = 4 * j;
         data[offsetData + 0] = (bytes[offsetByte + 0] & (0xff)) |
-                                ((bytes[offsetByte + 1] & 0x03) << 8);
+                               ((bytes[offsetByte + 1] & 0x03) << 8);
         data[offsetData + 1] = ((bytes[offsetByte + 1] >> 2) & (0x3f)) |
-                                ((bytes[offsetByte + 2] & 0x0f) << 6);
+                               ((bytes[offsetByte + 2] & 0x0f) << 6);
         data[offsetData + 2] = ((bytes[offsetByte + 2] >> 4) & (0x0f)) |
-                                ((bytes[offsetByte + 3] & 0x3f) << 4);
+                               ((bytes[offsetByte + 3] & 0x3f) << 4);
         data[offsetData + 3] = ((bytes[offsetByte + 3] >> 6) & (0x03)) |
-                                ((bytes[offsetByte + 4] & 0xff) << 2);
+                               ((bytes[offsetByte + 4] & 0xff) << 2);
     }
 }
 
@@ -164,19 +177,30 @@ void PackSk(uint8_t bytes[SABER_SKPOLYBYTES], const uint16_t data[SABER_N])
     }
 }
 
-void UnpackSk(const uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
-              uint16_t data[SABER_L][SABER_N])
+// void UnpackSk(const uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
+//               uint16_t data[SABER_L][SABER_N])
+// {
+//     int32_t i, j, offsetByte, offsetData;
+//     for (i = 0; i < SABER_L; i++) {
+//         for (j = 0; j < SABER_N / 2; j++) {
+//             offsetByte = i * SABER_SKPOLYBYTES + j;
+//             offsetData = 2 * j;
+//             data[i][offsetData] =
+//                 (int16_t)((int16_t)bytes[offsetByte] << 12) >> 12;
+//             data[i][offsetData + 1] =
+//                 (int16_t)((bytes[offsetByte] >> 4) << 12) >> 12;
+//         }
+//     }
+// }
+
+void UnpackSk(const uint8_t *bytes, uint16_t data[SABER_N])
 {
-    int32_t i, j, offsetByte, offsetData;
-    for (i = 0; i < SABER_L; i++) {
-        for (j = 0; j < SABER_N / 2; j++) {
-            offsetByte = i * SABER_SKPOLYBYTES + j;
-            offsetData = 2 * j;
-            data[i][offsetData] =
-                (int16_t)((int16_t)bytes[offsetByte] << 12) >> 12;
-            data[i][offsetData + 1] =
-                (int16_t)((bytes[offsetByte] >> 4) << 12) >> 12;
-        }
+    int32_t j, offsetByte, offsetData;
+    for (j = 0; j < SABER_N / 2; j++) {
+        offsetByte = j;
+        offsetData = 2 * j;
+        data[offsetData] = (int16_t)((int16_t)bytes[offsetByte] << 12) >> 12;
+        data[offsetData + 1] = (int16_t)((bytes[offsetByte] >> 4) << 12) >> 12;
     }
 }
 

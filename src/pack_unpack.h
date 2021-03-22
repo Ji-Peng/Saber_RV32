@@ -24,6 +24,5 @@ void Polp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
              const uint16_t data[SABER_N]);
 
 void PackSk(uint8_t bytes[SABER_SKPOLYBYTES], const uint16_t data[SABER_N]);
-void UnpackSk(const uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
-              uint16_t data[SABER_L][SABER_N]);
+void UnpackSk(const uint8_t *bytes, uint16_t data[SABER_N]);
 #endif
