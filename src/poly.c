@@ -24,8 +24,8 @@ void GenSecret(uint16_t s[SABER_L][SABER_N],
     }
 }
 
-void GenSInTime(uint16_t s[SABER_N],
-                     const uint8_t seed[SABER_NOISE_SEEDBYTES], int32_t index)
+void GenSInTime(uint16_t s[SABER_N], const uint8_t seed[SABER_NOISE_SEEDBYTES],
+                int32_t index)
 {
     int32_t i;
     // keccak states
@@ -112,7 +112,7 @@ void GenSInTime(uint16_t s[SABER_N],
 }
 
 void GenSecretNTT(int32_t s[SABER_L][SABER_N],
-                   const uint8_t seed[SABER_NOISE_SEEDBYTES])
+                  const uint8_t seed[SABER_NOISE_SEEDBYTES])
 {
     uint16_t t[SABER_N];
     int i;
@@ -128,7 +128,7 @@ void GenSecretNTT(int32_t s[SABER_L][SABER_N],
  * @description: Generate polynomial on the fly
  */
 void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
-             uint32_t init)
+                uint32_t init)
 {
     int32_t i;
     // 416B = 1poly, 3*168-416=88
@@ -170,14 +170,13 @@ void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
  * @description: Generate polynomial matrix A on the fly
  */
 void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
-             int32_t x, int32_t y)
+                int32_t x, int32_t y)
 {
     int i;
     uint64_t states[25];
-    uint8_t buf[SHAKE128_RATE];
+    uint8_t buf[3 * SHAKE128_RATE];
     // extended seed
     uint8_t xseed[SABER_SEEDBYTES + 2];
-    // init: clear states and absorb seed
     for (i = 0; i < 25; i++) {
         states[i] = 0;
     }
@@ -185,7 +184,8 @@ void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
     xseed[SABER_SEEDBYTES + 0] = x;
     xseed[SABER_SEEDBYTES + 1] = y;
     keccak_absorb(states, SHAKE128_RATE, xseed, SABER_SEEDBYTES + 2, 0x1F);
-    keccak_squeezeblocks(buf, 1, states, SHAKE128_RATE);
+    keccak_squeezeblocks(buf, 3, states, SHAKE128_RATE);
+    BS2Polq(buf, poly);
 }
 
 #endif

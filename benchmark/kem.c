@@ -330,11 +330,6 @@ static int TestPolyMul(void)
         sum2 += (t2 - t1);
 
         t1 = cpucycles();
-        InnerProdInTime(pk, b, a);
-        t2 = cpucycles();
-        sum3 += (t2 - t1);
-
-        t1 = cpucycles();
         PolyMulAcc(a, (uint16_t *)b, c);
         t2 = cpucycles();
         sum4 += (t2 - t1);
@@ -369,7 +364,7 @@ static int TestGen(void)
         }
     }
     printf("GenAInTime*9        %s\n", ullu(sum1 / NTESTS));
-    printf("GenSInTime     %s\n", ullu(sum2 / NTESTS));
+    printf("GenSInTime          %s\n", ullu(sum2 / NTESTS));
     return 0;
 }
 

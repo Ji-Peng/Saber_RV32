@@ -22,13 +22,13 @@ void MatrixVectorMulEnc(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
 void InnerProdInTimeEnc(const uint8_t *bytes,
                         const uint16_t s[SABER_L][SABER_N], uint8_t *ciphertext,
                         const uint8_t m[SABER_KEYBYTES]);
-void InnerProdInTimeDec(const uint8_t *bytes,
-                        const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
-                        uint16_t res[SABER_N]);
 #elif defined(FASTGENA_FASTMUL) || defined(SLOWGENA_FASTMUL)
 void MatrixVectorMulEnc(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
                         uint8_t *ciphertext);
 void InnerProdInTimeEnc(const uint8_t *bytes, const int32_t s[SABER_L][SABER_N],
                         uint8_t *ciphertext, const uint8_t m[SABER_KEYBYTES]);
 #endif
+void InnerProdInTimeDec(const uint8_t *bytes,
+                        const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
+                        uint16_t res[SABER_N]);
 #endif

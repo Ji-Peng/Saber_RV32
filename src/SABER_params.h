@@ -19,9 +19,9 @@
 #endif
 
 // three different strategies. you can only choose one strategy!
-#define FASTGENA_SLOWMUL
+// #define FASTGENA_SLOWMUL
 // #define FASTGENA_FASTMUL
-// #define SLOWGENA_FASTMUL
+#define SLOWGENA_FASTMUL
 
 // check computation strategy
 #if !defined(FASTGENA_SLOWMUL) && !defined(FASTGENA_FASTMUL) && \

@@ -5,6 +5,7 @@
 
 #include "SABER_params.h"
 #include "fips202.h"
+#include "ntt.h"
 #include "pack_unpack.h"
 #include "poly.h"
 #include "poly_mul.h"
@@ -57,8 +58,43 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
     GenSecretNTT(sp, seed_sp);
     MatrixVectorMulEnc(seed_A, sp, ciphertext);
     InnerProdInTimeEnc(pk, sp, ciphertext, m);
-
 #else
+    int32_t i, j;
+    int32_t t1[SABER_N];
+    uint16_t messageBit;
+    uint16_t t2[SABER_N];
+    uint16_t vp[SABER_N] = {0};
+    uint16_t b[SABER_L][SABER_N] = {0};
+    for (i = 0; i < SABER_L; i++) {
+        GenSInTime(t2, seed_sp, i);
+        // t1=si in ntt domain
+        NTT(t2, t1);
+        // MatrixVectorMul
+        for (j = 0; j < SABER_L; j++) {
+            // b[0]+=a0i*si b[1]+=a1i*si b[2]+=a2i*si
+            GenAInTime(t2, seed_A, j, i);
+            PolyMulAccFast(t2, t1, b[j]);
+        }
+        // InnerProduct
+        BS2Polp(pk + i * (SABER_EP * SABER_N / 8), t2);
+        PolyMulAccFast(t2, t1, vp);
+    }
+    for (i = 0; i < SABER_L; i++) {
+        for (j = 0; j < SABER_N; j++) {
+            b[i][j] = (b[i][j] + h1) >> (SABER_EQ - SABER_EP);
+        }
+        Polp2BS(ciphertext + i * (SABER_EP * SABER_N / 8), b[i]);
+    }
+
+    for (j = 0; j < SABER_KEYBYTES; j++) {
+        for (i = 0; i < 8; i++) {
+            messageBit = ((m[j] >> i) & 0x01);
+            messageBit = (messageBit << (SABER_EP - 1));
+            vp[j * 8 + i] =
+                (vp[j * 8 + i] - messageBit + h1) >> (SABER_EP - SABER_ET);
+        }
+    }
+    PolT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
 #endif
 }
 

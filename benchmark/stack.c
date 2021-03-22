@@ -30,7 +30,6 @@ uint8_t canary = 0x42;
 
 // #define TEST_CCA
 #ifdef TEST_CCA
-// 0x20a0 is ok
 // 992+1088+1440+32+32=3584
 // 0x2800-3584=0x1a00
 uint8_t pk[CRYPTO_PUBLICKEYBYTES];
@@ -142,14 +141,14 @@ static int test_stack(void)
     }
     printf("MatrixVectorMulEnc  %u\n", c);
 
-    FILL_STACK()
-    InnerProdInTime(pk, b, A);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        printf("c >= canary_size\n");
-        return -1;
-    }
-    printf("InnerProdInTime     %u\n", c);
+    // FILL_STACK()
+    // InnerProdInTime(pk, b, A);
+    // CHECK_STACK()
+    // if (c >= canary_size) {
+    //     printf("c >= canary_size\n");
+    //     return -1;
+    // }
+    // printf("InnerProdInTime     %u\n", c);
 
     FILL_STACK()
     PolyMulAcc(A, (uint16_t *)b, C);
