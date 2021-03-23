@@ -1,15 +1,15 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define M 5243393          // M = 512 * 10241 + 1 < 2^23
-#define Mprime -934542849  // M * Mprime = -1 mod R (R=2^32)
-#define MINV 934542849     // M * MINV = 1 mod R
-#define RmodM 628429       // R mod M
-#define NINV 1082784       // R^2 * (1/64) mod M
+#define M 10487809      // M = 512 * 20484 + 1 < 2^24
+#define Mprime 6293503  // M * Mprime = -1 mod R (R=2^32)
+#define MINV -6293503   // M * MINV = 1 mod R
+#define RmodM 5453415   // R mod M
+#define NINV 2466627    // R^2 * (1/64) mod M
 
-// 512th root is 43728
-// 128th root = 43728^4
-int32_t root = 4161597;
+// 512th root is 23394
+// 128th root = 23394^4
+int32_t root = 8406460;
 int64_t R = (int64_t)1 << 32;
 
 // NTT：normal bit reverse order
@@ -77,14 +77,14 @@ void check(void)
     }
     // check MPrime
     int32_t m = M, mp = Mprime;
-    if ((int64_t)m * mp % R == -1) {
+    if ((int64_t)m * mp % R == -1 || (int64_t)m * mp % R - R == -1) {
         printf("check MPrime        passed\n");
     } else {
         printf("check MPrime        error\n");
     }
     // check MINV
     mp = MINV;
-    if ((int64_t)m * mp % R == 1) {
+    if ((int64_t)m * mp % R == 1 || (int64_t)m * mp % R + R == 1) {
         printf("check MINV          passed\n");
     } else {
         printf("check MINV          error\n");

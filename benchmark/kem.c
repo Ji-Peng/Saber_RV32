@@ -22,7 +22,7 @@ static int TestCPA(void);
 static int SpeedCPA(void);
 static int SpeedCCA(void);
 
-#define NTESTS 1
+#define NTESTS 1000
 
 static void DisableWatchDog(void)
 {
@@ -423,7 +423,7 @@ static void TestNTTRange(void)
     uint16_t a[SABER_N * 2], s[SABER_N], r[SABER_N] = {0};
     for (i = 0; i < SABER_N; i++) {
         s[i] = 3;
-        a[i] = 8191;
+        a[i] = 4095;
     }
     PolyMulAcc(a, s, r);
     for (i = 0; i < SABER_N; i++) {
