@@ -1,17 +1,16 @@
 #include <stdint.h>
 #include <stdio.h>
 
-// #define M 25166081       // M = 196610 * 128 + 1
-// #define Mprime 41877759  // M * Mprime = -1 mod R (R=2^32)
-// #define MINV 4253089537  // M * MINV = 1 mod R
-// #define RmodM -8432555   // R mod M
-// #define NINV 7689784     // R^2 * (1/64) mod M
+#define M 5243393          // M = 512 * 10241 + 1 < 2^23
+#define Mprime -934542849  // M * Mprime = -1 mod R (R=2^32)
+#define MINV 934542849     // M * MINV = 1 mod R
+#define RmodM 628429       // R mod M
+#define NINV 1082784       // R^2 * (1/64) mod M
 
-#define M 4205569           // M = 8214 * 512 + 1
-#define Mprime -1196413953  // M * Mprime = -1 mod R (R=2^32)
-#define MINV 1196413953     // M * MINV = 1 mod R
-#define RmodM 1081347       // R mod M
-#define NINV 226614         // R^2 * (1/256) mod M
+// 512th root is 43728
+// 128th root = 43728^4
+int32_t root = 4161597;
+int64_t R = (int64_t)1 << 32;
 
 // NTT：normal bit reverse order
 // br(1,2,3,...,63)
@@ -45,8 +44,6 @@ int32_t treeMulTable[] = {
     3, 67, 35, 99,  19, 83, 51, 115, 11, 75, 43, 107, 27, 91, 59, 123,
     7, 71, 39, 103, 23, 87, 55, 119, 15, 79, 47, 111, 31, 95, 63, 127};
 
-int32_t root = 1298882;
-
 int32_t MontReduce(int64_t a)
 {
     int32_t t;
@@ -70,35 +67,72 @@ int32_t Pow(int32_t root, int32_t n)
     return t;
 }
 
+void check(void)
+{
+    // check 128th root
+    if (Pow(root, 128) == 1) {
+        printf("check 128th root    passed\n");
+    } else {
+        printf("check 128th root    error\n");
+    }
+    // check MPrime
+    int32_t m = M, mp = Mprime;
+    if ((int64_t)m * mp % R == -1) {
+        printf("check MPrime        passed\n");
+    } else {
+        printf("check MPrime        error\n");
+    }
+    // check MINV
+    mp = MINV;
+    if ((int64_t)m * mp % R == 1) {
+        printf("check MINV          passed\n");
+    } else {
+        printf("check MINV          error\n");
+    }
+    // check RmodM
+    if (R % M == RmodM) {
+        printf("check RmodM         passed\n");
+    } else {
+        printf("check RmodM         error\n");
+    }
+    // check NINV
+    if ((R >> 6) * R % M == NINV) {
+        printf("check NINV          passed\n");
+    } else {
+        printf("check NINV          error\n");
+    }
+    printf("===============check end===============\n");
+}
+
 void GenTables(void)
 {
     int32_t t;
     for (int j = 0; j < 63; j++) {
         t = Pow(root, treeNTT[j]);
         t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        // if (t > M / 2) t -= M;
-        // if (t < -M / 2) t += M;
         printf("%d, ", t);
     }
-    printf("\n\n");
+    printf("\n");
 
     for (int j = 0; j < 63; j++) {
+        // root is 128th, -i in intt
         t = Pow(root, 128 - treeINTT[j]);
         t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        // if (t > M / 2) t -= M;
-        // if (t < -M / 2) t += M;
         printf("%d, ", t);
     }
-    printf("\n\n");
+    printf("\n");
 
     for (int j = 0; j < 64; j++) {
         t = Pow(root, treeMulTable[j]);
         t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
         printf("%d, ", t);
     }
+    printf("\n");
 }
 
 int main(void)
 {
+    check();
+    GenTables();
     return 0;
 }
