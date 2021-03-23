@@ -62,8 +62,9 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
 
+# host_out/speed
 .PHONY: host
-host: host_out/kem host_out/speed
+host: host_out/kem
 
 # out/PQCgenKAT_kem.elf out/test_kex.elf
 .PHONY: all

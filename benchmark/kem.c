@@ -148,11 +148,26 @@ static void test_ntt_self(void)
     printf("test_ntt_self end\n");
 }
 
+static void TestNTTRange(void)
+{
+    int i;
+    uint16_t s[SABER_N], a[SABER_N], r[SABER_N] = {0};
+    for (i = 0; i < SABER_N; i++) {
+        s[i] = 2;
+        a[i] = 8191;
+    }
+    poly_mul_acc_ntt(a, s, r);
+    for (i = 0; i < SABER_N; i++) {
+        printf("%hd ", r[i] & 0x1fff);
+    }
+}
+
 int main(void)
 {
-    test_kem_cpa();
-    test_kem_cca();
+    // test_kem_cpa();
+    // test_kem_cca();
     // test_ntt();
     // test_ntt_self();
+    TestNTTRange();
     return 0;
 }
