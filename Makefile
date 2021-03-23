@@ -29,7 +29,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
 					-O3 -fstack-usage
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls \
-					-fomit-frame-pointer -march=native \
+					-fomit-frame-pointer -march=native -DHOST \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) \
 					-O0 -g
 

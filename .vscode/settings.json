@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "pack_unpack.h": "c",
+        "poly_mul.h": "c"
+    }
+}

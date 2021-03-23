@@ -113,6 +113,7 @@ static int test_kem_cpa(void)
     return 0;
 }
 
+#ifndef HOST
 static int speed_cpa(void)
 {
     // uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES];
@@ -260,6 +261,21 @@ static int test_GenMatrix(void)
 
     return 0;
 }
+#endif
+
+static void TestNTTRange(void)
+{
+    int i;
+    uint16_t s[SABER_N], a[SABER_N], r[SABER_N] = {0};
+    for (i = 0; i < SABER_N; i++) {
+        s[i] = 1;
+        a[i] = 8191;
+    }
+    poly_mul_acc(a, s, r);
+    for (i = 0; i < SABER_N; i++) {
+        printf("%hd ", r[i] & 0x1fff);
+    }
+}
 
 int main(void)
 {
@@ -269,6 +285,7 @@ int main(void)
     // speed_cpa();
     // speed_cca();
     // test_polmul();
-    test_GenMatrix();
+    // test_GenMatrix();
+    TestNTTRange();
     return 0;
 }
