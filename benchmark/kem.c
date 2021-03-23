@@ -130,20 +130,6 @@ static int TestCCA(void)
     return 0;
 }
 
-static void TestNTTRange(void)
-{
-    int i;
-    uint16_t a[SABER_N * 2], s[SABER_N], r[SABER_N] = {0};
-    for (i = 0; i < SABER_N; i++) {
-        s[i] = 5;
-        a[i] = 8191;
-    }
-    PolyMulAcc(a, s, r);
-    for (i = 0; i < SABER_N; i++) {
-        printf("%hd ", r[i] & 0x1fff);
-    }
-}
-
 #ifndef HOST
 
 static int SpeedCPA(void)
@@ -430,6 +416,20 @@ static int TestNTT(void)
 }
 
 #endif
+
+static void TestNTTRange(void)
+{
+    int i;
+    uint16_t a[SABER_N * 2], s[SABER_N], r[SABER_N] = {0};
+    for (i = 0; i < SABER_N; i++) {
+        s[i] = 5;
+        a[i] = 8191;
+    }
+    PolyMulAcc(a, s, r);
+    for (i = 0; i < SABER_N; i++) {
+        printf("%hd ", r[i] & 0x1fff);
+    }
+}
 
 int main(void)
 {
