@@ -422,7 +422,7 @@ static void TestNTTRange(void)
     int i;
     uint16_t a[SABER_N * 2], s[SABER_N], r[SABER_N] = {0};
     for (i = 0; i < SABER_N; i++) {
-        s[i] = 4;
+        s[i] = 3;
         a[i] = 8191;
     }
     PolyMulAcc(a, s, r);
@@ -433,7 +433,7 @@ static void TestNTTRange(void)
         // while ((int16_t)r[i] < -4096) {
         //     r[i] += 8192;
         // }
-        printf("%hd ", r[i]);
+        printf("%hd ", r[i] & 0x1fff);
     }
 }
 
