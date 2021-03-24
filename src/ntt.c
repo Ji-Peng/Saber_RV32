@@ -102,7 +102,7 @@ void InvNTT(int32_t in[256], int32_t out[256])
         zeta = invRootTable[k++];
         for (j = start; j < start + len; j++) {
             t = in[j];
-            out[j] = BarrettReduce(t + in[j + len]);
+            out[j] = t + in[j + len];
             out[j + len] = t - in[j + len];
             out[j + len] = FqMul(zeta, out[j + len]);
         }
@@ -113,7 +113,7 @@ void InvNTT(int32_t in[256], int32_t out[256])
             zeta = invRootTable[k++];
             for (j = start; j < start + len; j++) {
                 t = out[j];
-                out[j] = BarrettReduce(t + out[j + len]);
+                out[j] = t + out[j + len];
                 out[j + len] = t - out[j + len];
                 out[j + len] = FqMul(zeta, out[j + len]);
             }
