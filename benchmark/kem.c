@@ -431,11 +431,27 @@ static void TestNTTRange(void)
     }
 }
 
+static void TestCenteredReduce(void)
+{
+    uint16_t t = 8191;
+    printf("%hu\n", t);
+    t = (int16_t)(t << 3) >> 3;
+    printf("%hd\n", t);
+    t = 4096;
+    printf("%hu\n", t);
+    t = (int16_t)(t << 3) >> 3;
+    printf("%hd\n", t);
+    t = 4095;
+    printf("%hu\n", t);
+    t = (int16_t)(t << 3) >> 3;
+    printf("%hd\n", t);
+}
+
 int main(void)
 {
     DisableWatchDog();
-    // TestCPA();
-    // TestCCA();
+    TestCPA();
+    TestCCA();
 #ifndef HOST
     // SpeedCPA();
     // SpeedCCAKP();
@@ -447,6 +463,7 @@ int main(void)
     // TestKeccak();
     // TestNTT();
 #endif
-    TestNTTRange();
+    // TestNTTRange();
+    // TestCenteredReduce();
     return 0;
 }

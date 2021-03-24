@@ -123,6 +123,14 @@ void GenSecretNTT(int32_t s[SABER_L][SABER_N],
     }
 }
 
+void CenteredReduce(uint16_t poly[SABER_N])
+{
+    int32_t i;
+    for (i = 0; i < SABER_N; i++) {
+        poly[i] = (int16_t)(poly[i] << 3) >> 3;
+    }
+}
+
 #if defined(FASTGENA_SLOWMUL) || defined(FASTGENA_FASTMUL)
 /**
  * @description: Generate polynomial on the fly
@@ -164,6 +172,7 @@ void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
         BS2Polq(buf, poly);
     }
     state = !state;
+    CenteredReduce(poly);
 }
 #elif defined(SLOWGENA_FASTMUL)
 /**
@@ -186,6 +195,7 @@ void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
     keccak_absorb(states, SHAKE128_RATE, xseed, SABER_SEEDBYTES + 2, 0x1F);
     keccak_squeezeblocks(buf, 3, states, SHAKE128_RATE);
     BS2Polq(buf, poly);
+    CenteredReduce(poly);
 }
 
 #endif

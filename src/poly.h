@@ -7,18 +7,18 @@
 
 void GenSecret(uint16_t s[SABER_L][SABER_N],
                const uint8_t seed[SABER_NOISE_SEEDBYTES]);
-void GenSInTime(uint16_t s[SABER_N],
-                     const uint8_t seed[SABER_NOISE_SEEDBYTES], int32_t index);
+void GenSInTime(uint16_t s[SABER_N], const uint8_t seed[SABER_NOISE_SEEDBYTES],
+                int32_t index);
 void GenSecretNTT(int32_t s[SABER_L][SABER_N],
-                   const uint8_t seed[SABER_NOISE_SEEDBYTES]);
-
+                  const uint8_t seed[SABER_NOISE_SEEDBYTES]);
+void CenteredReduce(uint16_t poly[SABER_N]);
 #if defined(FASTGENA_SLOWMUL) || defined(FASTGENA_FASTMUL)
 void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
-             uint32_t init);
+                uint32_t init);
 
 #elif defined(SLOWGENA_FASTMUL)
 void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
-             int32_t x, int32_t y);
+                int32_t x, int32_t y);
 #endif
 
 #endif
