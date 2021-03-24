@@ -186,10 +186,6 @@ void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
     keccak_absorb(states, SHAKE128_RATE, xseed, SABER_SEEDBYTES + 2, 0x1F);
     keccak_squeezeblocks(buf, 3, states, SHAKE128_RATE);
     BS2Polq(buf, poly);
-    // for (i = 0; i < SABER_N; i++) {
-    //     printf("%hd--", poly[i]);
-    // }
-    // printf("\n");
 }
 
 #endif
