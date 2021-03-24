@@ -38,6 +38,13 @@ int32_t treeINTTMerged[] = {4,  2,  34, 1,  33, 17, 49, 36, 18, 50, 9,  41, 25,
                             43, 27, 59, 28, 14, 46, 7,  39, 23, 55, 60, 30, 62,
                             15, 47, 31, 63, 32, 16, 48, 8,  40, 24, 56};
 
+// order of usage, for more details see search_root.ipynb
+int32_t treeINTTMergedU[] = {1,  33, 17, 49, 2,  34, 4,  9,  41, 25, 57, 18, 50,
+                             36, 5,  37, 21, 53, 10, 42, 20, 13, 45, 29, 61, 26,
+                             58, 52, 3,  35, 19, 51, 6,  38, 12, 11, 43, 27, 59,
+                             22, 54, 44, 7,  39, 23, 55, 14, 46, 28, 15, 47, 31,
+                             63, 30, 62, 60, 8,  40, 24, 56, 16, 48, 32};
+
 int32_t treeMulTable[] = {
     1, 65, 33, 97,  17, 81, 49, 113, 9,  73, 41, 105, 25, 89, 57, 121,
     5, 69, 37, 101, 21, 85, 53, 117, 13, 77, 45, 109, 29, 93, 61, 125,
@@ -130,9 +137,29 @@ void GenTables(void)
     printf("\n");
 }
 
+void GenTablesMerged(void)
+{
+    int32_t t;
+    for (int j = 0; j < 63; j++) {
+        t = Pow(root, treeNTTMerged[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n");
+
+    for (int j = 0; j < 63; j++) {
+        // root is 128th, -i in intt
+        t = Pow(root, 128 - treeINTTMergedU[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n");
+}
+
 int main(void)
 {
     check();
-    GenTables();
+    // GenTables();
+    GenTablesMerged();
     return 0;
 }
