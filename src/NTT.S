@@ -7,21 +7,17 @@
 # int64_t a=in1*in2
 # int32_t t=a*Mprime
 # t=((int64_t)a+(int64_t)t*M)>>32
-.macro MontMul in1, in2, out, tmp1, tmp2
+.macro MontMul in1, in2, out, CM, CMprime, tmp1
     # out=low(in1*in2)=a_low
     mul \out, \in1, \in2
     # a_low=0: carry=0, a_low!=0: carry=1
-    snez \tmp2, \out
-    # tmp1=Mprime
-    li \tmp1, Mprime
+    snez \tmp1, \out
     # out=t=a_low*Mprime
-    mul \out, \out, \tmp1
-    # tmp1=M
-    li \tmp1, M
+    mul \out, \out, \CMprime
     # out=high(t*M)
-    mulh \out, \out, \tmp1
+    mulh \out, \out, \CM
     # add carry
-    add \out, \out, \tmp2
+    add \out, \out, \tmp1
     # high(in1*in2)
     mulh \tmp1, \in1, \in2
     add \out, \out, \tmp1
@@ -64,12 +60,14 @@
 # ntt_asm:
 #     ret
 
-# .globl FqMulAsm
-# .align 2
-# FqMulAsm:
-#     MontMul a0, a1, a3, a4, a5
-#     mv a0, a3
-#     ret
+.globl FqMulAsm
+.align 2
+FqMulAsm:
+    li a4, M
+    li a5, Mprime
+    MontMul a0, a1, a3, a4, a5, a6
+    mv a0, a3
+    ret
 
 # .globl BarrettReduceAsm
 # .align 2
