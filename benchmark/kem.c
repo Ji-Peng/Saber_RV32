@@ -447,18 +447,23 @@ static void TestCenteredReduce(void)
     printf("%hd\n", t);
 }
 
-// void TestASM(void)
-// {
-//     int16_t a[SABER_N] = {0}, b[3] = {0}, c[3] = {0};
-//     add_asm(a, b, c);
-//     printf("%d, %d, %d\n", a[0], a[SABER_N - 1], b[0]);
-// }
+void TestASM(void)
+{
+    // printf("%d\n", FqMulAsm(0, RmodM));
+    // printf("%d\n", FqMulAsm(1, RmodM));
+    // printf("%d\n", FqMulAsm(2 * M, RmodM));
+    // printf("%d\n", FqMulAsm(3 * M - 1, RmodM));
+    // printf("%d\n", FqMulAsm(3 * M + 1, RmodM));
+    printf("%d\n", BarrettReduceAsm(M));
+    printf("%d\n", BarrettReduceAsm(M - 1));
+    printf("%d\n", BarrettReduceAsm(M + 1));
+}
 
 int main(void)
 {
     DisableWatchDog();
-    TestCPA();
-    TestCCA();
+    // TestCPA();
+    // TestCCA();
 #ifndef HOST
     // SpeedCPA();
     // SpeedCCAKP();
@@ -472,6 +477,6 @@ int main(void)
 #endif
     // TestNTTRange();
     // TestCenteredReduce();
-    // TestASM();
+    TestASM();
     return 0;
 }
