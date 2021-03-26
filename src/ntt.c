@@ -62,6 +62,16 @@ int32_t FqMul(int32_t a, int32_t b)
     return MontReduce((int64_t)a * b);
 }
 
+#define NTTASM
+
+#ifdef NTTASM
+extern void ntt_asm(const uint16_t in[SABER_N], int32_t out[SABER_N],
+                    const int32_t rootTable[64]);
+void NTT(const uint16_t in[SABER_N], int32_t out[SABER_N])
+{
+    ntt_asm(in, out, rootTableMerged);
+}
+#else
 /*************************************************
  * Name:        NTT
  *
@@ -97,12 +107,7 @@ void NTT(const uint16_t in[256], int32_t out[256])
         }
     }
 }
-extern void ntt_asm(const uint16_t in[256], int32_t out[256],
-                    const int32_t rootTable[64]);
-void NTTAsm(const uint16_t in[256], int32_t out[256])
-{
-    ntt_asm(in, out, rootTableMerged);
-}
+#endif
 
 /*************************************************
  * Name:        invntt_tomont
