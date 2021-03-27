@@ -268,8 +268,8 @@ static void TestNTTRange(void)
     int i;
     uint16_t s[SABER_N], a[SABER_N], r[SABER_N] = {0};
     for (i = 0; i < SABER_N; i++) {
-        s[i] = 2;
-        a[i] = 8191;
+        s[i] = 1;
+        a[i] = 4095;
     }
     poly_mul_acc(a, s, r);
     for (i = 0; i < SABER_N; i++) {
