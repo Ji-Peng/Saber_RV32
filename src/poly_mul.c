@@ -117,7 +117,6 @@ void MatrixVectorMulEnc(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
     for (i = 0; i < SABER_L; i++) {
         // clear a and res
         for (j = 0; j < SABER_N; j++) {
-            a[j] = 0;
             res[j] = 0;
         }
         // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
