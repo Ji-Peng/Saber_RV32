@@ -62,7 +62,7 @@ int32_t FqMul(int32_t a, int32_t b)
     return MontReduce((int64_t)a * b);
 }
 
-#define NTTASM
+// #define NTTASM
 
 #ifdef NTTASM
 extern void ntt_asm(const uint16_t in[SABER_N], int32_t out[SABER_N],
@@ -70,6 +70,19 @@ extern void ntt_asm(const uint16_t in[SABER_N], int32_t out[SABER_N],
 void NTT(const uint16_t in[SABER_N], int32_t out[SABER_N])
 {
     ntt_asm(in, out, rootTableMerged);
+}
+
+extern void intt_asm(uint32_t in[256], int32_t out[256],
+                     const int32_t invRootTable[64]);
+void InvNTT(int32_t in[256], int32_t out[256])
+{
+    intt_asm(in, out, invRootTableMerged);
+}
+
+extern void basemul_asm(int32_t a[4], const int32_t b[4], int32_t zeta);
+void BaseMul(int32_t a[4], const int32_t b[4], int32_t zeta)
+{
+    basemul_asm(a, b, zeta);
 }
 #else
 /*************************************************
@@ -107,7 +120,6 @@ void NTT(const uint16_t in[256], int32_t out[256])
         }
     }
 }
-#endif
 
 /*************************************************
  * Name:        invntt_tomont
@@ -155,15 +167,8 @@ void InvNTT(int32_t in[256], int32_t out[256])
     // multiply mont^2/64, reduce to centered representatives, get low 13 bits
     for (j = 0; j < 256; j++) {
         out[j] = FqMul(out[j], f);
-        out[j] = BarrettReduce(out[j]);
+        // out[j] = CenReduce(out[j]);
     }
-}
-
-extern void intt_asm(uint32_t in[256], int32_t out[256],
-                     const int32_t invRootTable[64]);
-void InvNTTAsm(int32_t in[256], int32_t out[256])
-{
-    intt_asm(in, out, invRootTableMerged);
 }
 
 /*************************************************
@@ -219,3 +224,4 @@ void BaseMul(int32_t a[4], const int32_t b[4], int32_t zeta)
     t += (int64_t)a3 * b[0];
     a[3] = MontReduce(t);
 }
+#endif

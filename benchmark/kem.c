@@ -303,43 +303,23 @@ static int SpeedCCADec(void)
     return 0;
 }
 
-// static int TestPolyMul(void)
-// {
-//     uint8_t seed_A[SABER_SEEDBYTES];
-//     uint8_t seed_s[SABER_NOISE_SEEDBYTES];
-//     uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES];
-//     uint8_t sk[SABER_INDCPA_SECRETKEYBYTES];
-//     uint8_t ciphertext[SABER_BYTES_CCA_DEC];
+static int TestPolyMul(void)
+{
+    uint16_t a[2 * SABER_N], c[SABER_N];
+    uint32_t b[SABER_N];
+    int j;
+    uint64_t t1, t2, sum4;
+    sum4 = 0;
 
-//     uint16_t a[2 * SABER_N];
-//     uint16_t b[SABER_L][SABER_N];
-//     uint16_t c[SABER_N];
-//     int j;
-//     uint64_t t1, t2, sum1, sum2, sum3, sum4;
-//     sum1 = sum2 = sum3 = sum4 = 0;
-
-//     for (j = 0; j < NTESTS; j++) {
-//         t1 = cpucycles();
-//         MatrixVectorMulKP(seed_A, seed_s, sk, b);
-//         t2 = cpucycles();
-//         sum1 += (t2 - t1);
-
-//         t1 = cpucycles();
-//         MatrixVectorMulEnc(seed_A, b, ciphertext);
-//         t2 = cpucycles();
-//         sum2 += (t2 - t1);
-
-//         t1 = cpucycles();
-//         PolyMulAcc(a, (uint16_t *)b, c);
-//         t2 = cpucycles();
-//         sum4 += (t2 - t1);
-//     }
-//     printf("MatrixVectorMulKP   %s\n", ullu(sum1 / NTESTS));
-//     printf("MatrixVectorMulEnc  %s\n", ullu(sum2 / NTESTS));
-//     printf("InnerProdInTime     %s\n", ullu(sum3 / NTESTS));
-//     printf("PolyMulAcc          %s\n", ullu(sum4 / NTESTS));
-//     return 0;
-// }
+    for (j = 0; j < NTESTS; j++) {
+        t1 = cpucycles();
+        PolyMulAcc(a, (uint16_t *)b, c);
+        t2 = cpucycles();
+        sum4 += (t2 - t1);
+    }
+    printf("PolyMulAcc          %s\n", ullu(sum4 / NTESTS));
+    return 0;
+}
 
 // static int TestGen(void)
 // {
@@ -422,7 +402,7 @@ static void TestNTTRange(void)
     int i;
     uint16_t a[SABER_N * 2], s[SABER_N], r[SABER_N] = {0};
     for (i = 0; i < SABER_N; i++) {
-        s[i] = 4;
+        s[i] = 5;
         a[i] = 4095;
     }
     PolyMulAcc(a, s, r);
@@ -447,18 +427,6 @@ static void TestCenteredReduce(void)
     printf("%hd\n", t);
 }
 
-void TestASM(void)
-{
-    // printf("%d\n", FqMulAsm(0, RmodM));
-    // printf("%d\n", FqMulAsm(1, RmodM));
-    // printf("%d\n", FqMulAsm(2 * M, RmodM));
-    // printf("%d\n", FqMulAsm(3 * M - 1, RmodM));
-    // printf("%d\n", FqMulAsm(3 * M + 1, RmodM));
-    printf("%d\n", BarrettReduceAsm(M));
-    printf("%d\n", BarrettReduceAsm(M - 1));
-    printf("%d\n", BarrettReduceAsm(M + 1));
-}
-
 int main(void)
 {
     DisableWatchDog();
@@ -475,8 +443,8 @@ int main(void)
     // TestKeccak();
     // TestNTT();
 #endif
-    // TestNTTRange();
+    TestNTTRange();
     // TestCenteredReduce();
-    TestASM();
+    // TestASM();
     return 0;
 }

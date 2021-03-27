@@ -1,8 +1,12 @@
 .text
 
+# M * Mprime = -1 mod R (R=2^32), M and Mprime are used for montgomery reduce
 .equ Mprime, 0x6007ff
 .equ M, 0xa00801
+# v = (((int64_t)1 << 48) + M / 2) / M is used for barrett reduce
 .equ V, 0x199851d
+# NINV = R^2 * (1/64) mod M is used for reverting standard domain
+.equ NINV, 0x25a343
 
 # int64_t a=in1*in2
 # int32_t t=a*Mprime
@@ -21,6 +25,21 @@
     # high(in1*in2)
     mulh \tmp1, \in1, \in2
     add \out, \out, \tmp1
+.endm
+
+# int64_t a=inHi&&inLo
+# inHi and inLo wille be rewrited
+.macro MontReduce inLo, inHi, out, CM, CMPrime
+    # t=out=low(a*Mprime)
+    mul \out, \inLo, \CMPrime
+    # a_low=0: carry=0; a_low!=0: carry=1
+    snez \inLo, \inLo
+    # out=high(t*M)
+    mulh \out, \out, \CM
+    # high(t*M)+a_high
+    add \out, \out, \inHi
+    # add carry
+    add \out, \out, \inLo
 .endm
 
 # input: int32_t a
@@ -44,7 +63,7 @@
     sub \out, \in, \out
 .endm
 
-# Butterfly Unit
+# Butterfly Unit for NTT
 # in1, in2: t=zeta*in2, in2=in1-t; in1=in1+t;
 .macro BFU in1, in2, zeta, CM, CMprime, tmp1, tmp2
     # tmp1=zeta*in1
@@ -53,6 +72,47 @@
     sub \in2, \in1, \tmp1
     # in1=in1+t
     add \in1, \in1, \tmp1
+.endm
+
+# Butterfly Unit for INTT
+# in1, in2: t=in1; in1=t+in2; in2=t-in2; in2=zeta*in2
+.macro BFUINTT in1, in2, zeta, CM, CMprime, tmp1, tmp2
+    # t=in1
+    mv \tmp1, \in1
+    # in1=t+in2
+    add \in1, \tmp1, \in2
+    # t=t-in2
+    sub \tmp1, \tmp1, \in2
+    # in2=zeta*t
+    MontMul \zeta, \tmp1, \in2, \CM, \CMprime, \tmp2
+.endm
+
+# revert to Standard domain and reduce to Centered representation
+.macro SCReduce
+    # reduce s0
+    MontMul s0, a3, s8, a6, a7, s9
+    BarrettReduce s8, s0, s9
+    # reduce s1
+    MontMul s1, a3, s8, a6, a7, s9
+    BarrettReduce s8, s1, s9
+    # reduce s2
+    MontMul s2, a3, s8, a6, a7, s9
+    BarrettReduce s8, s2, s9
+    # reduce s3
+    MontMul s3, a3, s8, a6, a7, s9
+    BarrettReduce s8, s3, s9
+    # reduce s4
+    MontMul s4, a3, s8, a6, a7, s9
+    BarrettReduce s8, s4, s9
+    # reduce s5
+    MontMul s5, a3, s8, a6, a7, s9
+    BarrettReduce s8, s5, s9
+    # reduce s6
+    MontMul s6, a3, s8, a6, a7, s9
+    BarrettReduce s8, s6, s9
+    # reduce s7
+    MontMul s7, a3, s8, a6, a7, s9
+    BarrettReduce s8, s7, s9                
 .endm
 
 .macro LoadZetas
@@ -86,6 +146,24 @@
     sw s5, \len*4*5(\reg)
     sw s6, \len*4*6(\reg)
     sw s7, \len*4*7(\reg)
+.endm
+
+# {hi,lo}=in1*in2
+.macro MUL64 in1, in2, lo, hi
+    mul \lo, \in1, \in2
+    mulh \hi, \in1, \in2
+.endm
+
+# inLo and inHi will be rewrited
+.macro ADD64 inLo, inHi, outLo, outHi
+    # add low 32bits
+    add  \outLo, \outLo, \inLo
+    # (inLo+outLo)<inLo=>carry=1 else carry=0
+    sltu \inLo, \outLo, \inLo
+    # add high 32bits
+    add  \outHi, \outHi, \inHi
+    # add carry
+    add  \outHi, \outHi, \inLo
 .endm
 
 # void ntt_asm(const uint16_t in[256], int32_t out[256],
@@ -181,8 +259,6 @@ outer_456:
     addi a1, a1, 32*4-4*4
     addi a2, a2, 4*7
     bne  a5, a2, outer_456
-    // outer loop control register
-
 
     lw s0, 0*4(sp)
     lw s1, 1*4(sp)
@@ -197,4 +273,223 @@ outer_456:
     addi sp, sp, 4*10
     ret
 
-.size ntt_asm,.-ntt_asm
+# void intt_asm(const uint32_t in[256], int32_t out[256],
+# const int32_t rootTable[64]);
+# register usage: a0-a2: parameter, t0-t7: zetas, s0-s7: 8 coefficients
+# s8, s9 temporary usage, a6/a7: M/Mprime, a4/a5: looper control
+.globl intt_asm
+.align 2
+intt_asm:
+    addi sp, sp, -4*10
+    sw s0, 0*4(sp)
+    sw s1, 1*4(sp)
+    sw s2, 2*4(sp)
+    sw s3, 3*4(sp)
+    sw s4, 4*4(sp)
+    sw s5, 5*4(sp)
+    sw s6, 6*4(sp)
+    sw s7, 7*4(sp)
+    sw s8, 8*4(sp)
+    sw s9, 9*4(sp)
+
+# set outer loop control register a5, 8: inner loop number
+addi a5, a2, 8*4*7
+li a6, M
+li a7, Mprime
+outer_123:
+    LoadZetas
+    # set looper control register a4, inner loop's increment is 4 words
+    addi a4, a1, 4*4
+
+    inner_123:
+        # a[0,4,...,28]
+        LoadS w, 4, 4, a0
+        # level1
+        BFUINTT s0, s1, t0, a6, a7, s8, s9
+        BFUINTT s2, s3, t1, a6, a7, s8, s9
+        BFUINTT s4, s5, t2, a6, a7, s8, s9
+        BFUINTT s6, s7, t3, a6, a7, s8, s9
+        # level2
+        BFUINTT s0, s2, t4, a6, a7, s8, s9
+        BFUINTT s1, s3, t4, a6, a7, s8, s9
+        BFUINTT s4, s6, t5, a6, a7, s8, s9
+        BFUINTT s5, s7, t5, a6, a7, s8, s9
+        # level3
+        BFUINTT s0, s4, t6, a6, a7, s8, s9
+        BFUINTT s1, s5, t6, a6, a7, s8, s9
+        BFUINTT s2, s6, t6, a6, a7, s8, s9
+        BFUINTT s3, s7, t6, a6, a7, s8, s9
+
+        //save results
+        StoreS 4, a1
+        # looper control register changes
+        addi a0, a0, 4
+        addi a1, a1, 4
+        bne a1, a4, inner_123
+    # a1 points to next block, a2 points to next 7 zetas
+    # each block has 32 words, inner loop's increment is 4 words
+    addi a0, a0, 32*4-4*4
+    addi a1, a1, 32*4-4*4
+    addi a2, a2, 4*7
+    bne  a2, a5, outer_123
+
+    # reset a1
+    addi a1, a1, -8*32*4
+    # loop control, 32: loop numbers, 4: int32_t=4B
+    addi a4, a1, 32*4
+    LoadZetas
+    # Load NINV for reverting to standard domain
+    li a3, NINV
+# 123 layers, input is uint16_t in[N], output is int32_t out[N]
+looper_456:
+    # s0-s7 = a[0,32,64,...,224]
+    LoadS w, 32, 4, a1
+    # level1
+    BFUINTT s0, s1, t0, a6, a7, s8, s9
+    BFUINTT s2, s3, t1, a6, a7, s8, s9
+    BFUINTT s4, s5, t2, a6, a7, s8, s9
+    BFUINTT s6, s7, t3, a6, a7, s8, s9
+    # level2
+    BFUINTT s0, s2, t4, a6, a7, s8, s9
+    BFUINTT s1, s3, t4, a6, a7, s8, s9
+    BFUINTT s4, s6, t5, a6, a7, s8, s9
+    BFUINTT s5, s7, t5, a6, a7, s8, s9
+    # level3
+    BFUINTT s0, s4, t6, a6, a7, s8, s9
+    BFUINTT s1, s5, t6, a6, a7, s8, s9
+    BFUINTT s2, s6, t6, a6, a7, s8, s9
+    BFUINTT s3, s7, t6, a6, a7, s8, s9
+    # revert to standard domain and reduce to centered representation
+    SCReduce
+    # save results
+    StoreS 32, a1
+
+    addi a1, a1, 4
+    bne a1, a4, looper_456
+
+    lw s0, 0*4(sp)
+    lw s1, 1*4(sp)
+    lw s2, 2*4(sp)
+    lw s3, 3*4(sp)
+    lw s4, 4*4(sp)
+    lw s5, 5*4(sp)
+    lw s6, 6*4(sp)
+    lw s7, 7*4(sp)
+    lw s8, 8*4(sp)
+    lw s9, 9*4(sp)
+    addi sp, sp, 4*10
+    ret    
+
+# void basemul_asm(int32_t a[4], const int32_t b[4], int32_t zeta)
+# save results to a[4]
+# register usage: a0,a1,a2 parameters; t0-t3 save a0-a3; t4,t5,t6,a7 save b0-b3; a3,a4,a5,a6 temporary usage; s0=M, s1=Mprime
+.globl basemul_asm
+.align 2
+basemul_asm:
+    addi sp, sp, -3*4
+    sw s0, 0*4(sp)
+    sw s1, 1*4(sp)
+    sw s2, 2*4(sp)
+    # Load M, Mprime
+    li s0, M
+    li s1, Mprime
+    # load a0-a3 to t0-t3
+    lw t0, 0*4(a0) # a0
+    lw t1, 1*4(a0) # a1
+    lw t2, 2*4(a0) # a2
+    lw t3, 3*4(a0) # a3
+    # load b0-b3 to t4,t5,t6,a7
+    lw t4, 0*4(a1) # b0
+    lw t5, 1*4(a1) # b1
+    lw t6, 2*4(a1) # b2
+    lw a7, 3*4(a1) # b3
+    // r0=a0b0+zeta*(a1b3+a2b2+a3b1)
+    # a1b3
+    MUL64 t1, a7, a3, a4
+    # a2b2
+    MUL64 t2, t6, a5, a6
+    # a1b3+a2b2
+    ADD64 a3, a4, a5, a6
+    # a3b1
+    MUL64 t3, t5, a3, a4
+    # a1b3+a2b2+a3b1
+    ADD64 a3, a4, a5, a6
+    # a3=MontReduce(a1b3+a2b2+a3b1)
+    MontReduce a5, a6, a3, s0, s1
+    # a4=zeta*a3
+    MontMul a2, a3, a4, s0, s1, a5
+    # a3=FqMul(a0,b0)
+    MontMul t0, t4, a3, s0, s1, a5
+    add a3, a3, a4
+    # save to a[0]
+    sw a3, 0*4(a0)
+
+    // r1=a0b1+a1b0+zeta*(a2b3+a3b2)
+    # a2b3
+    MUL64 t2, a7, a3, a4
+    # a3b2
+    MUL64 t3, t6, a5, a6
+    # a2b3+a3b2
+    ADD64 a3, a4, a5, a6
+    # a3=MontReduce(a2b3+a3b2)
+    MontReduce a5, a6, a3, s0, s1
+    # s2=zeta*a3
+    MontMul a2, a3, s2, s0, s1, a5
+    # a0b1
+    MUL64 t0, t5, a3, a4
+    # a1b0
+    MUL64 t1, t4, a5, a6
+    # a0b1+a1b0
+    ADD64 a3, a4, a5, a6
+    # a3=MontReduce(a0b1+a1b0)
+    MontReduce a5, a6, a3, s0, s1
+    add a3, a3, s2
+    # save to a[1]
+    sw a3, 1*4(a0)
+
+    // r2=a0b2+a1b1+a2b0+zeta*(a3b3)
+    # a3=FqMul(a3,b3)
+    MontMul t3, a7, a3, s0, s1, a4
+    # s2=zeta*a3
+    MontMul a2, a3, s2, s0, s1, a5
+    # a0b2
+    MUL64 t0, t6, a3, a4
+    # a1b1
+    MUL64 t1, t5, a5, a6
+    # a0b2+a1b1
+    ADD64 a3, a4, a5, a6
+    # a2b0
+    MUL64 t2, t4, a3, a4
+    # a0b2+a1b1+a2b0
+    ADD64 a3, a4, a5, a6
+    # a3=MontReduce(a0b2+a1b1+a2b0)
+    MontReduce a5, a6, a3, s0, s1
+    add a3, a3, s2
+    # save to a[2]
+    sw a3, 2*4(a0)
+
+    // r3=a0b3+a1b2+a2b1+a3b0
+    # a0b3
+    MUL64 t0, a7, a3, a4
+    # a1b2
+    MUL64 t1, t6, a5, a6
+    # a0b3+a1b2
+    ADD64 a3, a4, a5, a6
+    # a2b1
+    MUL64 t2, t5, a3, a4
+    # a0b3+a1b2+a2b1
+    ADD64 a3, a4, a5, a6
+    # a3b0
+    MUL64 t3, t4, a3, a4
+    # a0b3+a1b2+a2b1+a3b0
+    ADD64 a3, a4, a5, a6
+    # MontReduce(a0b3+a1b2+a2b1+a3b0)
+    MontReduce a5, a6, a3, s0, s1
+    # save to a[3]
+    sw a3, 3*4(a0)
+
+    lw s0, 0*4(sp)
+    lw s1, 1*4(sp)
+    lw s2, 2*4(sp)
+    addi sp, sp, 3*4
+    ret

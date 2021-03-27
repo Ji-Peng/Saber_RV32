@@ -44,6 +44,27 @@ int32_t BarrettReduce(int32_t a)
     return a - t;
 }
 
+/**
+ * @description: input \in [-M, M], output \in [-M/2, M/2]
+ */
+int32_t CenReduce(int32_t a)
+{
+    int32_t mask;
+    // if a < -M/2 => mask = 1 => mask = 0xffff_ffff ==> a+=mask&M
+    // if a < -M/2 => a + M/2 < 0 => mask = 0xffff_ffff
+    // if a >= M/2 => a + M/2 > 0 => mask = 0
+    mask = (a + M / 2) >> 31;
+    a += mask & M;
+    // if a > M/2 => mask = 1 => mask = 0xffff_ffff ==> a-=mask&M
+    // if a >= M/2 => a - M/2 >=0 => mask = 0 => 0xffff_ffff
+    // if a < M/2 => a - M/2 < 0 => mask = 1 => 0
+    mask = a - M / 2;
+    mask = (mask >> 31) & 0x1;
+    mask = mask - 1;
+    a -= mask & M;
+    return a;
+}
+
 // int main(void)
 // {
 //     printf("%d\n", MontReduce(((int64_t)409 * M + 3) * RmodM));
@@ -53,8 +74,8 @@ int32_t BarrettReduce(int32_t a)
 //     printf("%d\n", MontReduce((int64_t)(3 * M) * RmodM));
 //     printf("%d\n", MontReduce((int64_t)(3 * M - 1) * RmodM));
 //     printf("%d\n", BarrettReduce(409 * M - 3));
-//     printf("%d\n", BarrettReduce(M - 1));
-//     printf("%d\n", BarrettReduce(2 * M));
-//     printf("%d\n", BarrettReduce(2 * M - 1));
-//     printf("%d\n", BarrettReduce(M / 2 + 3));
+//     printf("%d\n", CenteredReduce(M - 1));
+//     printf("%d\n", CenteredReduce(2 * M));
+//     printf("%d\n", CenteredReduce(2 * M - 1));
+//     printf("%d\n", CenteredReduce(M / 2 + 3));
 // }

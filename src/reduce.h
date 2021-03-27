@@ -13,4 +13,6 @@ int32_t MontReduce(int64_t a);
 
 int32_t BarrettReduce(int32_t a);
 
+int32_t CenReduce(int32_t a);
+
 #endif
