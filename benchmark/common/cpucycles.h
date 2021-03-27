@@ -3,6 +3,5 @@
 #include "stdint.h"
 
 uint64_t cpucycles(void);
-char* ullu(uint64_t val);
 
 #endif

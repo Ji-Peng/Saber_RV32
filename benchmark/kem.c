@@ -22,8 +22,11 @@ static int TestCPA(void);
 static int SpeedCPA(void);
 static int SpeedCCA(void);
 
-#define NTESTS 1000
-
+#ifdef HOST
+#    define NTESTS 1000
+#else
+#    define NTESTS 100
+#endif
 static void DisableWatchDog(void)
 {
 #ifndef HOST
@@ -34,7 +37,7 @@ static void DisableWatchDog(void)
     if (result != 0) {
         printf("watchdog disable failed\n");
     } else if (result == 0) {
-        printf("watchdog disable success\n");
+        // printf("watchdog disable success\n");
     } else {
         printf("unknown return value %d\n", result);
     }
@@ -151,7 +154,6 @@ static int SpeedCPA(void)
     memset(message1, 0, sizeof(message1));
     memset(message2, 0, sizeof(message2));
     memset(noiseseed, 0, sizeof(noiseseed));
-    printf("-----------TEST CPA SPEED-------------\n");
     for (j = 0; j < NTESTS; j++) {
         for (i = 0; i < 32; i++) {
             message1[i] = noiseseed[i] = i;
@@ -169,12 +171,11 @@ static int SpeedCPA(void)
         t2 = cpucycles();
         sum3 += (t2 - t1);
     }
-    printf("indcpa_kem_keypair  %s\n", ullu(sum1 / NTESTS));
-    printf("indcpa_kem_enc      %s\n", ullu(sum2 / NTESTS));
-    printf("indcpa_kem_dec      %s\n", ullu(sum3 / NTESTS));
-    printf("overall             %s\n", ullu((sum1 + sum2 + sum3) / NTESTS));
-    printf("NTESTS              %d\n", NTESTS);
-    printf("-----------TEST CPA SPEED-------------\n");
+    printf("indcpa_kem_keypair/enc/dec/all: ");
+    printf("%u/", (uint32_t)sum1 / NTESTS);
+    printf("%u/", (uint32_t)sum2 / NTESTS);
+    printf("%u/", (uint32_t)sum3 / NTESTS);
+    printf("%u\n", (uint32_t)(sum1 + sum2 + sum3) / NTESTS);
     return 0;
 }
 
@@ -195,7 +196,6 @@ static int SpeedCCA(void)
         entropy_input[i] = i + 1;
     RandomBytesInit(entropy_input, NULL);
 
-    printf("-----------TEST CCA SPEED-------------\n");
     for (j = 0; j < NTESTS; j++) {
         // Generation of secret key sk and public key pk pair
         t1 = cpucycles();
@@ -214,11 +214,11 @@ static int SpeedCCA(void)
         t2 = cpucycles();
         sum3 += (t2 - t1);
     }
-    printf("crypto_kem_keypair  %s\n", ullu(sum1 / NTESTS));
-    printf("crypto_kem_enc      %s\n", ullu(sum2 / NTESTS));
-    printf("crypto_kem_dec      %s\n", ullu(sum3 / NTESTS));
-    printf("overall             %s\n", ullu((sum1 + sum2 + sum3) / NTESTS));
-    printf("NTESTS              %d\n", NTESTS);
+    printf("crypto_kem_keypair/enc/dec/all: ");
+    printf("%u/", (uint32_t)sum1 / NTESTS);
+    printf("%u/", (uint32_t)sum2 / NTESTS);
+    printf("%u/", (uint32_t)sum3 / NTESTS);
+    printf("%u\n", (uint32_t)(sum1 + sum2 + sum3) / NTESTS);
     return 0;
 }
 
@@ -244,7 +244,7 @@ static int SpeedCCAKP(void)
         t2 = cpucycles();
         sum1 += (t2 - t1);
     }
-    printf("crypto_kem_keypair  %s\n", ullu(sum1 / NTESTS));
+    printf("crypto_kem_keypair/enc/dec: %u/", (uint32_t)sum1 / NTESTS);
     return 0;
 }
 
@@ -272,7 +272,7 @@ static int SpeedCCAEnc(void)
         t2 = cpucycles();
         sum2 += (t2 - t1);
     }
-    printf("crypto_kem_enc      %s\n", ullu(sum2 / NTESTS));
+    printf("%u/", (uint32_t)sum2 / NTESTS);
     return 0;
 }
 
@@ -299,7 +299,7 @@ static int SpeedCCADec(void)
         t2 = cpucycles();
         sum3 += (t2 - t1);
     }
-    printf("crypto_kem_dec      %s\n", ullu(sum3 / NTESTS));
+    printf("%u\n", (uint32_t)sum3 / NTESTS);
     return 0;
 }
 
@@ -317,36 +317,36 @@ static int TestPolyMul(void)
         t2 = cpucycles();
         sum4 += (t2 - t1);
     }
-    printf("PolyMulAcc          %s\n", ullu(sum4 / NTESTS));
+    printf("PolyMulAcc: %u\n", (uint32_t)sum4 / NTESTS);
     return 0;
 }
 
-// static int TestGen(void)
-// {
-//     uint16_t poly[SABER_N];
-//     uint8_t seed[SABER_SEEDBYTES];
-//     int i, j, k;
-//     uint64_t t1, t2, sum1, sum2;
-//     sum1 = sum2 = 0;
+static int TestGen(void)
+{
+    uint16_t poly[SABER_N];
+    uint8_t seed[SABER_SEEDBYTES];
+    int i, j, k;
+    uint64_t t1, t2, sum1, sum2;
+    sum1 = sum2 = 0;
 
-//     for (k = 0; k < NTESTS; k++) {
-//         for (i = 0; i < SABER_L; i++) {
-//             for (j = 0; j < SABER_L; j++) {
-//                 t1 = cpucycles();
-//                 GenAInTime(poly, seed, 1 - i - j);
-//                 t2 = cpucycles();
-//                 sum1 += (t2 - t1);
-//             }
-//             t1 = cpucycles();
-//             GenSInTime(poly, seed, i);
-//             t2 = cpucycles();
-//             sum2 += (t2 - t1);
-//         }
-//     }
-//     printf("GenAInTime*9        %s\n", ullu(sum1 / NTESTS));
-//     printf("GenSInTime          %s\n", ullu(sum2 / NTESTS));
-//     return 0;
-// }
+    for (k = 0; k < NTESTS; k++) {
+        for (i = 0; i < SABER_L; i++) {
+            for (j = 0; j < SABER_L; j++) {
+                t1 = cpucycles();
+                GenAInTime(poly, seed, 1 - i - j);
+                t2 = cpucycles();
+                sum1 += (t2 - t1);
+            }
+            t1 = cpucycles();
+            GenSInTime(poly, seed, i);
+            t2 = cpucycles();
+            sum2 += (t2 - t1);
+        }
+    }
+    printf("GenAInTime*9/GenSInTime: %u/%u\n", (uint32_t)sum1 / NTESTS,
+           (uint32_t)sum2 / NTESTS);
+    return 0;
+}
 
 static int TestKeccak(void)
 {
@@ -372,8 +372,8 @@ static int TestKeccak(void)
         sum2 += (t2 - t1);
     }
 
-    printf("keccak_absorb       %s\n", ullu(sum1 / NTESTS));
-    printf("keccak_squeeze      %s\n", ullu(sum2 / NTESTS));
+    printf("keccak_absorb/squeeze: %u/%u\n", (uint32_t)sum1 / NTESTS,
+           (uint32_t)sum2 / NTESTS);
     return 0;
 }
 
@@ -391,7 +391,7 @@ static int TestNTT(void)
         t2 = cpucycles();
         sum1 += (t2 - t1);
     }
-    printf("NTT                 %s\n", ullu(sum1 / NTESTS));
+    printf("NTT: %u\n", (uint32_t)sum1 / NTESTS);
     return 0;
 }
 
@@ -411,40 +411,31 @@ static void TestNTTRange(void)
     }
 }
 
-static void TestCenteredReduce(void)
-{
-    uint16_t t = 8191;
-    printf("%hu\n", t);
-    t = (int16_t)(t << 3) >> 3;
-    printf("%hd\n", t);
-    t = 4096;
-    printf("%hu\n", t);
-    t = (int16_t)(t << 3) >> 3;
-    printf("%hd\n", t);
-    t = 4095;
-    printf("%hu\n", t);
-    t = (int16_t)(t << 3) >> 3;
-    printf("%hd\n", t);
-}
-
 int main(void)
 {
+    printf("--SABER_L is %d--\n", SABER_L);
+    printf("--Strategy: ");
+#ifdef FASTGENA_SLOWMUL
+    printf("FASTGENA_SLOWMUL--\n");
+#elif defined(FASTGENA_FASTMUL)
+    printf("FASTGENA_FASTMUL--\n");
+#elif defined(SLOWGENA_FASTMUL)
+    printf("SLOWGENA_FASTMUL--\n");
+#endif
     DisableWatchDog();
     // TestCPA();
     // TestCCA();
 #ifndef HOST
-    // SpeedCPA();
-    // SpeedCCAKP();
-    // SpeedCCAEnc();
-    // SpeedCCADec();
-    // SpeedCCA();
-    // TestPolyMul();
-    // TestGen();
-    // TestKeccak();
-    // TestNTT();
+    SpeedCPA();
+    TestPolyMul();
+    TestNTT();
+    SpeedCCA();
+    SpeedCCAKP();
+    SpeedCCAEnc();
+    SpeedCCADec();
+    TestGen();
+    TestKeccak();
 #endif
-    TestNTTRange();
-    // TestCenteredReduce();
-    // TestASM();
+    // TestNTTRange();
     return 0;
 }

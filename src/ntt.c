@@ -40,8 +40,6 @@ int32_t FqMul(int32_t a, int32_t b)
     return MontReduce((int64_t)a * b);
 }
 
-// #define NTTASM
-
 #ifdef NTTASM
 const int32_t rootTableMerged[64] = {
     -280030,  -3836025, -4362766, 4859845,  -1672980, -5071803, -1927818,
