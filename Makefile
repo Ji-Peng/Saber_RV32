@@ -1,5 +1,3 @@
-# The configuration defaults to Debug. Valid choices are: debug and release
-CONFIGURATION ?= debug
 # BSP_DIR sets the path to the target-specific board support package.
 BSP_DIR = bsp
 # SRC_DIR sets the path to the program source directory
@@ -7,7 +5,6 @@ SRC_DIR = src
 COMMON_DIR = benchmark/common
 HOST_DIR = benchmark/host
 
-# for host
 HOST_GCC = /usr/bin/gcc
 # Allow users to select a different cross compiler.
 CROSS_COMPILE ?= riscv64-unknown-elf
@@ -47,11 +44,9 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
 
-# host_out/speed
 .PHONY: host
 host: host_out/kem
 
-# out/PQCgenKAT_kem.elf out/test_kex.elf  out/speed.elf out/kem.elf out/stack.elf 
 .PHONY: all
 all: out/kem.elf
 
@@ -67,13 +62,6 @@ out/%.elf: \
 		$(RISCV_LDLIBS) -o $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
 	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
-
-# mv $(basename $@) $@
-# $(RISCV_SIZE) $@
-# $(RISCV_OBJDUMP) --source --all-headers --demangle --line-numbers --wide $@ > $(basename $@).lst
-# touch -c $@
-# cat *.su > $(basename $@).stack
-# rm *.su
 
 host_out/kem: \
 		benchmark/kem.c \
