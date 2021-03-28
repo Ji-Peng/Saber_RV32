@@ -19,14 +19,26 @@ void MatrixVectorMulKP(const uint8_t *seed_a, const uint8_t *seed_s,
 #if defined(FASTGENA_SLOWMUL)
 void MatrixVectorMulEnc(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
                         uint8_t *ciphertext);
+int32_t MatrixVectorMulEncCmp(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+                              const uint8_t *ciphertext);
 void InnerProdInTimeEnc(const uint8_t *bytes,
                         const uint16_t s[SABER_L][SABER_N], uint8_t *ciphertext,
                         const uint8_t m[SABER_KEYBYTES]);
+int32_t InnerProdInTimeEncCmp(const uint8_t *bytes,
+                              const uint16_t s[SABER_L][SABER_N],
+                              const uint8_t *ciphertext,
+                              const uint8_t m[SABER_KEYBYTES]);
 #elif defined(FASTGENA_FASTMUL) || defined(SLOWGENA_FASTMUL)
 void MatrixVectorMulEnc(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
                         uint8_t *ciphertext);
+int32_t MatrixVectorMulEncCmp(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
+                              const uint8_t *ciphertext);
 void InnerProdInTimeEnc(const uint8_t *bytes, const int32_t s[SABER_L][SABER_N],
                         uint8_t *ciphertext, const uint8_t m[SABER_KEYBYTES]);
+int32_t InnerProdInTimeEncCmp(const uint8_t *bytes,
+                              const int32_t s[SABER_L][SABER_N],
+                              const uint8_t *ciphertext,
+                              const uint8_t m[SABER_KEYBYTES]);
 #endif
 void InnerProdInTimeDec(const uint8_t *bytes,
                         const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],

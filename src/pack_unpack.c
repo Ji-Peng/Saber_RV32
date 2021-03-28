@@ -45,6 +45,50 @@ void PolT2BS(uint8_t bytes[SABER_SCALEBYTES_KEM], const uint16_t data[SABER_N])
 #endif
 }
 
+int32_t PolT2BSCmp(const uint8_t bytes[SABER_SCALEBYTES_KEM],
+                   const uint16_t data[SABER_N])
+{
+    int32_t j, offsetByte, offsetData, fail = 0;
+#if SABER_ET == 3
+    for (j = 0; j < SABER_N / 8; j++) {
+        offsetByte = 3 * j;
+        offsetData = 8 * j;
+        fail |= bytes[offsetByte + 0] ^ ((data[offsetData + 0] & 0x7) |
+                                         ((data[offsetData + 1] & 0x7) << 3) |
+                                         ((data[offsetData + 2] & 0x3) << 6));
+        fail |=
+            bytes[offsetByte + 1] ^ (((data[offsetData + 2] >> 2) & 0x01) |
+                                     ((data[offsetData + 3] & 0x7) << 1) |
+                                     ((data[offsetData + 4] & 0x7) << 4) |
+                                     (((data[offsetData + 5]) & 0x01) << 7));
+        fail |= bytes[offsetByte + 2] ^ (((data[offsetData + 5] >> 1) & 0x03) |
+                                         ((data[offsetData + 6] & 0x7) << 2) |
+                                         ((data[offsetData + 7] & 0x7) << 5));
+    }
+#elif SABER_ET == 4
+    for (j = 0; j < SABER_N / 2; j++) {
+        offsetByte = j;
+        offsetData = 2 * j;
+        fail |= bytes[offsetByte] ^ ((data[offsetData] & 0x0f) |
+                                     ((data[offsetData + 1] & 0x0f) << 4));
+    }
+#elif SABER_ET == 6
+    for (j = 0; j < SABER_N / 4; j++) {
+        offsetByte = 3 * j;
+        offsetData = 4 * j;
+        fail |= bytes[offsetByte + 0] ^ ((data[offsetData + 0] & 0x3f) |
+                                         ((data[offsetData + 1] & 0x03) << 6));
+        fail |= bytes[offsetByte + 1] ^ (((data[offsetData + 1] >> 2) & 0x0f) |
+                                         ((data[offsetData + 2] & 0x0f) << 4));
+        fail |= bytes[offsetByte + 2] ^ (((data[offsetData + 2] >> 4) & 0x03) |
+                                         ((data[offsetData + 3] & 0x3f) << 2));
+    }
+#else
+#    error "Unsupported SABER parameter."
+#endif
+    return fail;
+}
+
 void BS2PolT(const uint8_t bytes[SABER_SCALEBYTES_KEM], uint16_t data[SABER_N])
 {
     int32_t j, offsetByte, offsetData;
@@ -148,6 +192,25 @@ void Polp2BS(uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
                                 ((data[offsetData + 3] & 0x03) << 6);
         bytes[offsetByte + 4] = ((data[offsetData + 3] >> 2) & 0xff);
     }
+}
+
+int32_t Polp2BSCmp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
+                   const uint16_t data[SABER_N])
+{
+    int32_t j, offsetByte, offsetData, fail = 0;
+    for (j = 0; j < SABER_N / 4; j++) {
+        offsetByte = 5 * j;
+        offsetData = 4 * j;
+        fail |= bytes[offsetByte + 0] ^ (data[offsetData + 0] & (0xff));
+        fail |= bytes[offsetByte + 1] ^ (((data[offsetData + 0] >> 8) & 0x03) |
+                                         ((data[offsetData + 1] & 0x3f) << 2));
+        fail |= bytes[offsetByte + 2] ^ (((data[offsetData + 1] >> 6) & 0x0f) |
+                                         ((data[offsetData + 2] & 0x0f) << 4));
+        fail |= bytes[offsetByte + 3] ^ (((data[offsetData + 2] >> 4) & 0x3f) |
+                                         ((data[offsetData + 3] & 0x03) << 6));
+        fail |= bytes[offsetByte + 4] ^ ((data[offsetData + 3] >> 2) & 0xff);
+    }
+    return fail;
 }
 
 void BS2Polp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],

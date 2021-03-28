@@ -62,7 +62,6 @@ int crypto_kem_dec(unsigned char *k, const unsigned char *c,
                    const unsigned char *sk)
 {
     int i, fail;
-    unsigned char cmp[SABER_BYTES_CCA_DEC];
     unsigned char buf[64];
     // Will contain key, coins
     unsigned char kr[64];
@@ -78,9 +77,7 @@ int crypto_kem_dec(unsigned char *k, const unsigned char *c,
 
     sha3_512(kr, buf, 64);
 
-    indcpa_kem_enc(buf, kr + 32, pk, cmp);
-
-    fail = Verify(c, cmp, SABER_BYTES_CCA_DEC);
+    fail = indcpa_kem_enc_cmp(buf, kr + 32, pk, c);
 
     // overwrite coins in kr with h(c)
     sha3_256(kr + 32, c, SABER_BYTES_CCA_DEC);

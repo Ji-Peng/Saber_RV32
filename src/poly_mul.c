@@ -131,6 +131,29 @@ void MatrixVectorMulEnc(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
     }
 }
 
+int32_t MatrixVectorMulEncCmp(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+                              const uint8_t *ciphertext)
+{
+    int i, j, fail = 0;
+    uint16_t a[2 * SABER_N], res[SABER_N];
+    for (i = 0; i < SABER_L; i++) {
+        // clear a and res
+        for (j = 0; j < SABER_N; j++) {
+            res[j] = 0;
+        }
+        // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
+        for (j = 0; j < SABER_L; j++) {
+            GenAInTime(a, seed, 1 - i - j);
+            PolyMulAcc(a, s[j], res);
+        }
+        for (j = 0; j < SABER_N; j++) {
+            res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
+        }
+        fail |= Polp2BSCmp(ciphertext + i * (SABER_EP * SABER_N / 8), res);
+    }
+    return fail;
+}
+
 /**
  * Name: InnerProd just-in-time
  * Description: inner product using ntt
@@ -159,6 +182,32 @@ void InnerProdInTimeEnc(const uint8_t *bytes,
     PolT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
 }
 
+int32_t InnerProdInTimeEncCmp(const uint8_t *bytes,
+                              const uint16_t s[SABER_L][SABER_N],
+                              const uint8_t *ciphertext,
+                              const uint8_t m[SABER_KEYBYTES])
+{
+    int i, j, fail = 0;
+    uint16_t b[2 * SABER_N], vp[SABER_N] = {0};
+    uint16_t message_bit;
+
+    for (j = 0; j < SABER_L; j++) {
+        BS2Polp(bytes + j * (SABER_EP * SABER_N / 8), b);
+        PolyMulAcc(b, s[j], vp);
+    }
+    for (j = 0; j < SABER_KEYBYTES; j++) {
+        for (i = 0; i < 8; i++) {
+            message_bit = ((m[j] >> i) & 0x01);
+            message_bit = (message_bit << (SABER_EP - 1));
+            vp[j * 8 + i] =
+                (vp[j * 8 + i] - message_bit + h1) >> (SABER_EP - SABER_ET);
+        }
+    }
+
+    fail |= PolT2BSCmp(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
+    return fail;
+}
+
 #elif defined(FASTGENA_FASTMUL)
 void MatrixVectorMulEnc(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
                         uint8_t *ciphertext)
@@ -181,6 +230,30 @@ void MatrixVectorMulEnc(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
         }
         Polp2BS(ciphertext + i * (SABER_EP * SABER_N / 8), res);
     }
+}
+
+int32_t MatrixVectorMulEncCmp(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
+                              const uint8_t *ciphertext)
+{
+    int i, j, fail = 0;
+    uint16_t a[SABER_N], res[SABER_N];
+    for (i = 0; i < SABER_L; i++) {
+        // clear a and res
+        for (j = 0; j < SABER_N; j++) {
+            a[j] = 0;
+            res[j] = 0;
+        }
+        // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
+        for (j = 0; j < SABER_L; j++) {
+            GenAInTime(a, seed, 1 - i - j);
+            PolyMulAccFast(a, s[j], res);
+        }
+        for (j = 0; j < SABER_N; j++) {
+            res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
+        }
+        fail |= Polp2BSCmp(ciphertext + i * (SABER_EP * SABER_N / 8), res);
+    }
+    return fail;
 }
 
 /**
@@ -208,6 +281,32 @@ void InnerProdInTimeEnc(const uint8_t *bytes, const int32_t s[SABER_L][SABER_N],
     }
 
     PolT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
+}
+
+int32_t InnerProdInTimeEncCmp(const uint8_t *bytes,
+                              const int32_t s[SABER_L][SABER_N],
+                              const uint8_t *ciphertext,
+                              const uint8_t m[SABER_KEYBYTES])
+{
+    int i, j, fail = 0;
+    uint16_t b[SABER_N], vp[SABER_N] = {0};
+    uint16_t message_bit;
+
+    for (j = 0; j < SABER_L; j++) {
+        BS2Polp(bytes + j * (SABER_EP * SABER_N / 8), b);
+        PolyMulAccFast(b, s[j], vp);
+    }
+    for (j = 0; j < SABER_KEYBYTES; j++) {
+        for (i = 0; i < 8; i++) {
+            message_bit = ((m[j] >> i) & 0x01);
+            message_bit = (message_bit << (SABER_EP - 1));
+            vp[j * 8 + i] =
+                (vp[j * 8 + i] - message_bit + h1) >> (SABER_EP - SABER_ET);
+        }
+    }
+
+    fail |= PolT2BSCmp(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
+    return fail;
 }
 
 #else
