@@ -7,6 +7,10 @@
 .equ V, 0x199851d
 # NINV = R^2 * (1/256) mod M is used for reverting standard domain
 .equ NINV, 0x316ad1
+# 2^{32} mod M
+.equ RmodM, 0x533667
+# M/2
+.equ MDiv2, 0x500400
 
 # int64_t a=in1*in2
 # int32_t t=a*Mprime
@@ -87,43 +91,72 @@
     MontMul \zeta, \tmp1, \in2, \CM, \CMprime, \tmp2
 .endm
 
+# int32_t mask;
+# mask = (a + M / 2) >> 31;
+# a += mask & M;
+# mask = a - M / 2;
+# mask = (mask >> 31) & 0x1;
+# mask = mask - 1;
+# a -= mask & M;
+.macro CenReduce in, out, CM, CMDiv2, tmp1
+    # tmp1=in+M/2
+    add \tmp1, \in, \CMDiv2
+    # tmp1>>31 : 0xffff_ffff or 0
+    srai \tmp1, \tmp1, 0x1f
+    # tmp1=tmp1 & M
+    and \tmp1, \tmp1, \CM
+    # in=in+tmp1
+    add \in, \in, \tmp1
+    # tmp1=in-M/2
+    sub \tmp1, \in, \CMDiv2
+    # tmp1>>31 : 0 or 1
+    srli \tmp1, \tmp1, 0x1f
+    # tmp1 = tmp1 - 1 : 0xffff_ffff or 0
+    addi \tmp1, \tmp1, -1
+    # tmp1=tmp1&M
+    and \tmp1, \tmp1, \CM
+    # out=in-tmp1
+    sub \out, \in, \tmp1
+.endm
+
 # revert to Standard domain and reduce to Centered representation
+# tp is NINV, t0 is M/2
 .macro SCReduce
     MontMul s0, tp, t4, t6, a7, t5
-    BarrettReduce t4, s0, t5
+    CenReduce t4, s0, t6, t0, t5
     MontMul s1, tp, t4, t6, a7, t5
-    BarrettReduce t4, s1, t5
+    CenReduce t4, s1, t6, t0, t5
     MontMul s2, tp, t4, t6, a7, t5
-    BarrettReduce t4, s2, t5
+    CenReduce t4, s2, t6, t0, t5
     MontMul s3, tp, t4, t6, a7, t5
-    BarrettReduce t4, s3, t5     
+    CenReduce t4, s3, t6, t0, t5
 
     MontMul s4, tp, t4, t6, a7, t5
-    BarrettReduce t4, s4, t5
+    CenReduce t4, s4, t6, t0, t5
     MontMul s5, tp, t4, t6, a7, t5
-    BarrettReduce t4, s5, t5
+    CenReduce t4, s5, t6, t0, t5
     MontMul s6, tp, t4, t6, a7, t5
-    BarrettReduce t4, s6, t5
+    CenReduce t4, s6, t6, t0, t5
     MontMul s7, tp, t4, t6, a7, t5
-    BarrettReduce t4, s7, t5 
+    CenReduce t4, s7, t6, t0, t5
 
     MontMul s8, tp, t4, t6, a7, t5
-    BarrettReduce t4, s8, t5
+    CenReduce t4, s8, t6, t0, t5
     MontMul s9, tp, t4, t6, a7, t5
-    BarrettReduce t4, s9, t5
+    CenReduce t4, s9, t6, t0, t5
     MontMul s10, tp, t4, t6, a7, t5
-    BarrettReduce t4, s10, t5
+    CenReduce t4, s10, t6, t0, t5
     MontMul s11, tp, t4, t6, a7, t5
-    BarrettReduce t4, s11, t5 
+    CenReduce t4, s11, t6, t0, t5
 
     MontMul a3, tp, t4, t6, a7, t5
-    BarrettReduce t4, a3, t5
+    CenReduce t4, a3, t6, t0, t5
     MontMul a4, tp, t4, t6, a7, t5
-    BarrettReduce t4, a4, t5
+    CenReduce t4, a4, t6, t0, t5
     MontMul a5, tp, t4, t6, a7, t5
-    BarrettReduce t4, a5, t5
+    CenReduce t4, a5, t6, t0, t5
     MontMul a6, tp, t4, t6, a7, t5
-    BarrettReduce t4, a6, t5                    
+    CenReduce t4, a6, t6, t0, t5                   
 .endm
 
 
@@ -185,6 +218,11 @@
 
 # void ntt_asm(const uint16_t in[256], int32_t out[256],
 # const int32_t rootTable[256]);
+# a0-a2: function parameters
+# s0-s11+a3-a6: 16 coefficients
+# gp: loop controller, t6/a7: M/Mprime
+# t4, t5: temporary variables
+# t0-t3+tp: zetas
 .globl ntt_asm_8layer
 .align 2
 ntt_asm_8layer:
@@ -362,6 +400,11 @@ looper_5678:
 
 # void intt_asm(const uint32_t in[256], int32_t out[256],
 # const int32_t rootTable[256]);
+# a0-a2: function parameters
+# s0-s11+a3-a6: 16 coefficients
+# gp: loop controller, t6/a7: M/Mprime
+# t4, t5: temporary variables
+# t0-t3+tp: zetas
 .globl intt_asm_8layer
 .align 2
 intt_asm_8layer:
@@ -451,12 +494,19 @@ inv_looper_1234:
     //========layer5678========//
     # reset a1
     addi a1, a1, -16*16*4
+    # a1[0] mod q for avoiding overflow
+    lw s0, 0*4(a1)
+    li s1, RmodM
+    # s2=MontMul(s0,s1)
+    MontMul s0, s1, s2, t6, a7, s3
+    sw s2, 0*4(a1)
     # loop control, 16: loop numbers, 4: int32_t=4B
     addi gp, a1, 16*4
     # Load NINV for reverting to standard domain
     li tp, NINV
+    # load M/2 for centered reduction
+    li t0, MDiv2
     # load zetas
-    lw  t0, 12*4(a2)
     lw  t1, 13*4(a2)
     lw  t2, 14*4(a2)
 # 5678 layers, input is int32_t out[N], output is int32_t out[N]
@@ -493,10 +543,11 @@ inv_looper_5678:
     BFUINTT a3,  a5,  t3, t6, a7, t4, t5
     BFUINTT a4,  a6,  t3, t6, a7, t4, t5    
     # level3
-    BFUINTT s0,  s4, t0, t6, a7, t4, t5
-    BFUINTT s1,  s5, t0, t6, a7, t4, t5
-    BFUINTT s2,  s6, t0, t6, a7, t4, t5
-    BFUINTT s3,  s7, t0, t6, a7, t4, t5 
+    lw  t3,  12*4(a2)
+    BFUINTT s0,  s4, t3, t6, a7, t4, t5
+    BFUINTT s1,  s5, t3, t6, a7, t4, t5
+    BFUINTT s2,  s6, t3, t6, a7, t4, t5
+    BFUINTT s3,  s7, t3, t6, a7, t4, t5 
     BFUINTT s8,  a3, t1, t6, a7, t4, t5
     BFUINTT s9,  a4, t1, t6, a7, t4, t5
     BFUINTT s10, a5, t1, t6, a7, t4, t5
