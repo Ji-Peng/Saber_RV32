@@ -7,6 +7,8 @@
 .equ V, 0x199851d
 # NINV = R^2 * (1/64) mod M is used for reverting standard domain
 .equ NINV, 0x25a343
+# M/2
+.equ MDiv2, 0x500400
 
 # int64_t a=in1*in2
 # int32_t t=a*Mprime
@@ -87,32 +89,60 @@
     MontMul \zeta, \tmp1, \in2, \CM, \CMprime, \tmp2
 .endm
 
+# int32_t mask;
+# mask = (a + M / 2) >> 31;
+# a += mask & M;
+# mask = a - M / 2;
+# mask = (mask >> 31) & 0x1;
+# mask = mask - 1;
+# a -= mask & M;
+.macro CenReduce in, out, CM, CMDiv2, tmp1
+    # tmp1=in+M/2
+    add \tmp1, \in, \CMDiv2
+    # tmp1>>31 : 0xffff_ffff or 0
+    srai \tmp1, \tmp1, 0x1f
+    # tmp1=tmp1 & M
+    and \tmp1, \tmp1, \CM
+    # in=in+tmp1
+    add \in, \in, \tmp1
+    # tmp1=in-M/2
+    sub \tmp1, \in, \CMDiv2
+    # tmp1>>31 : 0 or 1
+    srli \tmp1, \tmp1, 0x1f
+    # tmp1 = tmp1 - 1 : 0xffff_ffff or 0
+    addi \tmp1, \tmp1, -1
+    # tmp1=tmp1&M
+    and \tmp1, \tmp1, \CM
+    # out=in-tmp1
+    sub \out, \in, \tmp1
+.endm
+
 # revert to Standard domain and reduce to Centered representation
 .macro SCReduce
     # reduce s0
     MontMul s0, a3, s8, a6, a7, s9
-    BarrettReduce s8, s0, s9
+    CenReduce s8, s0, a6, s10, s9
     # reduce s1
     MontMul s1, a3, s8, a6, a7, s9
-    BarrettReduce s8, s1, s9
+    CenReduce s8, s1, a6, s10, s9
     # reduce s2
     MontMul s2, a3, s8, a6, a7, s9
-    BarrettReduce s8, s2, s9
+    CenReduce s8, s2, a6, s10, s9
     # reduce s3
     MontMul s3, a3, s8, a6, a7, s9
-    BarrettReduce s8, s3, s9
+    CenReduce s8, s3, a6, s10, s9
     # reduce s4
     MontMul s4, a3, s8, a6, a7, s9
-    BarrettReduce s8, s4, s9
+    CenReduce s8, s4, a6, s10, s9
     # reduce s5
     MontMul s5, a3, s8, a6, a7, s9
-    BarrettReduce s8, s5, s9
+    CenReduce s8, s5, a6, s10, s9
     # reduce s6
     MontMul s6, a3, s8, a6, a7, s9
-    BarrettReduce s8, s6, s9
+    CenReduce s8, s6, a6, s10, s9
     # reduce s7
     MontMul s7, a3, s8, a6, a7, s9
-    BarrettReduce s8, s7, s9                
+    CenReduce s8, s7, a6, s10, s9
 .endm
 
 .macro LoadZetas
@@ -275,12 +305,15 @@ outer_456:
 
 # void intt_asm(const uint32_t in[256], int32_t out[256],
 # const int32_t rootTable[64]);
-# register usage: a0-a2: parameter, t0-t7: zetas, s0-s7: 8 coefficients
-# s8, s9 temporary usage, a6/a7: M/Mprime, a4/a5: looper control
+# register usage: 
+# a0-a2: parameter, a3: NINV, a4/a5: looper control, a6/a7: M/Mprime
+# t0-t6: zetas
+# s0-s7: 8 coefficients
+# s8, s9 temporary usage, s10: M/2 for CenReduce
 .globl intt_asm
 .align 2
 intt_asm:
-    addi sp, sp, -4*10
+    addi sp, sp, -4*11
     sw s0, 0*4(sp)
     sw s1, 1*4(sp)
     sw s2, 2*4(sp)
@@ -291,6 +324,7 @@ intt_asm:
     sw s7, 7*4(sp)
     sw s8, 8*4(sp)
     sw s9, 9*4(sp)
+    sw s10, 10*4(sp)
 
 # set outer loop control register a5, 8: inner loop number
 addi a5, a2, 8*4*7
@@ -340,6 +374,7 @@ outer_123:
     LoadZetas
     # Load NINV for reverting to standard domain
     li a3, NINV
+    li s10, MDiv2
 # 456 layers, input is int32_t out[N], output is int32_t out[N]
 looper_456:
     # s0-s7 = a[0,32,64,...,224]
@@ -377,7 +412,8 @@ looper_456:
     lw s7, 7*4(sp)
     lw s8, 8*4(sp)
     lw s9, 9*4(sp)
-    addi sp, sp, 4*10
+    lw s10, 10*4(sp)
+    addi sp, sp, 4*11
     ret    
 
 # void basemul_asm(int32_t a[4], const int32_t b[4], int32_t zeta)
