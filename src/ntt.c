@@ -137,11 +137,8 @@ void InvNTT(int32_t in[256], int32_t out[256])
     unsigned int start, len, j, k;
     int32_t t, zeta;
     // mont^2/64 mod M = (2^32)^2/64 mod M
-    // const int32_t f = NINV;
-    // mont^2/64 mod M = (2^32)^2/64 mod M
-    const int32_t f = ((((int64_t)1 << 32) >> 6) * ((int64_t)1 << 32)) % M;
-    // mont^2/64 mod M = (2^32)/64 mod M
-    // const int32_t f = 4025329;
+    const int32_t f =
+        (((((int64_t)1 << 32) >> 6) % M) * (((int64_t)1 << 32) % M)) % M;
 
     k = 0;
     len = 4;
@@ -171,7 +168,7 @@ void InvNTT(int32_t in[256], int32_t out[256])
     // multiply mont^2/64, reduce to centered representatives, get low 13 bits
     for (j = 0; j < 256; j++) {
         out[j] = FqMul(out[j], f);
-        // out[j] = CenReduce(out[j]);
+        out[j] = CenReduce(out[j]);
     }
 }
 
@@ -355,7 +352,7 @@ void InvNTT(int32_t in[256], int32_t out[256])
     // multiply mont^2/64, reduce to centered representatives, get low 13 bits
     for (j = 0; j < 256; j++) {
         out[j] = FqMul(out[j], f);
-        // out[j] = CenReduce(out[j]);
+        out[j] = CenReduce(out[j]);
     }
 }
 
@@ -636,6 +633,8 @@ void InvNTT(int32_t in[256], int32_t out[256])
             out[j + len] = FqMul(zeta, out[j + len]);
         }
     }
+    // mod M for avoiding overflow
+    out[0] = FqMul(out[0], ((int64_t)1 << 32) % M);
     // remaining seven layers
     for (len = 2; len <= 128; len <<= 1) {
         for (start = 0; start < 256; start = j + len) {
@@ -650,9 +649,9 @@ void InvNTT(int32_t in[256], int32_t out[256])
     }
 
     // multiply mont^2/64, reduce to centered representatives, get low 13 bits
-    for (j = 0; j < 256; j++) {
+    for (j = 0; j < SABER_N; j++) {
         out[j] = FqMul(out[j], f);
-        // out[j] = CenReduce(out[j]);
+        out[j] = CenReduce(out[j]);
     }
 }
 
