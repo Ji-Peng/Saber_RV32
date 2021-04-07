@@ -340,7 +340,7 @@ outer_123:
     LoadZetas
     # Load NINV for reverting to standard domain
     li a3, NINV
-# 123 layers, input is uint16_t in[N], output is int32_t out[N]
+# 456 layers, input is int32_t out[N], output is int32_t out[N]
 looper_456:
     # s0-s7 = a[0,32,64,...,224]
     LoadS w, 32, 4, a1

@@ -83,10 +83,7 @@ void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
  **************************************************/
 void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
-    unsigned int i;
-    for (i = 0; i < SABER_N; i++) {
-        a[i] = FqMul(a[i], b[i]);
-    }
+    BaseMul(a, b);
 }
 #endif
 

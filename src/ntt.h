@@ -10,5 +10,5 @@ void BaseMul(int32_t a[4], const int32_t b[4], int32_t zeta);
 #elif defined(SEVEN_LAYER_NTT)
 void BaseMul(int32_t a[2], const int32_t b[2], int32_t zeta);
 #elif defined(COMPLETE_NTT)
-void BaseMul(int32_t a[1], const int32_t b[1]);
+void BaseMul(int32_t a[SABER_N], const int32_t b[SABER_N]);
 #endif
