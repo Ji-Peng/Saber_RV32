@@ -140,23 +140,17 @@
     MontMul s7, tp, t4, t6, a7, t5
     CenReduce t4, s7, t6, t0, t5
 
-    MontMul s8, tp, t4, t6, a7, t5
-    CenReduce t4, s8, t6, t0, t5
-    MontMul s9, tp, t4, t6, a7, t5
-    CenReduce t4, s9, t6, t0, t5
-    MontMul s10, tp, t4, t6, a7, t5
-    CenReduce t4, s10, t6, t0, t5
-    MontMul s11, tp, t4, t6, a7, t5
-    CenReduce t4, s11, t6, t0, t5
+    # second half coefficients have been multiply by R*(1/N), 
+    # which is included in last table item
+    CenReduce s8, s8, t6, t0, t5
+    CenReduce s9, s9, t6, t0, t5
+    CenReduce s10, s10, t6, t0, t5
+    CenReduce s11, s11, t6, t0, t5
 
-    MontMul a3, tp, t4, t6, a7, t5
-    CenReduce t4, a3, t6, t0, t5
-    MontMul a4, tp, t4, t6, a7, t5
-    CenReduce t4, a4, t6, t0, t5
-    MontMul a5, tp, t4, t6, a7, t5
-    CenReduce t4, a5, t6, t0, t5
-    MontMul a6, tp, t4, t6, a7, t5
-    CenReduce t4, a6, t6, t0, t5                   
+    CenReduce a3, a3, t6, t0, t5
+    CenReduce a4, a4, t6, t0, t5
+    CenReduce a5, a5, t6, t0, t5
+    CenReduce a6, a6, t6, t0, t5                   
 .endm
 
 
@@ -508,6 +502,7 @@ inv_looper_1234:
     li t0, MDiv2
     # load zetas
     lw  t1, 13*4(a2)
+    # last table item includes R*(1/N)
     lw  t2, 14*4(a2)
 # 5678 layers, input is int32_t out[N], output is int32_t out[N]
 inv_looper_5678:
