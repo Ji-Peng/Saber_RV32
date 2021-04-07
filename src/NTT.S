@@ -132,17 +132,17 @@
     MontMul s3, a3, s8, a6, a7, s9
     CenReduce s8, s3, a6, s10, s9
     # reduce s4
-    MontMul s4, a3, s8, a6, a7, s9
-    CenReduce s8, s4, a6, s10, s9
+    # MontMul s4, a3, s8, a6, a7, s9
+    CenReduce s4, s4, a6, s10, s9
     # reduce s5
-    MontMul s5, a3, s8, a6, a7, s9
-    CenReduce s8, s5, a6, s10, s9
+    # MontMul s5, a3, s8, a6, a7, s9
+    CenReduce s5, s5, a6, s10, s9
     # reduce s6
-    MontMul s6, a3, s8, a6, a7, s9
-    CenReduce s8, s6, a6, s10, s9
+    # MontMul s6, a3, s8, a6, a7, s9
+    CenReduce s6, s6, a6, s10, s9
     # reduce s7
-    MontMul s7, a3, s8, a6, a7, s9
-    CenReduce s8, s7, a6, s10, s9
+    # MontMul s7, a3, s8, a6, a7, s9
+    CenReduce s7, s7, a6, s10, s9
 .endm
 
 .macro LoadZetas
