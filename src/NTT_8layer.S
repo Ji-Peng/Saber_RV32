@@ -154,23 +154,23 @@
 .endm
 
 
-.macro LoadS hw, len, wordLen, reg
-    l\hw s0, \len*\wordLen*0(\reg)
-    l\hw s1, \len*\wordLen*1(\reg)
-    l\hw s2, \len*\wordLen*2(\reg)
-    l\hw s3, \len*\wordLen*3(\reg)
-    l\hw s4, \len*\wordLen*4(\reg)
-    l\hw s5, \len*\wordLen*5(\reg)
-    l\hw s6, \len*\wordLen*6(\reg)
-    l\hw s7, \len*\wordLen*7(\reg)
-    l\hw s8, \len*\wordLen*8(\reg)
-    l\hw s9, \len*\wordLen*9(\reg)
-    l\hw s10, \len*\wordLen*10(\reg)
-    l\hw s11, \len*\wordLen*11(\reg)
-    l\hw a3, \len*\wordLen*12(\reg)
-    l\hw a4, \len*\wordLen*13(\reg)
-    l\hw a5, \len*\wordLen*14(\reg)
-    l\hw a6, \len*\wordLen*15(\reg)
+.macro LoadS bhw, len, wordLen, reg
+    l\bhw s0, \len*\wordLen*0(\reg)
+    l\bhw s1, \len*\wordLen*1(\reg)
+    l\bhw s2, \len*\wordLen*2(\reg)
+    l\bhw s3, \len*\wordLen*3(\reg)
+    l\bhw s4, \len*\wordLen*4(\reg)
+    l\bhw s5, \len*\wordLen*5(\reg)
+    l\bhw s6, \len*\wordLen*6(\reg)
+    l\bhw s7, \len*\wordLen*7(\reg)
+    l\bhw s8, \len*\wordLen*8(\reg)
+    l\bhw s9, \len*\wordLen*9(\reg)
+    l\bhw s10, \len*\wordLen*10(\reg)
+    l\bhw s11, \len*\wordLen*11(\reg)
+    l\bhw a3, \len*\wordLen*12(\reg)
+    l\bhw a4, \len*\wordLen*13(\reg)
+    l\bhw a5, \len*\wordLen*14(\reg)
+    l\bhw a6, \len*\wordLen*15(\reg)
 .endm
 
 .macro StoreS len, reg
@@ -217,9 +217,9 @@
 # gp: loop controller, t6/a7: M/Mprime
 # t4, t5: temporary variables
 # t0-t3+tp: zetas
-.globl ntt_asm_8layer
+.globl ntta_asm_8layer
 .align 2
-ntt_asm_8layer:
+ntta_asm_8layer:
     addi sp, sp, -4*14
     sw s0,  0*4(sp)
     sw s1,  1*4(sp)
@@ -391,6 +391,188 @@ looper_5678:
     lw tp,  13*4(sp)
     addi sp, sp, 4*14
     ret
+
+# void ntt_asm(const uint8_t in[256], int32_t out[256],
+# const int32_t rootTable[256]);
+# a0-a2: function parameters
+# s0-s11+a3-a6: 16 coefficients
+# gp: loop controller, t6/a7: M/Mprime
+# t4, t5: temporary variables
+# t0-t3+tp: zetas
+.globl ntts_asm_8layer
+.align 2
+ntts_asm_8layer:
+    addi sp, sp, -4*14
+    sw s0,  0*4(sp)
+    sw s1,  1*4(sp)
+    sw s2,  2*4(sp)
+    sw s3,  3*4(sp)
+    sw s4,  4*4(sp)
+    sw s5,  5*4(sp)
+    sw s6,  6*4(sp)
+    sw s7,  7*4(sp)
+    sw s8,  8*4(sp)
+    sw s9,  9*4(sp)
+    sw s10, 10*4(sp)
+    sw s11, 11*4(sp)
+    sw gp,  12*4(sp)
+    sw tp,  13*4(sp)
+
+    # zeta, M, Mprime
+    lw t0, 0*4(a2)
+    lw t1, 1*4(a2)
+    lw t2, 2*4(a2)
+    lw t3, 3*4(a2)
+
+    li t6, M
+    li a7, Mprime
+    # loop control, a0+16=a[16], 16: loop numbers, 2: uint8_t=1B
+    addi gp, a0, 16*1
+# 1234 layers, input is uint16_t in[N], output is int32_t out[N]
+ntts_looper_1234:
+    # a[0,16,32,...,240]
+    LoadS b, 16, 1, a0
+    # level1
+    BFU s0, s8,  t0, t6, a7, t4, t5
+    BFU s1, s9,  t0, t6, a7, t4, t5
+    BFU s2, s10, t0, t6, a7, t4, t5
+    BFU s3, s11, t0, t6, a7, t4, t5
+    BFU s4, a3,  t0, t6, a7, t4, t5
+    BFU s5, a4,  t0, t6, a7, t4, t5
+    BFU s6, a5,  t0, t6, a7, t4, t5
+    BFU s7, a6,  t0, t6, a7, t4, t5    
+    # level2
+    BFU s0,  s4, t1, t6, a7, t4, t5
+    BFU s1,  s5, t1, t6, a7, t4, t5
+    BFU s2,  s6, t1, t6, a7, t4, t5
+    BFU s3,  s7, t1, t6, a7, t4, t5 
+    BFU s8,  a3, t2, t6, a7, t4, t5
+    BFU s9,  a4, t2, t6, a7, t4, t5
+    BFU s10, a5, t2, t6, a7, t4, t5
+    BFU s11, a6, t2, t6, a7, t4, t5     
+    # level3
+    BFU s0,  s2,  t3, t6, a7, t4, t5
+    BFU s1,  s3,  t3, t6, a7, t4, t5
+    lw  tp,  4*4(a2)
+    BFU s4,  s6,  tp, t6, a7, t4, t5
+    BFU s5,  s7,  tp, t6, a7, t4, t5 
+    lw  tp,  5*4(a2)
+    BFU s8,  s10, tp, t6, a7, t4, t5
+    BFU s9,  s11, tp, t6, a7, t4, t5
+    lw  tp,  6*4(a2)
+    BFU a3,  a5,  tp, t6, a7, t4, t5
+    BFU a4,  a6,  tp, t6, a7, t4, t5
+    # level4
+    lw  tp,  7*4(a2)
+    BFU s0,  s1,  tp, t6, a7, t4, t5
+    lw  tp,  8*4(a2)
+    BFU s2,  s3,  tp, t6, a7, t4, t5
+    lw  tp,  9*4(a2)
+    BFU s4,  s5,  tp, t6, a7, t4, t5
+    lw  tp,  10*4(a2)
+    BFU s6,  s7,  tp, t6, a7, t4, t5
+    lw  tp,  11*4(a2)
+    BFU s8,  s9,  tp, t6, a7, t4, t5
+    lw  tp,  12*4(a2)
+    BFU s10, s11, tp, t6, a7, t4, t5
+    lw  tp,  13*4(a2)
+    BFU a3,  a4,  tp, t6, a7, t4, t5
+    lw  tp,  14*4(a2)
+    BFU a5,  a6,  tp, t6, a7, t4, t5  
+    //save results
+    StoreS 16, a1
+
+    addi a0, a0, 1
+    addi a1, a1, 4
+    bne gp, a0, ntts_looper_1234
+
+# ============== level 5678 ============== #
+# reset a1, 16: inner loop number, 4: wordLen
+addi a1, a1, -16*4
+# a2 points to next 15 zetas
+addi a2, a2, 4*15
+# set outer loop control register gp, 16: block number in 5th layer
+# and there are 16 coefficients in each block
+addi gp, a2, 16*4*15
+
+ntts_looper_5678:
+    # a[0,1,...,15]
+    LoadS w, 1, 4, a1
+    lw  t0, 0*4(a2)
+    lw  t1, 1*4(a2)
+    lw  t2, 2*4(a2)
+    lw  t3, 3*4(a2)
+    # level5
+    BFU s0, s8,  t0, t6, a7, t4, t5
+    BFU s1, s9,  t0, t6, a7, t4, t5
+    BFU s2, s10, t0, t6, a7, t4, t5
+    BFU s3, s11, t0, t6, a7, t4, t5
+    BFU s4, a3,  t0, t6, a7, t4, t5
+    BFU s5, a4,  t0, t6, a7, t4, t5
+    BFU s6, a5,  t0, t6, a7, t4, t5
+    BFU s7, a6,  t0, t6, a7, t4, t5 
+    # level6
+    BFU s0,  s4,  t1, t6, a7, t4, t5
+    BFU s1,  s5,  t1, t6, a7, t4, t5
+    BFU s2,  s6,  t1, t6, a7, t4, t5
+    BFU s3,  s7,  t1, t6, a7, t4, t5
+    BFU s8,  a3,  t2, t6, a7, t4, t5
+    BFU s9,  a4,  t2, t6, a7, t4, t5
+    BFU s10, a5,  t2, t6, a7, t4, t5
+    BFU s11, a6,  t2, t6, a7, t4, t5 
+    # level7
+    BFU s0,  s2,  t3, t6, a7, t4, t5
+    BFU s1,  s3,  t3, t6, a7, t4, t5
+    lw  t0, 4*4(a2)
+    lw  t1, 5*4(a2)
+    lw  t2, 6*4(a2)
+    lw  t3, 7*4(a2)
+    BFU s4,  s6,  t0, t6, a7, t4, t5
+    BFU s5,  s7,  t0, t6, a7, t4, t5
+    BFU s8,  s10, t1, t6, a7, t4, t5
+    BFU s9,  s11, t1, t6, a7, t4, t5
+    BFU a3,  a5,  t2, t6, a7, t4, t5
+    BFU a4,  a6,  t2, t6, a7, t4, t5 
+    # level8
+    BFU s0,  s1,  t3, t6, a7, t4, t5
+    lw  t0, 8*4(a2)
+    lw  t1, 9*4(a2)
+    lw  t2, 10*4(a2)
+    lw  t3, 11*4(a2)
+    BFU s2,  s3,  t0, t6, a7, t4, t5
+    BFU s4,  s5,  t1, t6, a7, t4, t5
+    BFU s6,  s7,  t2, t6, a7, t4, t5
+    BFU s8,  s9,  t3, t6, a7, t4, t5
+    lw  t0, 12*4(a2)
+    lw  t1, 13*4(a2)
+    lw  t2, 14*4(a2)
+    BFU s10, s11, t0, t6, a7, t4, t5
+    BFU a3,  a4,  t1, t6, a7, t4, t5
+    BFU a5,  a6,  t2, t6, a7, t4, t5 
+    //save results
+    StoreS 1, a1
+    # a1 points to next block, a2 points to next 7 zetas
+    # each block has 16 words
+    addi a1, a1, 16*4
+    addi a2, a2, 4*15
+    bne  gp, a2, ntts_looper_5678
+
+    lw s0,  0*4(sp)
+    lw s1,  1*4(sp)
+    lw s2,  2*4(sp)
+    lw s3,  3*4(sp)
+    lw s4,  4*4(sp)
+    lw s5,  5*4(sp)
+    lw s6,  6*4(sp)
+    lw s7,  7*4(sp)
+    lw s8,  8*4(sp)
+    lw s9,  9*4(sp)
+    lw s10, 10*4(sp)
+    lw s11, 11*4(sp)
+    lw gp,  12*4(sp)
+    lw tp,  13*4(sp)
+    addi sp, sp, 4*14
+    ret    
 
 # void intt_asm(const uint32_t in[256], int32_t out[256],
 # const int32_t rootTable[256]);

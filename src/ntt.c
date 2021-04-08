@@ -41,17 +41,22 @@ int32_t invRootTableMerged[64] = {
     771147,   -1250,    -1150913, -2896842, 4582610,  2683848,  3450405,
     1927818,  5071803,  1672980,  -4859845, 4362766,  3836025,  -1468258};
 
-extern void ntt_asm(const uint16_t in[SABER_N], int32_t out[SABER_N],
-                    int32_t rootTableMerged[SABER_N / 4]);
+extern void ntta_asm(const uint16_t in[SABER_N], int32_t out[SABER_N],
+                     int32_t rootTableMerged[SABER_N / 4]);
+extern void ntts_asm(const uint8_t in[SABER_N], int32_t out[SABER_N],
+                     int32_t rootTableMerged[SABER_N / 4]);
 extern void intt_asm(int32_t in[SABER_N], int32_t out[SABER_N],
                      int32_t invRootTableMerged[SABER_N / 4]);
 extern void basemul_asm(int32_t a[4], const int32_t b[4], int32_t zeta);
 
-void NTT(const uint16_t in[SABER_N], int32_t out[SABER_N])
+void NTTA(const uint16_t in[SABER_N], int32_t out[SABER_N])
 {
-    ntt_asm(in, out, rootTableMerged);
+    ntta_asm(in, out, rootTableMerged);
 }
-
+void NTTS(const uint8_t in[SABER_N], int32_t out[SABER_N])
+{
+    ntts_asm(in, out, rootTableMerged);
+}
 void InvNTT(int32_t in[SABER_N], int32_t out[SABER_N])
 {
     intt_asm(in, out, invRootTableMerged);
@@ -323,7 +328,7 @@ int32_t invRootTable[] = {
  *
  * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
  **************************************************/
-void NTT(const uint16_t in[256], int32_t out[256])
+void NTTA(const uint16_t in[256], int32_t out[256])
 {
     unsigned int len, start, j, k;
     int32_t t, zeta;
@@ -336,6 +341,42 @@ void NTT(const uint16_t in[256], int32_t out[256])
         t = FqMul(zeta, (int32_t)(int16_t)in[j + len]);
         out[j + len] = (int32_t)(int16_t)in[j] - t;
         out[j] = (int32_t)(int16_t)in[j] + t;
+    }
+    // remaining five layers
+    for (len = 64; len >= 2; len >>= 1) {
+        for (start = 0; start < 256; start = j + len) {
+            zeta = rootTable[k++];
+            for (j = start; j < start + len; j++) {
+                t = FqMul(zeta, out[j + len]);
+                out[j + len] = out[j] - t;
+                out[j] = out[j] + t;
+            }
+        }
+    }
+}
+
+/*************************************************
+ * Name:        NTT
+ *
+ * Description: Number-theoretic transform (NTT).
+ * input is in standard order, output is in bitreversed order
+ * input and output can not be same address because different data type
+ *
+ * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
+ **************************************************/
+void NTTS(const uint8_t in[256], int32_t out[256])
+{
+    unsigned int len, start, j, k;
+    int32_t t, zeta;
+
+    k = 0;
+    len = 128;
+    zeta = rootTable[k++];
+    // a sepearate first layer for storing results to output polynomial
+    for (j = 0; j < len; j++) {
+        t = FqMul(zeta, (int32_t)(int16_t)(int8_t)in[j + len]);
+        out[j + len] = (int32_t)(int16_t)(int8_t)in[j] - t;
+        out[j] = (int32_t)(int16_t)(int8_t)in[j] + t;
     }
     // remaining five layers
     for (len = 64; len >= 2; len >>= 1) {
@@ -514,18 +555,22 @@ int32_t invRootTableMerged[] = {
     -3724084, -723028,  3450405,  1927818,  5071803,  1672980,  -4859845,
     4362766,  3836025,  4876840};
 
-extern void ntt_asm_8layer(const uint16_t in[SABER_N], int32_t out[SABER_N],
-                           int32_t *rootTableMerged);
-
+extern void ntta_asm_8layer(const uint16_t in[SABER_N], int32_t out[SABER_N],
+                            int32_t *rootTableMerged);
+extern void ntts_asm_8layer(const uint8_t in[SABER_N], int32_t out[SABER_N],
+                            int32_t *rootTableMerged);
 extern void intt_asm_8layer(const int32_t in[SABER_N], int32_t out[SABER_N],
                             int32_t *invRootTableMerged);
 extern void basemul_asm_8layer(int32_t a[SABER_N], const int32_t b[SABER_N]);
 
-void NTT(const uint16_t in[SABER_N], int32_t out[SABER_N])
+void NTTA(const uint16_t in[SABER_N], int32_t out[SABER_N])
 {
-    ntt_asm_8layer(in, out, rootTableMerged);
+    ntta_asm_8layer(in, out, rootTableMerged);
 }
-
+void NTTS(const uint8_t in[SABER_N], int32_t out[SABER_N])
+{
+    ntts_asm_8layer(in, out, rootTableMerged);
+}
 void InvNTT(int32_t in[SABER_N], int32_t out[SABER_N])
 {
     intt_asm_8layer(in, out, invRootTableMerged);
