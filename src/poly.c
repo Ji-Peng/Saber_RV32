@@ -11,7 +11,7 @@
 #include "pack_unpack.h"
 #include "poly_mul.h"
 
-void GenSecret(uint16_t s[SABER_L][SABER_N],
+void GenSecret(uint8_t s[SABER_L][SABER_N],
                const uint8_t seed[SABER_NOISE_SEEDBYTES])
 {
     uint8_t buf[SABER_L * SABER_POLYCOINBYTES];
@@ -24,7 +24,7 @@ void GenSecret(uint16_t s[SABER_L][SABER_N],
     }
 }
 
-void GenSInTime(uint16_t s[SABER_N], const uint8_t seed[SABER_NOISE_SEEDBYTES],
+void GenSInTime(uint8_t s[SABER_N], const uint8_t seed[SABER_NOISE_SEEDBYTES],
                 int32_t index)
 {
     int32_t i;
@@ -114,12 +114,12 @@ void GenSInTime(uint16_t s[SABER_N], const uint8_t seed[SABER_NOISE_SEEDBYTES],
 void GenSecretNTT(int32_t s[SABER_L][SABER_N],
                   const uint8_t seed[SABER_NOISE_SEEDBYTES])
 {
-    uint16_t t[SABER_N];
+    uint8_t t[SABER_N];
     int i;
 
     for (i = 0; i < SABER_L; i++) {
         GenSInTime(t, seed, i);
-        NTT(t, s[i]);
+        NTTS(t, s[i]);
     }
 }
 

@@ -3,8 +3,8 @@
 
 /* Change this for different security strengths */
 // #define SABER_L 2 /* LightSaber */
-#define SABER_L 3 /* Saber */
-// #define SABER_L 4 /* FireSaber */
+// #define SABER_L 3 /* Saber */
+#define SABER_L 4 /* FireSaber */
 
 /* Don't change anything below this line */
 #if SABER_L == 2
@@ -16,8 +16,8 @@
 #    define SABER_MU 8
 #    define SABER_ET 4
 #    define SLOWGENA_FASTMUL
-// #    define SIX_LAYER_NTT
-#    define SEVEN_LAYER_NTT
+#    define SIX_LAYER_NTT
+// #    define SEVEN_LAYER_NTT
 // #    define COMPLETE_NTT
 #elif SABER_L == 4
 #    define SABER_MU 6
@@ -25,8 +25,6 @@
 #    define FASTGENA_SLOWMUL
 #    define SIX_LAYER_NTT
 #endif
-
-// three different strategies. you can only choose one strategy!
 
 // #ifndef HOST
 // #    define NTTASM

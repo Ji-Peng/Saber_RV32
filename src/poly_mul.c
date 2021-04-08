@@ -104,13 +104,13 @@ void PolyAdd(uint16_t res[SABER_N], int32_t in[SABER_N])
  * Description: res += a * b using ntt，a, b in standard domain
  */
 __attribute__((noinline)) void PolyMulAcc(uint16_t a[2 * SABER_N],
-                                          const uint16_t b[SABER_N],
+                                          const uint8_t b[SABER_N],
                                           uint16_t res[SABER_N])
 {
     int32_t t[SABER_N];
     int32_t *p = (int32_t *)a;
-    NTT(a, t);
-    NTT(b, p);
+    NTTA(a, t);
+    NTTS(b, p);
     PolyBaseMul(p, t);
     InvNTT(p, t);
     PolyAdd(res, t);
@@ -126,7 +126,7 @@ __attribute__((noinline)) void PolyMulAccFast(uint16_t a[SABER_N],
 {
     int32_t t[SABER_N];
     int32_t *pb = (int32_t *)b;
-    NTT(a, t);
+    NTTA(a, t);
     PolyBaseMul(t, pb);
     InvNTT(t, t);
     PolyAdd(res, t);
@@ -139,13 +139,14 @@ void MatrixVectorMulKP(const uint8_t *seed_a, const uint8_t *seed_s,
     int i, j;
     int32_t t1[SABER_N];
     uint16_t t2[SABER_N];
+    uint8_t *s = (uint8_t *)t2;
     for (i = 0; i < SABER_L; i++) {
         // t2=si
-        GenSInTime(t2, seed_s, i);
+        GenSInTime(s, seed_s, i);
         // pack si to sk
-        PackSk(sk + i * SABER_SKPOLYBYTES, t2);
+        PackSk(sk + i * SABER_SKPOLYBYTES, s);
         // trans si to ntt domain, which is saved in t1
-        NTT(t2, t1);
+        NTTS(s, t1);
         // generate poly and muladd
         for (j = 0; j < SABER_L; j++) {
 #if defined(FASTGENA_SLOWMUL) || defined(FASTGENA_FASTMUL)
@@ -160,7 +161,7 @@ void MatrixVectorMulKP(const uint8_t *seed_a, const uint8_t *seed_s,
 }
 
 #ifdef FASTGENA_SLOWMUL
-void MatrixVectorMulEnc(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+void MatrixVectorMulEnc(const uint8_t *seed, uint8_t s[SABER_L][SABER_N],
                         uint8_t *ciphertext)
 {
     int i, j;
@@ -182,7 +183,7 @@ void MatrixVectorMulEnc(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
     }
 }
 
-int32_t MatrixVectorMulEncCmp(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
+int32_t MatrixVectorMulEncCmp(const uint8_t *seed, uint8_t s[SABER_L][SABER_N],
                               const uint8_t *ciphertext)
 {
     int i, j, fail = 0;
@@ -209,9 +210,8 @@ int32_t MatrixVectorMulEncCmp(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
  * Name: InnerProd just-in-time
  * Description: inner product using ntt
  */
-void InnerProdInTimeEnc(const uint8_t *bytes,
-                        const uint16_t s[SABER_L][SABER_N], uint8_t *ciphertext,
-                        const uint8_t m[SABER_KEYBYTES])
+void InnerProdInTimeEnc(const uint8_t *bytes, const uint8_t s[SABER_L][SABER_N],
+                        uint8_t *ciphertext, const uint8_t m[SABER_KEYBYTES])
 {
     int i, j;
     uint16_t b[2 * SABER_N], vp[SABER_N] = {0};
@@ -234,7 +234,7 @@ void InnerProdInTimeEnc(const uint8_t *bytes,
 }
 
 int32_t InnerProdInTimeEncCmp(const uint8_t *bytes,
-                              const uint16_t s[SABER_L][SABER_N],
+                              const uint8_t s[SABER_L][SABER_N],
                               const uint8_t *ciphertext,
                               const uint8_t m[SABER_KEYBYTES])
 {
@@ -370,7 +370,7 @@ void InnerProdInTimeDec(const uint8_t *bytes,
 {
     int j;
     uint16_t b[2 * SABER_N];
-    uint16_t s[SABER_N];
+    uint8_t s[SABER_N];
 
     for (j = 0; j < SABER_L; j++) {
         BS2Polp(bytes + j * (SABER_EP * SABER_N / 8), b);

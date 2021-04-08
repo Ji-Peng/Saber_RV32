@@ -97,7 +97,7 @@ int32_t invRootTable[64] = {
  *
  * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
  **************************************************/
-void NTT(const uint16_t in[256], int32_t out[256])
+void NTTA(const uint16_t in[256], int32_t out[256])
 {
     unsigned int len, start, j, k;
     int32_t t, zeta;
@@ -110,6 +110,42 @@ void NTT(const uint16_t in[256], int32_t out[256])
         t = FqMul(zeta, (int32_t)(int16_t)in[j + len]);
         out[j + len] = (int32_t)(int16_t)in[j] - t;
         out[j] = (int32_t)(int16_t)in[j] + t;
+    }
+    // remaining five layers
+    for (len = 64; len >= 4; len >>= 1) {
+        for (start = 0; start < 256; start = j + len) {
+            zeta = rootTable[k++];
+            for (j = start; j < start + len; j++) {
+                t = FqMul(zeta, out[j + len]);
+                out[j + len] = out[j] - t;
+                out[j] = out[j] + t;
+            }
+        }
+    }
+}
+
+/*************************************************
+ * Name:        NTT
+ *
+ * Description: Number-theoretic transform (NTT).
+ * input is in standard order, output is in bitreversed order
+ * input and output can not be same address because different data type
+ *
+ * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
+ **************************************************/
+void NTTS(const uint8_t in[256], int32_t out[256])
+{
+    unsigned int len, start, j, k;
+    int32_t t, zeta;
+
+    k = 0;
+    len = 128;
+    zeta = rootTable[k++];
+    // a sepearate first layer for storing results to output polynomial
+    for (j = 0; j < len; j++) {
+        t = FqMul(zeta, (int32_t)(int16_t)(int8_t)in[j + len]);
+        out[j + len] = (int32_t)(int16_t)(int8_t)in[j] - t;
+        out[j] = (int32_t)(int16_t)(int8_t)in[j] + t;
     }
     // remaining five layers
     for (len = 64; len >= 4; len >>= 1) {
@@ -580,7 +616,7 @@ int32_t invRootTable[] = {
     4362766,  3836025,  4876840};
 
 /*************************************************
- * Name:        NTT
+ * Name:        NTT for public matrix A
  *
  * Description: Number-theoretic transform (NTT).
  * input is in standard order, output is in bitreversed order
@@ -588,13 +624,10 @@ int32_t invRootTable[] = {
  *
  * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
  **************************************************/
-void NTT(const uint16_t in[256], int32_t out[256])
+void NTTA(const uint16_t in[256], int32_t out[256])
 {
     unsigned int len, start, j, k;
     int32_t t, zeta;
-
-    uint64_t t1, t2, sum;
-    int32_t temp = 0;
 
     k = 0;
     len = 128;
@@ -604,6 +637,42 @@ void NTT(const uint16_t in[256], int32_t out[256])
         t = FqMul(zeta, (int32_t)(int16_t)in[j + len]);
         out[j + len] = (int32_t)(int16_t)in[j] - t;
         out[j] = (int32_t)(int16_t)in[j] + t;
+    }
+    // remaining seven layers
+    for (len = 64; len >= 1; len >>= 1) {
+        for (start = 0; start < 256; start = j + len) {
+            zeta = rootTable[k++];
+            for (j = start; j < start + len; j++) {
+                t = FqMul(zeta, out[j + len]);
+                out[j + len] = out[j] - t;
+                out[j] = out[j] + t;
+            }
+        }
+    }
+}
+
+/*************************************************
+ * Name:        NTT for Secret vector
+ *
+ * Description: Number-theoretic transform (NTT).
+ * input is in standard order, output is in bitreversed order
+ * input and output can not be same address because different data type
+ *
+ * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
+ **************************************************/
+void NTTS(const uint8_t in[256], int32_t out[256])
+{
+    unsigned int len, start, j, k;
+    int32_t t, zeta;
+
+    k = 0;
+    len = 128;
+    zeta = rootTable[k++];
+    // a sepearate first layer for storing results to output polynomial
+    for (j = 0; j < len; j++) {
+        t = FqMul(zeta, (int32_t)(int16_t)(int8_t)in[j + len]);
+        out[j + len] = (int32_t)(int16_t)(int8_t)in[j] - t;
+        out[j] = (int32_t)(int16_t)(int8_t)in[j] + t;
     }
     // remaining seven layers
     for (len = 64; len >= 1; len >>= 1) {

@@ -12,6 +12,6 @@ Vadim Lyubashevsky, John M. Schanck, Peter Schwabe & Damien stehle
 
 #include "SABER_params.h"
 
-void CBD(uint16_t s[SABER_N], uint8_t *buf, int32_t num);
+void CBD(uint8_t s[SABER_N], uint8_t *buf, int32_t num);
 
 #endif

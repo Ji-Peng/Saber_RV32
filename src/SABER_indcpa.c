@@ -45,7 +45,7 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
 {
     const uint8_t *seed_A = pk + SABER_POLYVECCOMPRESSEDBYTES;
 #ifdef FASTGENA_SLOWMUL
-    uint16_t sp[SABER_L][SABER_N];
+    uint8_t sp[SABER_L][SABER_N];
     GenSecret(sp, seed_sp);
     MatrixVectorMulEnc(seed_A, sp, ciphertext);
     InnerProdInTimeEnc(pk, sp, ciphertext, m);
@@ -60,12 +60,13 @@ void indcpa_kem_enc(const uint8_t m[SABER_KEYBYTES],
     int32_t t1[SABER_N];
     uint16_t messageBit;
     uint16_t t2[SABER_N];
+    uint8_t *s = (uint8_t *)t2;
     uint16_t vp[SABER_N] = {0};
     uint16_t b[SABER_L][SABER_N] = {0};
     for (i = 0; i < SABER_L; i++) {
-        GenSInTime(t2, seed_sp, i);
+        GenSInTime(s, seed_sp, i);
         // t1=si in ntt domain
-        NTT(t2, t1);
+        NTTS(s, t1);
         // MatrixVectorMul
         for (j = 0; j < SABER_L; j++) {
             // b[0]+=a0i*si b[1]+=a1i*si b[2]+=a2i*si
@@ -103,7 +104,7 @@ int32_t indcpa_kem_enc_cmp(const uint8_t m[SABER_KEYBYTES],
     const uint8_t *seed_A = pk + SABER_POLYVECCOMPRESSEDBYTES;
     int32_t fail = 0;
 #ifdef FASTGENA_SLOWMUL
-    uint16_t sp[SABER_L][SABER_N];
+    uint8_t sp[SABER_L][SABER_N];
     GenSecret(sp, seed_sp);
     fail |= MatrixVectorMulEncCmp(seed_A, sp, ciphertext);
     fail |= InnerProdInTimeEncCmp(pk, sp, ciphertext, m);
@@ -118,12 +119,13 @@ int32_t indcpa_kem_enc_cmp(const uint8_t m[SABER_KEYBYTES],
     int32_t t1[SABER_N];
     uint16_t messageBit;
     uint16_t t2[SABER_N];
+    uint8_t *s = (uint8_t *)t2;
     uint16_t vp[SABER_N] = {0};
     uint16_t b[SABER_L][SABER_N] = {0};
     for (i = 0; i < SABER_L; i++) {
-        GenSInTime(t2, seed_sp, i);
+        GenSInTime(s, seed_sp, i);
         // t1=si in ntt domain
-        NTT(t2, t1);
+        NTTS(s, t1);
         // MatrixVectorMul
         for (j = 0; j < SABER_L; j++) {
             // b[0]+=a0i*si b[1]+=a1i*si b[2]+=a2i*si

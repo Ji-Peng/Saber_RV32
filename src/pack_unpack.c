@@ -231,7 +231,7 @@ void BS2Polp(const uint8_t bytes[SABER_POLYCOMPRESSEDBYTES],
     }
 }
 
-void PackSk(uint8_t bytes[SABER_SKPOLYBYTES], const uint16_t data[SABER_N])
+void PackSk(uint8_t bytes[SABER_SKPOLYBYTES], const uint8_t data[SABER_N])
 {
     int32_t j, offsetData;
     for (j = 0; j < SABER_N / 2; j++) {
@@ -240,30 +240,14 @@ void PackSk(uint8_t bytes[SABER_SKPOLYBYTES], const uint16_t data[SABER_N])
     }
 }
 
-// void UnpackSk(const uint8_t bytes[SABER_INDCPA_SECRETKEYBYTES],
-//               uint16_t data[SABER_L][SABER_N])
-// {
-//     int32_t i, j, offsetByte, offsetData;
-//     for (i = 0; i < SABER_L; i++) {
-//         for (j = 0; j < SABER_N / 2; j++) {
-//             offsetByte = i * SABER_SKPOLYBYTES + j;
-//             offsetData = 2 * j;
-//             data[i][offsetData] =
-//                 (int16_t)((int16_t)bytes[offsetByte] << 12) >> 12;
-//             data[i][offsetData + 1] =
-//                 (int16_t)((bytes[offsetByte] >> 4) << 12) >> 12;
-//         }
-//     }
-// }
-
-void UnpackSk(const uint8_t *bytes, uint16_t data[SABER_N])
+void UnpackSk(const uint8_t *bytes, uint8_t data[SABER_N])
 {
     int32_t j, offsetByte, offsetData;
     for (j = 0; j < SABER_N / 2; j++) {
         offsetByte = j;
         offsetData = 2 * j;
-        data[offsetData] = (int16_t)((int16_t)bytes[offsetByte] << 12) >> 12;
-        data[offsetData + 1] = (int16_t)((bytes[offsetByte] >> 4) << 12) >> 12;
+        data[offsetData] = (int8_t)((int8_t)bytes[offsetByte] << 4) >> 4;
+        data[offsetData + 1] = (int8_t)((bytes[offsetByte] >> 4) << 4) >> 4;
     }
 }
 

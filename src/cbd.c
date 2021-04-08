@@ -22,7 +22,7 @@ static uint64_t LoadLittleEndian(const uint8_t *x, int bytes)
     return r;
 }
 
-void CBD(uint16_t s[SABER_N], uint8_t *buf, int32_t num)
+void CBD(uint8_t s[SABER_N], uint8_t *buf, int32_t num)
 {
 #if SABER_MU == 6
     uint32_t t, d, a[4], b[4];
@@ -43,10 +43,10 @@ void CBD(uint16_t s[SABER_N], uint8_t *buf, int32_t num)
         a[3] = (d >> 18) & 0x7;
         b[3] = (d >> 21);
 
-        s[4 * i + 0] = (uint16_t)(a[0] - b[0]);
-        s[4 * i + 1] = (uint16_t)(a[1] - b[1]);
-        s[4 * i + 2] = (uint16_t)(a[2] - b[2]);
-        s[4 * i + 3] = (uint16_t)(a[3] - b[3]);
+        s[4 * i + 0] = (uint8_t)(a[0] - b[0]);
+        s[4 * i + 1] = (uint8_t)(a[1] - b[1]);
+        s[4 * i + 2] = (uint8_t)(a[2] - b[2]);
+        s[4 * i + 3] = (uint8_t)(a[3] - b[3]);
     }
 #elif SABER_MU == 8
     uint32_t t, d, a[4], b[4];
@@ -67,10 +67,10 @@ void CBD(uint16_t s[SABER_N], uint8_t *buf, int32_t num)
         a[3] = (d >> 24) & 0xf;
         b[3] = (d >> 28);
 
-        s[4 * i + 0] = (uint16_t)(a[0] - b[0]);
-        s[4 * i + 1] = (uint16_t)(a[1] - b[1]);
-        s[4 * i + 2] = (uint16_t)(a[2] - b[2]);
-        s[4 * i + 3] = (uint16_t)(a[3] - b[3]);
+        s[4 * i + 0] = (uint8_t)(a[0] - b[0]);
+        s[4 * i + 1] = (uint8_t)(a[1] - b[1]);
+        s[4 * i + 2] = (uint8_t)(a[2] - b[2]);
+        s[4 * i + 3] = (uint8_t)(a[3] - b[3]);
     }
 #elif SABER_MU == 10
     uint64_t t, d, a[4], b[4];
@@ -91,10 +91,10 @@ void CBD(uint16_t s[SABER_N], uint8_t *buf, int32_t num)
         a[3] = (d >> 30) & 0x1f;
         b[3] = (d >> 35);
 
-        s[4 * i + 0] = (uint16_t)(a[0] - b[0]);
-        s[4 * i + 1] = (uint16_t)(a[1] - b[1]);
-        s[4 * i + 2] = (uint16_t)(a[2] - b[2]);
-        s[4 * i + 3] = (uint16_t)(a[3] - b[3]);
+        s[4 * i + 0] = (uint8_t)(a[0] - b[0]);
+        s[4 * i + 1] = (uint8_t)(a[1] - b[1]);
+        s[4 * i + 2] = (uint8_t)(a[2] - b[2]);
+        s[4 * i + 3] = (uint8_t)(a[3] - b[3]);
     }
 #else
 #    error "Unsupported SABER parameter."
