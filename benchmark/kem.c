@@ -44,7 +44,7 @@ static char* ullu(uint64_t val)
 #ifdef HOST
 #    define NTESTS 1000
 #else
-#    define NTESTS 10
+#    define NTESTS 100
 #endif
 static void DisableWatchDog(void)
 {
@@ -358,7 +358,7 @@ static int TestPolyMul(void)
     printf("%s", ullu(sum1 / NTESTS));
     printf("/%s", ullu(sum2 / NTESTS));
     printf("/%s", ullu(sum3 / NTESTS));
-    printf("/%s", ullu(sum4 / NTESTS));
+    printf("/%s\n\n", ullu(sum4 / NTESTS));
 
     return 0;
 }
@@ -436,25 +436,45 @@ static void TestNTTRange(void)
     }
 }
 
+static void PrintConfig(void)
+{
+    printf("SABER_L is %d\n", SABER_L);
+    printf("Strategy: ");
+#ifdef FASTGENA_SLOWMUL
+    printf("FASTGENA_SLOWMUL\n");
+#elif defined(FASTGENA_FASTMUL)
+    printf("FASTGENA_FASTMUL\n");
+#elif defined(SLOWGENA_FASTMUL)
+    printf("SLOWGENA_FASTMUL\n");
+#endif
+
+    printf("NTT: ");
+#ifdef COMPLETE_NTT
+    printf("COMPLETE_NTT ");
+#elif defined(SEVEN_LAYER_NTT)
+    printf("SEVEN_LAYER_NTT ");
+#elif defined(SIX_LAYER_NTT)
+    printf("SIX_LAYER_NTT ");
+#endif
+
+#ifdef NTTASM
+    printf("ASM Implementation\n");
+#else
+    printf("C Implementation\n");
+#endif
+}
+
 int main(void)
 {
-    printf("--SABER_L is %d--\n", SABER_L);
-    printf("--Strategy: ");
-#ifdef FASTGENA_SLOWMUL
-    printf("FASTGENA_SLOWMUL--\n");
-#elif defined(FASTGENA_FASTMUL)
-    printf("FASTGENA_FASTMUL--\n");
-#elif defined(SLOWGENA_FASTMUL)
-    printf("SLOWGENA_FASTMUL--\n");
-#endif
+    PrintConfig();
     DisableWatchDog();
     TestCPA();
     TestCCA();
 #ifndef HOST
-    // TestCenR();
-    // SpeedCPA();
-    // SpeedCCA();
     // TestPolyMul();
+    SpeedCPA();
+    SpeedCCA();
+    // TestCenR();
     // TestNTT();
     // SpeedCCAKP();
     // SpeedCCAEnc();

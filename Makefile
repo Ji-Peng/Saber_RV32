@@ -34,12 +34,12 @@ HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
 					-O3 -g
 
-# stack_size=0x2800 for kem.elf
+# L=2: stack_size=0x1b00, L=3/4: stack_size=0x2550
 RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x2800 \
+					-Xlinker --defsym=__stack_size=0x2550 \
 					-Xlinker --defsym=__heap_max=1
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
@@ -61,7 +61,7 @@ out/%.elf: \
 		$(filter %.c,$^) $(filter %.S,$^) \
 		$(RISCV_LDLIBS) -o $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
-	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
+	$(RISCV_OBJDUMP) -D $@ > $(basename $@).s
 
 host_out/kem: \
 		benchmark/kem.c \

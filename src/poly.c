@@ -61,14 +61,19 @@ void GenSInTime(uint8_t s[SABER_N], const uint8_t seed[SABER_NOISE_SEEDBYTES],
     } else if (index == 2) {
         // 48B leftover = 64coeff
         CBD(s, leftovers, 64);
+        // 1buf = 192coeff + 24B leftover
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
         CBD(s + 64, buf, 192);
         memcpy(leftovers, buf + SHAKE128_RATE - 24, 24);
-    } else {
+    } else if (index == 3) {
         // 24B leftover = 32coeff
         CBD(s, leftovers, 32);
+        // 1buf = 224coeff
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
         CBD(s + 32, buf, 224);
+    } else {
+        printf("Error in GenSInTime\n");
+        exit(1);
     }
 
 #elif SABER_MU == 8
@@ -92,12 +97,15 @@ void GenSInTime(uint8_t s[SABER_N], const uint8_t seed[SABER_NOISE_SEEDBYTES],
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
         CBD(s + 248, buf, 8);
         memcpy(leftovers, buf + SHAKE128_RATE - 88, 88);
-    } else {
+    } else if (index == 2) {
         // 1leftover = 88B = 88coeff
         CBD(s, leftovers, 88);
         // 1buf = 168coeff
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
         CBD(s + 88, buf, 168);
+    } else {
+        printf("Error in GenSInTime\n");
+        exit(1);
     }
 
 #elif SABER_MU == 10
