@@ -61,7 +61,7 @@ out/%.elf: \
 		$(filter %.c,$^) $(filter %.S,$^) \
 		$(RISCV_LDLIBS) -o $@
 	$(RISCV_OBJCOPY) -O ihex $@ $(basename $@).hex
-	$(RISCV_OBJDUMP) -d $@ > $(basename $@).s
+	$(RISCV_OBJDUMP) -D $@ > $(basename $@).s
 
 host_out/kem: \
 		benchmark/kem.c \

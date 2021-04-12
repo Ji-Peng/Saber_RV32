@@ -324,19 +324,42 @@ static int SpeedCCADec(void)
 
 static int TestPolyMul(void)
 {
-    uint16_t a[2 * SABER_N], c[SABER_N];
-    uint32_t b[SABER_N];
+    uint16_t a[2 * SABER_N];
+    // uint32_t b[SABER_N];
+    uint16_t* c = a;
+    uint32_t* b = (uint32_t*)a;
     int j;
-    uint64_t t1, t2, sum4;
-    sum4 = 0;
+    uint64_t t1, t2, sum1, sum2, sum3, sum4;
+    sum1 = sum2 = sum3 = sum4 = 0;
 
+    printf("NTT/PolyBaseMul/InvNTT/PolyMulAcc:");
+    // printf("hello\n");
     for (j = 0; j < NTESTS; j++) {
         t1 = cpucycles();
-        PolyMulAcc(a, (uint16_t*)b, c);
+        NTTA(a, b);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+
+        t1 = cpucycles();
+        PolyBaseMul((int32_t*)a, b);
+        t2 = cpucycles();
+        sum2 += (t2 - t1);
+
+        t1 = cpucycles();
+        InvNTT((int32_t*)a, b);
+        t2 = cpucycles();
+        sum3 += (t2 - t1);
+
+        t1 = cpucycles();
+        PolyMulAcc(a, (uint8_t*)b, c);
         t2 = cpucycles();
         sum4 += (t2 - t1);
     }
-    printf("PolyMulAcc: %s\n", ullu(sum4 / NTESTS));
+    printf("%s", ullu(sum1 / NTESTS));
+    printf("/%s", ullu(sum2 / NTESTS));
+    printf("/%s", ullu(sum3 / NTESTS));
+    printf("/%s\n\n", ullu(sum4 / NTESTS));
+
     return 0;
 }
 
@@ -396,30 +419,13 @@ static int TestKeccak(void)
     return 0;
 }
 
-static int TestNTT(void)
-{
-    int i;
-    uint64_t t1, t2, sum1;
-    uint16_t in[SABER_N];
-    int32_t out[SABER_N];
-    sum1 = 0;
-
-    for (i = 0; i < NTESTS; i++) {
-        t1 = cpucycles();
-        NTT(in, out);
-        t2 = cpucycles();
-        sum1 += (t2 - t1);
-    }
-    printf("NTT: %s\n", ullu(sum1 / NTESTS));
-    return 0;
-}
-
 #endif
 
 static void TestNTTRange(void)
 {
     int i;
-    uint16_t a[SABER_N * 2], s[SABER_N], r[SABER_N] = {0};
+    uint16_t a[SABER_N * 2], r[SABER_N] = {0};
+    uint8_t s[SABER_N];
     for (i = 0; i < SABER_N; i++) {
         s[i] = 5;
         a[i] = 4095;
@@ -467,8 +473,10 @@ int main(void)
 #ifndef HOST
     // SpeedCPA();
     // TestPolyMul();
-    // TestNTT();
+    SpeedCPA();
     SpeedCCA();
+    // TestCenR();
+    // TestNTT();
     // SpeedCCAKP();
     // SpeedCCAEnc();
     // SpeedCCADec();
