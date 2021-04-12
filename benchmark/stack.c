@@ -28,22 +28,23 @@ uint8_t canary = 0x42;
         c--;                             \
     }
 
-// #define TEST_CCA
+#define TEST_CCA
 #ifdef TEST_CCA
 // 992+1088+1440+32+32=3584
 // 0x2800-3584=0x1a00
-uint8_t pk[CRYPTO_PUBLICKEYBYTES];
-uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
+// uint8_t pk[CRYPTO_PUBLICKEYBYTES];
+// uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
 uint8_t sk[CRYPTO_SECRETKEYBYTES];
 uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
-#    define MAX_SIZE (0x1a00 - 64)
+#    define MAX_SIZE (0x1a00 - 128)
 unsigned int canary_size = MAX_SIZE;
-// // uint8_t *pk = sk;
-// // uint8_t *ct = sk;
+uint8_t *pk = sk;
+uint8_t *ct = sk;
 static int test_stack(void)
 {
     volatile unsigned char a;
 
+    printf("indcpa_kem_keypair/enc/dec:");
     FILL_STACK()
     indcpa_kem_keypair(pk, sk);
     CHECK_STACK()
@@ -51,7 +52,7 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("indcpa_kem_keypair  %u\n", c);
+    printf("%u/", c);
 
     FILL_STACK()
     indcpa_kem_enc(ss_a, ss_b, pk, ct);
@@ -60,7 +61,7 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("indcpa_kem_enc      %u\n", c);
+    printf("%u/", c);
 
     FILL_STACK()
     indcpa_kem_dec(sk, ct, ss_b);
@@ -69,8 +70,9 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("indcpa_kem_dec      %u\n", c);
+    printf("%u\n", c);
 
+    printf("crypto_kem_keypair/enc/dec:");
     FILL_STACK()
     crypto_kem_keypair(pk, sk);
     CHECK_STACK()
@@ -78,7 +80,7 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("crypto_kem_keypair  %u\n", c);
+    printf("%u/", c);
 
     FILL_STACK()
     crypto_kem_enc(ct, ss_a, pk);
@@ -87,7 +89,7 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("crypto_kem_enc      %u\n", c);
+    printf("%u/", c);
 
     FILL_STACK()
     crypto_kem_dec(ss_b, ct, sk);
@@ -96,11 +98,8 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("crypto_kem_dec      %u\n", c);
+    printf("%u\n", c);
 
-    if (memcmp(ss_a, ss_b, SABER_KEYBYTES)) {
-        printf("KEM ERROR\n");
-    }
     return 0;
 }
 

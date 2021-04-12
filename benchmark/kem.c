@@ -336,7 +336,7 @@ static int TestPolyMul(void)
     // printf("hello\n");
     for (j = 0; j < NTESTS; j++) {
         t1 = cpucycles();
-        NTTA(a, b);
+        NTT(a, b);
         t2 = cpucycles();
         sum1 += (t2 - t1);
 
@@ -351,7 +351,7 @@ static int TestPolyMul(void)
         sum3 += (t2 - t1);
 
         t1 = cpucycles();
-        PolyMulAcc(a, (uint8_t*)b, c);
+        PolyMulAcc(a, (uint16_t*)b, c);
         t2 = cpucycles();
         sum4 += (t2 - t1);
     }
@@ -425,7 +425,7 @@ static void TestNTTRange(void)
 {
     int i;
     uint16_t a[SABER_N * 2], r[SABER_N] = {0};
-    uint8_t s[SABER_N];
+    uint16_t s[SABER_N];
     for (i = 0; i < SABER_N; i++) {
         s[i] = 5;
         a[i] = 4095;
@@ -473,7 +473,7 @@ int main(void)
 #ifndef HOST
     // SpeedCPA();
     // TestPolyMul();
-    SpeedCPA();
+    // SpeedCPA();
     SpeedCCA();
     // TestCenR();
     // TestNTT();
