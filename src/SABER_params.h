@@ -16,17 +16,13 @@
 #    define SABER_MU 8
 #    define SABER_ET 4
 #    define SLOWGENA_FASTMUL
-// #    define SIX_LAYER_NTT
-#    define SEVEN_LAYER_NTT
-// #    define COMPLETE_NTT
+#    define SIX_LAYER_NTT
 #elif SABER_L == 4
 #    define SABER_MU 6
 #    define SABER_ET 6
 #    define FASTGENA_SLOWMUL
 #    define SIX_LAYER_NTT
 #endif
-
-// three different strategies. you can only choose one strategy!
 
 // #ifndef HOST
 // #    define NTTASM

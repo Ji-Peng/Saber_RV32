@@ -27,19 +27,19 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-I$(BSP_DIR)/install/include -I$(COMMON_DIR) -I$(SRC_DIR) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
-					-O3 -g
+					-O3
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
 					-DHOST \
 					-fomit-frame-pointer -fno-tree-vectorize -march=native \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
-					-O3 -g
+					-O3
 
-# stack_size=0x2800 for kem.elf
+# L=2: stack_size=0x1b00, L=3/4: stack_size=0x2550
 RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x2800 \
+					-Xlinker --defsym=__stack_size=0x2550 \
 					-Xlinker --defsym=__heap_max=1
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
