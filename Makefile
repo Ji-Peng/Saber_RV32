@@ -28,9 +28,9 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
 					-Os
-HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
+HOST_CFLAGS 	= 	-Wall -Wextra -Wredundant-decls -Wno-unused-function \
 					-DHOST \
-					-fomit-frame-pointer -fno-tree-vectorize -march=native \
+					-fomit-frame-pointer -fno-tree-vectorize \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
 					-O3
 

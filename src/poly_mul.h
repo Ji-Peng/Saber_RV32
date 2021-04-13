@@ -1,46 +1,32 @@
-#ifndef POLY_MUL_H
-#define POLY_MUL_H
+#include"SABER_params.h"
 
-#include <stdint.h>
+#define N_SB (SABER_N >> 2)
+#define N_SB_RES (2*N_SB-1)
 
-#include "SABER_params.h"
 
-void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N]);
+#define N_SB_16 (N_SB >> 2)
+#define N_SB_16_RES (2*N_SB_16-1)
 
-void PolyAdd(uint16_t res[SABER_N], int32_t in[SABER_N]);
+#define MUL_TYPE TC_TC
+//#define MUL_TYPE TC_KARA
 
-void PolyMulAcc(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],
-                uint16_t res[SABER_N]);
-void PolyMulAccFast(uint16_t a[SABER_N], const int32_t b[SABER_N],
-                    uint16_t res[SABER_N]);
-void MatrixVectorMulKP(const uint8_t *seed_a, const uint8_t *seed_s,
-                       uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
-                       uint16_t b[SABER_L][SABER_N]);
-#if defined(FASTGENA_SLOWMUL)
-void MatrixVectorMulEnc(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
-                        uint8_t *ciphertext);
-int32_t MatrixVectorMulEncCmp(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
-                              const uint8_t *ciphertext);
-void InnerProdInTimeEnc(const uint8_t *bytes,
-                        const uint16_t s[SABER_L][SABER_N], uint8_t *ciphertext,
-                        const uint8_t m[SABER_KEYBYTES]);
-int32_t InnerProdInTimeEncCmp(const uint8_t *bytes,
-                              const uint16_t s[SABER_L][SABER_N],
-                              const uint8_t *ciphertext,
-                              const uint8_t m[SABER_KEYBYTES]);
-#elif defined(FASTGENA_FASTMUL) || defined(SLOWGENA_FASTMUL)
-void MatrixVectorMulEnc(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
-                        uint8_t *ciphertext);
-int32_t MatrixVectorMulEncCmp(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
-                              const uint8_t *ciphertext);
-void InnerProdInTimeEnc(const uint8_t *bytes, const int32_t s[SABER_L][SABER_N],
-                        uint8_t *ciphertext, const uint8_t m[SABER_KEYBYTES]);
-int32_t InnerProdInTimeEncCmp(const uint8_t *bytes,
-                              const int32_t s[SABER_L][SABER_N],
-                              const uint8_t *ciphertext,
-                              const uint8_t m[SABER_KEYBYTES]);
+#if MUL_TYPE == TC_TC
+	#define NUM_POLY_MID 7
+#elif MUL_TYPE == TC_KARA
+	#define NUM_POLY_MID 9
 #endif
-void InnerProdInTimeDec(const uint8_t *bytes,
-                        const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
-                        uint16_t res[SABER_N]);
-#endif
+
+
+void pol_mul(uint16_t* a, uint16_t* b, uint16_t* res, uint16_t p, uint32_t n);
+
+void pol_mul_sb(int16_t* a, int16_t* b, int16_t* res, uint16_t p, uint32_t n,uint32_t start);
+
+void toom_cook_4way(const uint16_t* a1, const uint16_t* b1, uint16_t* result);
+
+void pol_mul(uint16_t* a, uint16_t* b, uint16_t* res, uint16_t p, uint32_t n);
+
+void evaluation_single(const uint16_t *b, uint32_t bw_ar[7][NUM_POLY_MID][N_SB_16]);
+
+void TC_evaluation_64_unrolled(const uint16_t* a1, uint32_t bw_ar[7][NUM_POLY_MID][N_SB_16], uint32_t w_ar[7][NUM_POLY_MID][N_SB_16_RES]);
+
+void TC_interpol_64_unrolled(uint32_t w_ar[7][NUM_POLY_MID][N_SB_16_RES], uint16_t *result);

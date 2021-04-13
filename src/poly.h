@@ -1,24 +1,26 @@
+/*---------------------------------------------------------------------
+This file has been adapted from the implementation 
+(available at, Public Domain https://github.com/pq-crystals/kyber) 
+of "CRYSTALS – Kyber: a CCA-secure module-lattice-based KEM"
+by : Joppe Bos, Leo Ducas, Eike Kiltz, Tancrede Lepoint, 
+Vadim Lyubashevsky, John M. Schanck, Peter Schwabe & Damien stehle
+----------------------------------------------------------------------*/
+
 #ifndef POLY_H
 #define POLY_H
 
 #include <stdint.h>
-
 #include "SABER_params.h"
 
-void GenSecret(uint16_t s[SABER_L][SABER_N],
-               const uint8_t seed[SABER_NOISE_SEEDBYTES]);
-void GenSInTime(uint16_t s[SABER_N], const uint8_t seed[SABER_NOISE_SEEDBYTES],
-                int32_t index);
-void GenSecretNTT(int32_t s[SABER_L][SABER_N],
-                  const uint8_t seed[SABER_NOISE_SEEDBYTES]);
-void CenteredReduce(uint16_t poly[SABER_N]);
-#if defined(FASTGENA_SLOWMUL) || defined(FASTGENA_FASTMUL)
-void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
-                uint32_t init);
+typedef struct
+{
+  uint16_t coeffs[SABER_N];
+} poly;
 
-#elif defined(SLOWGENA_FASTMUL)
-void GenAInTime(uint16_t poly[SABER_N], const uint8_t seed[SABER_SEEDBYTES],
-                int32_t x, int32_t y);
-#endif
+typedef struct{
+  poly vec[SABER_K];
+} polyvec;
+
+void GenSecret(uint16_t r[SABER_K][SABER_N],const unsigned char *seed);
 
 #endif

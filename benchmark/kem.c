@@ -10,10 +10,8 @@
 #    include "metal/watchdog.h"
 #endif
 #include "fips202.h"
-#include "ntt.h"
 #include "poly.h"
 #include "poly_mul.h"
-#include "reduce.h"
 #include "rng.h"
 #include "verify.h"
 
@@ -320,132 +318,10 @@ static int SpeedCCADec(void)
     return 0;
 }
 
-static int TestPolyMul(void)
-{
-    uint16_t a[2 * SABER_N];
-    // uint32_t b[SABER_N];
-    uint16_t* c = a;
-    uint32_t* b = (uint32_t*)a;
-    int j;
-    uint64_t t1, t2, sum1, sum2, sum3, sum4;
-    sum1 = sum2 = sum3 = sum4 = 0;
-
-    printf("NTT/PolyBaseMul/InvNTT/PolyMulAcc:");
-    for (j = 0; j < NTESTS; j++) {
-        t1 = cpucycles();
-        NTT(a, b);
-        t2 = cpucycles();
-        sum1 += (t2 - t1);
-
-        t1 = cpucycles();
-        PolyBaseMul((int32_t*)a, b);
-        t2 = cpucycles();
-        sum2 += (t2 - t1);
-
-        t1 = cpucycles();
-        InvNTT((int32_t*)a, b);
-        t2 = cpucycles();
-        sum3 += (t2 - t1);
-
-        t1 = cpucycles();
-        PolyMulAcc(a, (uint16_t*)b, c);
-        t2 = cpucycles();
-        sum4 += (t2 - t1);
-    }
-    printf("%s", ullu(sum1 / NTESTS));
-    printf("/%s", ullu(sum2 / NTESTS));
-    printf("/%s", ullu(sum3 / NTESTS));
-    printf("/%s\n\n", ullu(sum4 / NTESTS));
-
-    return 0;
-}
-
-static int TestGen(void)
-{
-    uint16_t s[3][SABER_N];
-    uint16_t* poly = s;
-    uint8_t seed[SABER_SEEDBYTES];
-    int i, j, k;
-    uint64_t t1, t2, t3, sum1, sum2, sum3;
-    sum1 = sum2 = sum3 = 0;
-
-    for (k = 0; k < 100; k++) {
-        for (i = 0; i < 3; i++) {
-            for (j = 0; j < 3; j++) {
-                t1 = cpucycles();
-#    if defined(FASTGENA_SLOWMUL) || defined(FASTGENA_FASTMUL)
-                GenAInTime(poly, seed, 1 - i - j);
-#    elif defined(SLOWGENA_FASTMUL)
-                GenAInTime(poly, seed, i, j);
-#    endif
-                t2 = cpucycles();
-                sum1 += (t2 - t1);
-            }
-            // t1 = cpucycles();
-            // GenSInTime(poly, seed, i);
-            // t2 = cpucycles();
-            // sum2 += (t2 - t1);
-        }
-        // t1 = cpucycles();
-        // GenSecret(s, seed);
-        // t2 = cpucycles();
-        // sum3 += (t2 - t1);
-    }
-    printf("GenAInTime*9 / GenSInTime*3: %u/%u\n", (uint32_t)sum1 / NTESTS,
-           (uint32_t)sum2 / NTESTS);
-    printf("GenSecret: %u\n", (uint32_t)sum3 / NTESTS);
-    return 0;
-}
-
-static int TestKeccak(void)
-{
-    uint64_t keccak_state[25];
-    uint8_t seed[32], buf[168];
-    int i;
-    uint64_t t1, t2, sum1, sum2;
-    sum1 = sum2 = 0;
-
-    for (i = 0; i < 25; i++) {
-        keccak_state[i] = 0;
-    }
-
-    for (i = 0; i < NTESTS; i++) {
-        t1 = cpucycles();
-        keccak_absorb(keccak_state, SHAKE128_RATE, seed, 32, 0x1F);
-        t2 = cpucycles();
-        sum1 += (t2 - t1);
-
-        t1 = cpucycles();
-        keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
-        t2 = cpucycles();
-        sum2 += (t2 - t1);
-    }
-
-    printf("keccak_absorb/squeeze: %s/", ullu(sum1 / NTESTS));
-    printf("%s\n", ullu(sum2 / NTESTS));
-    return 0;
-}
-
 #endif
-
-static void TestNTTRange(void)
-{
-    int i;
-    uint16_t a[SABER_N * 2], r[SABER_N] = {0};
-    uint16_t s[SABER_N];
-    for (i = 0; i < SABER_N; i++) {
-        s[i] = 5;
-        a[i] = 4095;
-    }
-    PolyMulAcc(a, s, r);
-    for (i = 0; i < SABER_N; i++) {
-        printf("%hd ", r[i] & 0x1fff);
-    }
-}
-
 static void PrintConfig(void)
 {
-    printf("SABER_L is %d\n", SABER_L);
+    printf("SABER_L is %d\n", SABER_K);
     printf("Strategy: ");
 #ifdef FASTGENA_SLOWMUL
     printf("FASTGENA_SLOWMUL\n");
@@ -475,8 +351,8 @@ int main(void)
 {
     PrintConfig();
     DisableWatchDog();
-    // TestCPA();
-    // TestCCA();
+    TestCPA();
+    TestCCA();
 #ifndef HOST
     // SpeedCPA();
     // TestPolyMul();

@@ -1,380 +1,680 @@
-#include "poly_mul.h"
-
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include "poly_mul.h"
 
-#include "ntt.h"
-#include "pack_unpack.h"
-#include "poly.h"
+void TC_evaluation_16(const uint32_t* a1, uint32_t bw_ar[NUM_POLY_MID][N_SB_16], uint32_t *w1,  uint32_t *w2,  uint32_t *w3,  uint32_t *w4,  uint32_t *w5,  uint32_t *w6,  uint32_t *w7);
 
-#ifdef SIX_LAYER_NTT
-// point-wise multiplication mod (X^4-zeta^{2br(i)+1}) i=0,1,...,63
-int32_t mulTable[64] = {
-    2896842,  -2896842, 1150913,  -1150913, 1250,     -1250,    -771147,
-    771147,   -3214001, 3214001,  -2216070, 2216070,  2587567,  -2587567,
-    4635835,  -4635835, 1247022,  -1247022, 1133020,  -1133020, 1610224,
-    -1610224, -4652015, 4652015,  4035904,  -4035904, 254135,   -254135,
-    2640679,  -2640679, 1621924,  -1621924, -2966437, 2966437,  -1300452,
-    1300452,  -3963361, 3963361,  3815660,  -3815660, -4635716, 4635716,
-    -4810532, 4810532,  394299,   -394299,  -3565801, 3565801,  723646,
-    -723646,  1340759,  -1340759, 1171195,  -1171195, 4777770,  -4777770,
-    -495362,  495362,   -1032438, 1032438,  -4833797, 4833797,  152199,
-    -152199};
+void TC_interpol_16(uint32_t *w1, uint32_t *w2, uint32_t *w3, uint32_t *w4, uint32_t *w5, uint32_t *w6, uint32_t *w7, uint32_t *result);
 
-/*************************************************
- * Name:        PolyBaseMul
- *
- * Description: Multiplication of two polynomials in NTT domain
- *
- * Arguments:   - a: pointer to first input polynomial and also output
- *              - b: pointer to second input polynomial
- **************************************************/
-void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
-{
-    unsigned int i;
-    for (i = 0; i < SABER_N / 4; i++) {
-        BaseMul(&a[4 * i], &b[4 * i], mulTable[i]);
-    }
-}
-#elif defined(SEVEN_LAYER_NTT)
-int32_t mulTable[] = {
-    -4787907, 4787907,  4312107,  -4312107, -563551,  563551,   -2485656,
-    2485656,  -4934765, 4934765,  -1274402, 1274402,  4806806,  -4806806,
-    -2404203, 2404203,  844313,   -844313,  -5047542, 5047542,  -315757,
-    315757,   1140755,  -1140755, -913766,  913766,   917326,   -917326,
-    -1367707, 1367707,  -5171082, 5171082,  883183,   -883183,  2100688,
-    -2100688, -3038201, 3038201,  -4533557, 4533557,  1436016,  -1436016,
-    -4273149, 4273149,  3975068,  -3975068, 5163653,  -5163653, 4695769,
-    -4695769, 2573915,  -2573915, -653503,  653503,   434027,   -434027,
-    4192924,  -4192924, -881546,  881546,   -2887756, 2887756,  2791875,
-    -2791875, -909077,  909077,   -4601548, 4601548,  239548,   -239548,
-    -3183857, 3183857,  5136869,  -5136869, 3554108,  -3554108, -5221924,
-    5221924,  128531,   -128531,  -4205624, 4205624,  -4707996, 4707996,
-    2940826,  -2940826, 4825397,  -4825397, -3821535, 3821535,  -1387751,
-    1387751,  1063300,  -1063300, -4465789, 4465789,  -3282628, 3282628,
-    -2174102, 2174102,  -4896547, 4896547,  1107666,  -1107666, -3193337,
-    3193337,  658585,   -658585,  3591289,  -3591289, -2710765, 2710765,
-    2655674,  -2655674, -622899,  622899,   3866337,  -3866337, -4722017,
-    4722017,  -842149,  842149,   4652240,  -4652240, 1066461,  -1066461,
-    -1272644, 1272644};
-/*************************************************
- * Name:        PolyBaseMul
- *
- * Description: Multiplication of two polynomials in NTT domain
- *
- * Arguments:   - a: pointer to first input polynomial and also output
- *              - b: pointer to second input polynomial
- **************************************************/
-void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
-{
-    unsigned int i;
-    for (i = 0; i < SABER_N / 2; i++) {
-        BaseMul(&a[2 * i], &b[2 * i], mulTable[i]);
-    }
-}
-#elif defined(COMPLETE_NTT)
-/*************************************************
- * Name:        PolyBaseMul
- *
- * Description: Multiplication of two polynomials in NTT domain
- *
- * Arguments:   - a: pointer to first input polynomial and also output
- *              - b: pointer to second input polynomial
- **************************************************/
-void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
-{
-    BaseMul(a, b);
-}
-#endif
+static inline int16_t reduce(int16_t a, int64_t p);
 
-/**
- * Name: PolyAdd
- * Description: polynomial addition
- */
-void PolyAdd(uint16_t res[SABER_N], int32_t in[SABER_N])
-{
-    int i;
-    for (i = 0; i < SABER_N; i++) {
-        res[i] += (int16_t)in[i];
-    }
+void print_poly2(int16_t *a, int64_t n, uint64_t p){
+
+	printf("-----------------------\n");
+	int i;
+	for (i = n - 1; i >= 0; i--){
+		if (a[i] != 0){
+			if(i!=0)
+				printf("  Mod(%d,%lu)*x^%d + ", a[i], p,i);
+			else
+				printf("  Mod(%d,%lu)*x^%d ", a[i], p,i);
+
+			}
+	}
+
+	printf("\n-----------------------\n");
 }
 
-/**
- * Name: PolyMulAcc
- * Description: res += a * b using ntt，a, b in standard domain
- */
-__attribute__((noinline)) void PolyMulAcc(uint16_t a[2 * SABER_N],
-                                          const uint16_t b[SABER_N],
-                                          uint16_t res[SABER_N])
-{
-    int32_t t[SABER_N];
-    int32_t *p = (int32_t *)a;
-    NTT(a, t);
-    NTT(b, p);
-    PolyBaseMul(p, t);
-    InvNTT(p, t);
-    PolyAdd(res, t);
+void pol_mul(uint16_t* a, uint16_t* b, uint16_t* res, uint16_t p, uint32_t n)
+
+{ 
+	// Polynomial multiplication using the schoolbook method, c[x] = a[x]*b[x] 
+	// SECURITY NOTE: TO BE USED FOR TESTING ONLY.  
+
+	uint32_t i;
+
+//-------------------normal multiplication-----------------
+
+	uint16_t c[512];
+
+	for (i = 0; i < 512; i++) c[i] = 0;
+
+	toom_cook_4way(a, b, c);
+
+	//---------------reduction-------
+	for(i=n;i<2*n;i++){
+		res[i-n]=(c[i-n]-c[i])&(p-1);
+	}
+	
+
+}
+//----------------------------------lazy interpolation--------------------------------
+
+void pol_mul_noreduce_32(const uint32_t* a, const uint32_t* b, uint32_t* res, uint32_t n) //simple school book without polynomial reduction. For 32 bits 
+{ 
+	uint32_t i, j;
+	
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			res[i+j]=res[i+j] + (a[i] * b[j]);
+		}
+	}
 }
 
-/**
- * Name: PolyMulAcc
- * Description: res += a * b using ntt，a in standard domain, b in ntt domain
- */
-__attribute__((noinline)) void PolyMulAccFast(uint16_t a[SABER_N],
-                                              const int32_t b[SABER_N],
-                                              uint16_t res[SABER_N])
-{
-    int32_t t[SABER_N];
-    int32_t *pb = (int32_t *)b;
-    NTT(a, t);
-    PolyBaseMul(t, pb);
-    InvNTT(t, t);
-    PolyAdd(res, t);
+
+void evaluation_single(const uint16_t *b, uint32_t bw_ar[7][NUM_POLY_MID][N_SB_16]){ // for precomputing B
+
+	uint32_t r0, r1, r2, r3, r4, r5, r6, r7;
+
+	uint32_t bw1[N_SB], bw2[N_SB], bw3[N_SB], bw4[N_SB], bw5[N_SB], bw6[N_SB], bw7[N_SB]; //can be reduced
+
+	uint16_t *B0, *B1, *B2, *B3;
+
+	int j;
+
+	B0 = (uint16_t*)b;
+	B1 = (uint16_t*)&b[N_SB];
+	B2 = (uint16_t*)&b[2*N_SB];
+	B3 = (uint16_t*)&b[3*N_SB];
+
+	for (j = 0; j < N_SB; ++j) {
+		r0 = B0[j];
+		r1 = B1[j];
+		r2 = B2[j];
+		r3 = B3[j];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw3[j] = r6;
+		bw4[j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw5[j] = r6;
+		bw6[j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		bw2[j] = r4; 
+		bw7[j] = r0;
+		bw1[j] = r3;
+	}
+
+	for (j = 0; j < N_SB_16; ++j) {
+		r0 = bw1[j];
+		r1 = bw1[j+N_SB_16];
+		r2 = bw1[j+2*N_SB_16];
+		r3 = bw1[j+3*N_SB_16];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[0][2][j] = r6;
+		bw_ar[0][3][j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[0][4][j] = r6;
+		bw_ar[0][5][j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		bw_ar[0][1][j] = r4; 
+		bw_ar[0][6][j] = r0;
+		bw_ar[0][0][j] = r3;
+	}
+
+
+	for (j = 0; j < N_SB_16; ++j) {
+		r0 = bw2[j];
+		r1 = bw2[j+N_SB_16];
+		r2 = bw2[j+2*N_SB_16];
+		r3 = bw2[j+3*N_SB_16];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[1][2][j] = r6;
+		bw_ar[1][3][j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[1][4][j] = r6;
+		bw_ar[1][5][j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		bw_ar[1][1][j] = r4; 
+		bw_ar[1][6][j] = r0;
+		bw_ar[1][0][j] = r3;
+	}
+
+	for (j = 0; j < N_SB_16; ++j) {
+		r0 = bw3[j];
+		r1 = bw3[j+N_SB_16];
+		r2 = bw3[j+2*N_SB_16];
+		r3 = bw3[j+3*N_SB_16];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[2][2][j] = r6;
+		bw_ar[2][3][j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[2][4][j] = r6;
+		bw_ar[2][5][j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		bw_ar[2][1][j] = r4; 
+		bw_ar[2][6][j] = r0;
+		bw_ar[2][0][j] = r3;
+	}
+
+
+	for (j = 0; j < N_SB_16; ++j) {
+		r0 = bw4[j];
+		r1 = bw4[j+N_SB_16];
+		r2 = bw4[j+2*N_SB_16];
+		r3 = bw4[j+3*N_SB_16];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[3][2][j] = r6;
+		bw_ar[3][3][j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[3][4][j] = r6;
+		bw_ar[3][5][j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		bw_ar[3][1][j] = r4; 
+		bw_ar[3][6][j] = r0;
+		bw_ar[3][0][j] = r3;
+	}
+
+	for (j = 0; j < N_SB_16; ++j) {
+		r0 = bw5[j];
+		r1 = bw5[j+N_SB_16];
+		r2 = bw5[j+2*N_SB_16];
+		r3 = bw5[j+3*N_SB_16];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[4][2][j] = r6;
+		bw_ar[4][3][j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[4][4][j] = r6;
+		bw_ar[4][5][j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		bw_ar[4][1][j] = r4; 
+		bw_ar[4][6][j] = r0;
+		bw_ar[4][0][j] = r3;
+	}
+
+
+	for (j = 0; j < N_SB_16; ++j) {
+		r0 = bw6[j];
+		r1 = bw6[j+N_SB_16];
+		r2 = bw6[j+2*N_SB_16];
+		r3 = bw6[j+3*N_SB_16];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[5][2][j] = r6;
+		bw_ar[5][3][j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[5][4][j] = r6;
+		bw_ar[5][5][j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		bw_ar[5][1][j] = r4; 
+		bw_ar[5][6][j] = r0;
+		bw_ar[5][0][j] = r3;
+	}
+
+	for (j = 0; j < N_SB_16; ++j) {
+		r0 = bw7[j];
+		r1 = bw7[j+N_SB_16];
+		r2 = bw7[j+2*N_SB_16];
+		r3 = bw7[j+3*N_SB_16];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[6][2][j] = r6;
+		bw_ar[6][3][j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw_ar[6][4][j] = r6;
+		bw_ar[6][5][j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		bw_ar[6][1][j] = r4; 
+		bw_ar[6][6][j] = r0;
+		bw_ar[6][0][j] = r3;
+	}
+
+
 }
 
-void MatrixVectorMulKP(const uint8_t *seed_a, const uint8_t *seed_s,
-                       uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
-                       uint16_t b[SABER_L][SABER_N])
+void TC_evaluation_64_unrolled(const uint16_t* a1, uint32_t bw_ar[7][NUM_POLY_MID][N_SB_16], uint32_t w_ar[7][NUM_POLY_MID][N_SB_16_RES])//TC+TC unrolled
 {
-    int i, j;
-    int32_t t1[SABER_N];
-    uint16_t t2[SABER_N];
-    for (i = 0; i < SABER_L; i++) {
-        // t2=si
-        GenSInTime(t2, seed_s, i);
-        // pack si to sk
-        PackSk(sk + i * SABER_SKPOLYBYTES, t2);
-        // trans si to ntt domain, which is saved in t1
-        NTT(t2, t1);
-        // generate poly and muladd
-        for (j = 0; j < SABER_L; j++) {
-#if defined(FASTGENA_SLOWMUL) || defined(FASTGENA_FASTMUL)
-            // i=0, j=0, init=1, t2=aij
-            GenAInTime(t2, seed_a, 1 - i - j);
-#elif defined(SLOWGENA_FASTMUL)
-            GenAInTime(t2, seed_a, i, j);
-#endif
-            PolyMulAccFast(t2, t1, b[j]);
-        }
-    }
+
+	uint32_t aw1[N_SB], aw2[N_SB], aw3[N_SB], aw4[N_SB], aw5[N_SB], aw6[N_SB], aw7[N_SB];
+
+	uint32_t r0, r1, r2, r3, r4, r5, r6, r7;
+	uint16_t *A0, *A1, *A2, *A3;
+
+	A0 = (uint16_t*)a1;
+	A1 = (uint16_t*)&a1[N_SB];
+	A2 = (uint16_t*)&a1[2*N_SB];
+	A3 = (uint16_t*)&a1[3*N_SB];
+
+	int j;
+
+// EVALUATION
+	for (j = 0; j < N_SB; ++j) {
+		r0 = A0[j];
+		r1 = A1[j];
+		r2 = A2[j];
+		r3 = A3[j];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		aw3[j] = r6;
+		aw4[j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		aw5[j] = r6;
+		aw6[j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		aw2[j] = r4; aw7[j] = r0;
+		aw1[j] = r3;
+	}
+
+// MULTIPLICATION
+
+	TC_evaluation_16(aw1, bw_ar[0], w_ar[0][0], w_ar[0][1], w_ar[0][2], w_ar[0][3], w_ar[0][4], w_ar[0][5], w_ar[0][6]);
+	TC_evaluation_16(aw2, bw_ar[1], w_ar[1][0], w_ar[1][1], w_ar[1][2], w_ar[1][3], w_ar[1][4], w_ar[1][5], w_ar[1][6]);
+	TC_evaluation_16(aw3, bw_ar[2], w_ar[2][0], w_ar[2][1], w_ar[2][2], w_ar[2][3], w_ar[2][4], w_ar[2][5], w_ar[2][6]);
+	TC_evaluation_16(aw4, bw_ar[3], w_ar[3][0], w_ar[3][1], w_ar[3][2], w_ar[3][3], w_ar[3][4], w_ar[3][5], w_ar[3][6]);	
+	TC_evaluation_16(aw5, bw_ar[4], w_ar[4][0], w_ar[4][1], w_ar[4][2], w_ar[4][3], w_ar[4][4], w_ar[4][5], w_ar[4][6]);
+	TC_evaluation_16(aw6, bw_ar[5], w_ar[5][0], w_ar[5][1], w_ar[5][2], w_ar[5][3], w_ar[5][4], w_ar[5][5], w_ar[5][6]);
+	TC_evaluation_16(aw7, bw_ar[6], w_ar[6][0], w_ar[6][1], w_ar[6][2], w_ar[6][3], w_ar[6][4], w_ar[6][5], w_ar[6][6]);
+
 }
 
-#ifdef FASTGENA_SLOWMUL
-void MatrixVectorMulEnc(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
-                        uint8_t *ciphertext)
-{
-    int i, j;
-    uint16_t a[2 * SABER_N], res[SABER_N];
-    for (i = 0; i < SABER_L; i++) {
-        // clear a and res
-        for (j = 0; j < SABER_N; j++) {
-            res[j] = 0;
-        }
-        // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
-        for (j = 0; j < SABER_L; j++) {
-            GenAInTime(a, seed, 1 - i - j);
-            PolyMulAcc(a, s[j], res);
-        }
-        for (j = 0; j < SABER_N; j++) {
-            res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
-        }
-        Polp2BS(ciphertext + i * (SABER_EP * SABER_N / 8), res);
-    }
+void TC_interpol_64_unrolled(uint32_t w_ar[7][NUM_POLY_MID][N_SB_16_RES], uint16_t *result){ //unrolled
+
+	//printf("\nInterpolation called\n");
+
+	uint32_t r0, r1, r2, r3, r4, r5, r6;
+	uint16_t inv3 = 43691, inv9 = 36409, inv15 = 61167;
+
+	uint32_t w1[N_SB_RES] = {0}, w2[N_SB_RES] = {0}, w3[N_SB_RES] = {0}, w4[N_SB_RES] = {0}, w5[N_SB_RES] = {0}, w6[N_SB_RES] = {0}, w7[N_SB_RES] = {0};
+
+	int i;
+	
+	uint16_t * C;
+	C = result;
+
+	TC_interpol_16(w_ar[0][0], w_ar[0][1], w_ar[0][2], w_ar[0][3], w_ar[0][4], w_ar[0][5], w_ar[0][6], w1);
+	TC_interpol_16(w_ar[1][0], w_ar[1][1], w_ar[1][2], w_ar[1][3], w_ar[1][4], w_ar[1][5], w_ar[1][6], w2);
+	TC_interpol_16(w_ar[2][0], w_ar[2][1], w_ar[2][2], w_ar[2][3], w_ar[2][4], w_ar[2][5], w_ar[2][6], w3);
+	TC_interpol_16(w_ar[3][0], w_ar[3][1], w_ar[3][2], w_ar[3][3], w_ar[3][4], w_ar[3][5], w_ar[3][6], w4);
+	TC_interpol_16(w_ar[4][0], w_ar[4][1], w_ar[4][2], w_ar[4][3], w_ar[4][4], w_ar[4][5], w_ar[4][6], w5);
+	TC_interpol_16(w_ar[5][0], w_ar[5][1], w_ar[5][2], w_ar[5][3], w_ar[5][4], w_ar[5][5], w_ar[5][6], w6);
+	TC_interpol_16(w_ar[6][0], w_ar[6][1], w_ar[6][2], w_ar[6][3], w_ar[6][4], w_ar[6][5], w_ar[6][6], w7);	
+
+	for (i = 0; i < N_SB_RES; ++i) {
+		r0 = w1[i];
+		r1 = w2[i];
+		r2 = w3[i];
+		r3 = w4[i];
+		r4 = w5[i];
+		r5 = w6[i];
+		r6 = w7[i];
+
+		r1 = r1 + r4;
+		r5 = r5 - r4;
+		r3 = ((r3-r2) >> 1);
+		r4 = r4 - r0;
+		r4 = r4 - (r6 << 6);
+		r4 = (r4 << 1) + r5;
+		r2 = r2 + r3;
+		r1 = r1 - (r2 << 6) - r2;
+		r2 = r2 - r6;
+		r2 = r2 - r0;
+		r1 = r1 + 45*r2;
+		r4 = (((r4 - (r2 << 3))*inv3) >> 3);
+		r5 = r5 + r1;
+		r1 = (((r1 + (r3 << 4))*inv9) >> 1);
+		r3 = -(r3 + r1);
+		r5 = (((30*r1 - r5)*inv15) >> 2);
+		r2 = r2 - r4;
+		r1 = r1 - r5;
+
+		C[i]     += r6;
+		C[i+64]  += r5;
+		C[i+128] += r4;
+		C[i+192] += r3;
+		C[i+256] += r2;
+		C[i+320] += r1;
+		C[i+384] += r0;
+	}
+
+
+
 }
 
-int32_t MatrixVectorMulEncCmp(const uint8_t *seed, uint16_t s[SABER_L][SABER_N],
-                              const uint8_t *ciphertext)
-{
-    int i, j, fail = 0;
-    uint16_t a[2 * SABER_N], res[SABER_N];
-    for (i = 0; i < SABER_L; i++) {
-        // clear a and res
-        for (j = 0; j < SABER_N; j++) {
-            res[j] = 0;
-        }
-        // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
-        for (j = 0; j < SABER_L; j++) {
-            GenAInTime(a, seed, 1 - i - j);
-            PolyMulAcc(a, s[j], res);
-        }
-        for (j = 0; j < SABER_N; j++) {
-            res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
-        }
-        fail |= Polp2BSCmp(ciphertext + i * (SABER_EP * SABER_N / 8), res);
-    }
-    return fail;
+
+void TC_evaluation_16(const uint32_t* a1, uint32_t bw_ar[NUM_POLY_MID][N_SB_16], uint32_t *w1,  uint32_t *w2,  uint32_t *w3,  uint32_t *w4,  uint32_t *w5,  uint32_t *w6,  uint32_t *w7){
+
+	uint32_t aw1[N_SB_16], aw2[N_SB_16], aw3[N_SB_16], aw4[N_SB_16], aw5[N_SB_16], aw6[N_SB_16], aw7[N_SB_16];
+
+	uint32_t r0, r1, r2, r3, r4, r5, r6, r7;
+	uint32_t *A0, *A1, *A2, *A3;
+	A0 = (uint32_t*)a1;
+	A1 = (uint32_t*)&a1[N_SB_16];
+	A2 = (uint32_t*)&a1[2*N_SB_16];
+	A3 = (uint32_t*)&a1[3*N_SB_16];
+	/*
+	B0 = (uint32_t*)b1;
+	B1 = (uint32_t*)&b1[N_SB_16];
+	B2 = (uint32_t*)&b1[2*N_SB_16];
+	B3 = (uint32_t*)&b1[3*N_SB_16];
+	*/
+	int j;
+
+// EVALUATION
+	for (j = 0; j < N_SB_16; ++j) {
+		r0 = A0[j];
+		r1 = A1[j];
+		r2 = A2[j];
+		r3 = A3[j];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		aw3[j] = r6;
+		aw4[j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		aw5[j] = r6;
+		aw6[j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		aw2[j] = r4; aw7[j] = r0;
+		aw1[j] = r3;
+	}
+// MULTIPLICATION
+
+	pol_mul_noreduce_32(aw1,bw_ar[0],w1, 16);
+	pol_mul_noreduce_32(aw2,bw_ar[1],w2, 16);
+	pol_mul_noreduce_32(aw3,bw_ar[2],w3, 16);
+	pol_mul_noreduce_32(aw4,bw_ar[3],w4, 16);
+	pol_mul_noreduce_32(aw5,bw_ar[4],w5, 16);
+	pol_mul_noreduce_32(aw6,bw_ar[5],w6, 16);
+	pol_mul_noreduce_32(aw7,bw_ar[6],w7, 16);
 }
 
-/**
- * Name: InnerProd just-in-time
- * Description: inner product using ntt
- */
-void InnerProdInTimeEnc(const uint8_t *bytes,
-                        const uint16_t s[SABER_L][SABER_N], uint8_t *ciphertext,
-                        const uint8_t m[SABER_KEYBYTES])
-{
-    int i, j;
-    uint16_t b[2 * SABER_N], vp[SABER_N] = {0};
-    uint16_t message_bit;
+void TC_interpol_16(uint32_t *w1, uint32_t *w2, uint32_t *w3, uint32_t *w4, uint32_t *w5, uint32_t *w6, uint32_t *w7, uint32_t *result){
 
-    for (j = 0; j < SABER_L; j++) {
-        BS2Polp(bytes + j * (SABER_EP * SABER_N / 8), b);
-        PolyMulAcc(b, s[j], vp);
-    }
-    for (j = 0; j < SABER_KEYBYTES; j++) {
-        for (i = 0; i < 8; i++) {
-            message_bit = ((m[j] >> i) & 0x01);
-            message_bit = (message_bit << (SABER_EP - 1));
-            vp[j * 8 + i] =
-                (vp[j * 8 + i] - message_bit + h1) >> (SABER_EP - SABER_ET);
-        }
-    }
 
-    PolT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
+	uint32_t r0, r1, r2, r3, r4, r5, r6;
+	uint32_t inv3 = 174763, inv9 = 233017, inv15 = 454383;
+	uint32_t * C;
+	C = result;
+	int i;
+
+		for (i = 0; i < N_SB_16_RES; ++i) {
+		r0 = w1[i];
+		r1 = w2[i];
+		r2 = w3[i];
+		r3 = w4[i];
+		r4 = w5[i];
+		r5 = w6[i];
+		r6 = w7[i];
+
+		r1 = r1 + r4;
+		r5 = r5 - r4;
+		r3 = ((r3-r2) >> 1);
+		r4 = r4 - r0;
+		r4 = r4 - (r6 << 6);
+		r4 = (r4 << 1) + r5;
+		r2 = r2 + r3;
+		r1 = r1 - (r2 << 6) - r2;
+		r2 = r2 - r6;
+		r2 = r2 - r0;
+		r1 = r1 + 45*r2;
+		r4 = (((r4 - (r2 << 3))*inv3) >> 3);
+		r5 = r5 + r1;
+		r1 = (((r1 + (r3 << 4))*inv9) >> 1);
+		r3 = -(r3 + r1);
+		r5 = (((30*r1 - r5)*inv15) >> 2);
+		r2 = r2 - r4;
+		r1 = r1 - r5;
+		
+		C[i]    +=r6;
+		C[i+16] +=r5;
+		C[i+32] +=r4;
+		C[i+48] +=r3;
+		C[i+64] +=r2;
+		C[i+80] +=r1;
+		C[i+96] +=r0;
+		
+	}
+
+
+
 }
 
-int32_t InnerProdInTimeEncCmp(const uint8_t *bytes,
-                              const uint16_t s[SABER_L][SABER_N],
-                              const uint8_t *ciphertext,
-                              const uint8_t m[SABER_KEYBYTES])
-{
-    int i, j, fail = 0;
-    uint16_t b[2 * SABER_N], vp[SABER_N] = {0};
-    uint16_t message_bit;
 
-    for (j = 0; j < SABER_L; j++) {
-        BS2Polp(bytes + j * (SABER_EP * SABER_N / 8), b);
-        PolyMulAcc(b, s[j], vp);
-    }
-    for (j = 0; j < SABER_KEYBYTES; j++) {
-        for (i = 0; i < 8; i++) {
-            message_bit = ((m[j] >> i) & 0x01);
-            message_bit = (message_bit << (SABER_EP - 1));
-            vp[j * 8 + i] =
-                (vp[j * 8 + i] - message_bit + h1) >> (SABER_EP - SABER_ET);
-        }
-    }
 
-    fail |= PolT2BSCmp(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
-    return fail;
+//----------------------------------lazy interpolation ends---------------------------
+
+
+void karatsuba_simple(const uint16_t* a_1,const uint16_t* b_1, uint16_t* result_final){//uses 10 registers
+
+	uint16_t N=64;
+	uint16_t d01[N/2-1];
+	uint16_t d0123[N/2-1];
+	uint16_t d23[N/2-1];
+	uint16_t result_d01[N-1];	
+
+	int32_t i,j;
+
+	memset(result_d01,0,(N-1)*sizeof(uint16_t));
+	memset(d01,0,(N/2-1)*sizeof(uint16_t));
+	memset(d0123,0,(N/2-1)*sizeof(uint16_t));
+	memset(d23,0,(N/2-1)*sizeof(uint16_t));
+	memset(result_final,0,(2*N-1)*sizeof(uint16_t));
+
+	uint16_t acc1,acc2,acc3,acc4,acc5,acc6,acc7,acc8,acc9,acc10;
+
+
+	for (i = 0; i < N/4; i++) {
+		acc1=a_1[i];//a0
+		acc2=a_1[i+N/4];//a1
+		acc3=a_1[i+2*N/4];//a2
+		acc4=a_1[i+3*N/4];//a3	
+		for (j = 0; j < N/4; j++) {
+
+			acc5=b_1[j];//b0
+			acc6=b_1[j+N/4];//b1
+
+			result_final[i+j+0*N/4]=result_final[i+j+0*N/4]+acc1*acc5;
+			result_final[i+j+2*N/4]=result_final[i+j+2*N/4]+acc2*acc6;
+
+			acc7=acc5+acc6;//b01
+			acc8=acc1+acc2;//a01
+			d01[i+j]=d01[i+j] + acc7*acc8;
+	//--------------------------------------------------------
+
+			acc7=b_1[j+2*N/4];//b2
+			acc8=b_1[j+3*N/4];//b3			
+			result_final[i+j+4*N/4]=result_final[i+j+4*N/4]+acc7*acc3;
+
+			result_final[i+j+6*N/4]=result_final[i+j+6*N/4]+acc8*acc4;
+
+			acc9=acc3+acc4;
+			acc10=acc7+acc8;
+			d23[i+j]=d23[i+j] + acc9*acc10;
+	//--------------------------------------------------------
+
+			acc5=acc5+acc7;//b02
+			acc7=acc1+acc3;//a02
+			result_d01[i+j+0*N/4]=result_d01[i+j+0*N/4]+acc5*acc7;
+
+			acc6=acc6+acc8;//b13
+			acc8=acc2+acc4;			
+			result_d01[i+j+ 2*N/4]=result_d01[i+j+ 2*N/4]+acc6*acc8;
+
+			acc5=acc5+acc6;
+			acc7=acc7+acc8;
+			d0123[i+j]=d0123[i+j] + acc5*acc7;
+		}
+	}
+
+//------------------2nd last stage-------------------------
+
+	for(i=0;i<N/2-1;i++){
+		d0123[i]=d0123[i]-result_d01[i+0*N/4]-result_d01[i+2*N/4];
+		d01[i]=d01[i]-result_final[i+0*N/4]-result_final[i+2*N/4];
+		d23[i]=d23[i]-result_final[i+4*N/4]-result_final[i+6*N/4];
+	}
+
+	for(i=0;i<N/2-1;i++){
+		result_d01[i+1*N/4]=result_d01[i+1*N/4]+d0123[i];
+		result_final[i+1*N/4]=result_final[i+1*N/4]+d01[i];
+		result_final[i+5*N/4]=result_final[i+5*N/4]+d23[i];
+	}
+
+//------------Last stage---------------------------
+	for(i=0;i<N-1;i++){
+		result_d01[i]=result_d01[i]-result_final[i]-result_final[i+N];
+	}
+	
+	for(i=0;i<N-1;i++){
+		result_final[i+1*N/2]=result_final[i+1*N/2]+result_d01[i];//-result_d0[i]-result_d1[i];		
+	}
+
 }
 
-#elif defined(FASTGENA_FASTMUL)
-void MatrixVectorMulEnc(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
-                        uint8_t *ciphertext)
+
+
+void toom_cook_4way (const uint16_t* a1,const uint16_t* b1, uint16_t* result)
 {
-    int i, j;
-    uint16_t a[SABER_N], res[SABER_N];
-    for (i = 0; i < SABER_L; i++) {
-        // clear a and res
-        for (j = 0; j < SABER_N; j++) {
-            a[j] = 0;
-            res[j] = 0;
-        }
-        // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
-        for (j = 0; j < SABER_L; j++) {
-            GenAInTime(a, seed, 1 - i - j);
-            PolyMulAccFast(a, s[j], res);
-        }
-        for (j = 0; j < SABER_N; j++) {
-            res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
-        }
-        Polp2BS(ciphertext + i * (SABER_EP * SABER_N / 8), res);
-    }
+	uint16_t inv3 = 43691, inv9 = 36409, inv15 = 61167;
+
+	uint16_t aw1[N_SB], aw2[N_SB], aw3[N_SB], aw4[N_SB], aw5[N_SB], aw6[N_SB], aw7[N_SB];
+	uint16_t bw1[N_SB], bw2[N_SB], bw3[N_SB], bw4[N_SB], bw5[N_SB], bw6[N_SB], bw7[N_SB];
+	uint16_t w1[N_SB_RES] = {0}, w2[N_SB_RES] = {0}, w3[N_SB_RES] = {0}, w4[N_SB_RES] = {0},
+			 w5[N_SB_RES] = {0}, w6[N_SB_RES] = {0}, w7[N_SB_RES] = {0};
+	uint16_t r0, r1, r2, r3, r4, r5, r6, r7;
+	uint16_t *A0, *A1, *A2, *A3, *B0, *B1, *B2, *B3;
+	A0 = (uint16_t*)a1;
+	A1 = (uint16_t*)&a1[N_SB];
+	A2 = (uint16_t*)&a1[2*N_SB];
+	A3 = (uint16_t*)&a1[3*N_SB];
+	B0 = (uint16_t*)b1;
+	B1 = (uint16_t*)&b1[N_SB];
+	B2 = (uint16_t*)&b1[2*N_SB];
+	B3 = (uint16_t*)&b1[3*N_SB];
+
+	uint16_t * C;
+	C = result;
+
+	int i,j;
+
+// EVALUATION
+	for (j = 0; j < N_SB; ++j) {
+		r0 = A0[j];
+		r1 = A1[j];
+		r2 = A2[j];
+		r3 = A3[j];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		aw3[j] = r6;
+		aw4[j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		aw5[j] = r6;
+		aw6[j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		aw2[j] = r4; aw7[j] = r0;
+		aw1[j] = r3;
+	}
+	for (j = 0; j < N_SB; ++j) {
+		r0 = B0[j];
+		r1 = B1[j];
+		r2 = B2[j];
+		r3 = B3[j];
+		r4 = r0 + r2;
+		r5 = r1 + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw3[j] = r6;
+		bw4[j] = r7;
+		r4 = ((r0 << 2)+r2) << 1;
+		r5 = (r1 << 2) + r3;
+		r6 = r4 + r5; r7 = r4 - r5;
+		bw5[j] = r6;
+		bw6[j] = r7;
+		r4 = (r3 << 3) + (r2 << 2) + (r1 << 1) + r0;
+		bw2[j] = r4; bw7[j] = r0;
+		bw1[j] = r3;
+	}
+
+// MULTIPLICATION
+
+	karatsuba_simple(aw1, bw1, w1);
+	karatsuba_simple(aw2, bw2, w2);
+	karatsuba_simple(aw3, bw3, w3);
+	karatsuba_simple(aw4, bw4, w4);
+	karatsuba_simple(aw5, bw5, w5);
+	karatsuba_simple(aw6, bw6, w6);
+	karatsuba_simple(aw7, bw7, w7);
+
+// INTERPOLATION
+	for (i = 0; i < N_SB_RES; ++i) {
+		r0 = w1[i];
+		r1 = w2[i];
+		r2 = w3[i];
+		r3 = w4[i];
+		r4 = w5[i];
+		r5 = w6[i];
+		r6 = w7[i];
+
+		r1 = r1 + r4;
+		r5 = r5 - r4;
+		r3 = ((r3-r2) >> 1);
+		r4 = r4 - r0;
+		r4 = r4 - (r6 << 6);
+		r4 = (r4 << 1) + r5;
+		r2 = r2 + r3;
+		r1 = r1 - (r2 << 6) - r2;
+		r2 = r2 - r6;
+		r2 = r2 - r0;
+		r1 = r1 + 45*r2;
+		r4 = (((r4 - (r2 << 3))*inv3) >> 3);
+		r5 = r5 + r1;
+		r1 = (((r1 + (r3 << 4))*inv9) >> 1);
+		r3 = -(r3 + r1);
+		r5 = (((30*r1 - r5)*inv15) >> 2);
+		r2 = r2 - r4;
+		r1 = r1 - r5;
+
+		C[i]     += r6;
+		C[i+64]  += r5;
+		C[i+128] += r4;
+		C[i+192] += r3;
+		C[i+256] += r2;
+		C[i+320] += r1;
+		C[i+384] += r0;
+	}
 }
 
-int32_t MatrixVectorMulEncCmp(const uint8_t *seed, int32_t s[SABER_L][SABER_N],
-                              const uint8_t *ciphertext)
+
+static inline int16_t reduce(int16_t a, int64_t p)
 {
-    int i, j, fail = 0;
-    uint16_t a[SABER_N], res[SABER_N];
-    for (i = 0; i < SABER_L; i++) {
-        // clear a and res
-        for (j = 0; j < SABER_N; j++) {
-            a[j] = 0;
-            res[j] = 0;
-        }
-        // generate poly and muladd: res=A[i0]*s[0]+A[i1]*s[1]+A[i2]*s[2]
-        for (j = 0; j < SABER_L; j++) {
-            GenAInTime(a, seed, 1 - i - j);
-            PolyMulAccFast(a, s[j], res);
-        }
-        for (j = 0; j < SABER_N; j++) {
-            res[j] = (res[j] + h1) >> (SABER_EQ - SABER_EP);
-        }
-        fail |= Polp2BSCmp(ciphertext + i * (SABER_EP * SABER_N / 8), res);
-    }
-    return fail;
+    return a&(p-1);
 }
 
-/**
- * Name: InnerProd just-in-time
- * Description: inner product using ntt, s in ntt domain
- */
-void InnerProdInTimeEnc(const uint8_t *bytes, const int32_t s[SABER_L][SABER_N],
-                        uint8_t *ciphertext, const uint8_t m[SABER_KEYBYTES])
-{
-    int i, j;
-    uint16_t b[SABER_N], vp[SABER_N] = {0};
-    uint16_t message_bit;
-
-    for (j = 0; j < SABER_L; j++) {
-        BS2Polp(bytes + j * (SABER_EP * SABER_N / 8), b);
-        PolyMulAccFast(b, s[j], vp);
-    }
-    for (j = 0; j < SABER_KEYBYTES; j++) {
-        for (i = 0; i < 8; i++) {
-            message_bit = ((m[j] >> i) & 0x01);
-            message_bit = (message_bit << (SABER_EP - 1));
-            vp[j * 8 + i] =
-                (vp[j * 8 + i] - message_bit + h1) >> (SABER_EP - SABER_ET);
-        }
-    }
-
-    PolT2BS(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
-}
-
-int32_t InnerProdInTimeEncCmp(const uint8_t *bytes,
-                              const int32_t s[SABER_L][SABER_N],
-                              const uint8_t *ciphertext,
-                              const uint8_t m[SABER_KEYBYTES])
-{
-    int i, j, fail = 0;
-    uint16_t b[SABER_N], vp[SABER_N] = {0};
-    uint16_t message_bit;
-
-    for (j = 0; j < SABER_L; j++) {
-        BS2Polp(bytes + j * (SABER_EP * SABER_N / 8), b);
-        PolyMulAccFast(b, s[j], vp);
-    }
-    for (j = 0; j < SABER_KEYBYTES; j++) {
-        for (i = 0; i < 8; i++) {
-            message_bit = ((m[j] >> i) & 0x01);
-            message_bit = (message_bit << (SABER_EP - 1));
-            vp[j * 8 + i] =
-                (vp[j * 8 + i] - message_bit + h1) >> (SABER_EP - SABER_ET);
-        }
-    }
-
-    fail |= PolT2BSCmp(ciphertext + SABER_POLYVECCOMPRESSEDBYTES, vp);
-    return fail;
-}
-
-#else
-
-#endif
-
-void InnerProdInTimeDec(const uint8_t *bytes,
-                        const uint8_t sk[SABER_INDCPA_SECRETKEYBYTES],
-                        uint16_t res[SABER_N])
-{
-    int j;
-    uint16_t b[2 * SABER_N];
-    uint16_t s[SABER_N];
-
-    for (j = 0; j < SABER_L; j++) {
-        BS2Polp(bytes + j * (SABER_EP * SABER_N / 8), b);
-        UnpackSk(sk + j * SABER_SKPOLYBYTES, s);
-        PolyMulAcc(b, s, res);
-    }
-}
