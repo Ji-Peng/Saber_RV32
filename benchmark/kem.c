@@ -36,15 +36,13 @@ static char* ullu(uint64_t val)
         hval /= hbase;
     } while (hval);
 
-    // *out-- = 'x', *out = '0';
-
     return ++out;
 }
 
 #ifdef HOST
 #    define NTESTS 1000
 #else
-#    define NTESTS 100
+#    define NTESTS 10
 #endif
 static void DisableWatchDog(void)
 {
@@ -333,7 +331,6 @@ static int TestPolyMul(void)
     sum1 = sum2 = sum3 = sum4 = 0;
 
     printf("NTT/PolyBaseMul/InvNTT/PolyMulAcc:");
-    // printf("hello\n");
     for (j = 0; j < NTESTS; j++) {
         t1 = cpucycles();
         NTT(a, b);
@@ -363,32 +360,42 @@ static int TestPolyMul(void)
     return 0;
 }
 
-// static int TestGen(void)
-// {
-//     uint16_t poly[SABER_N];
-//     uint8_t seed[SABER_SEEDBYTES];
-//     int i, j, k;
-//     uint64_t t1, t2, sum1, sum2;
-//     sum1 = sum2 = 0;
+static int TestGen(void)
+{
+    uint16_t s[3][SABER_N];
+    uint16_t* poly = s;
+    uint8_t seed[SABER_SEEDBYTES];
+    int i, j, k;
+    uint64_t t1, t2, t3, sum1, sum2, sum3;
+    sum1 = sum2 = sum3 = 0;
 
-//     for (k = 0; k < NTESTS; k++) {
-//         for (i = 0; i < SABER_L; i++) {
-//             for (j = 0; j < SABER_L; j++) {
-//                 t1 = cpucycles();
-//                 GenAInTime(poly, seed, 1 - i - j);
-//                 t2 = cpucycles();
-//                 sum1 += (t2 - t1);
-//             }
-//             t1 = cpucycles();
-//             GenSInTime(poly, seed, i);
-//             t2 = cpucycles();
-//             sum2 += (t2 - t1);
-//         }
-//     }
-//     printf("GenAInTime*9/GenSInTime: %u/%u\n", (uint32_t)sum1 / NTESTS,
-//            (uint32_t)sum2 / NTESTS);
-//     return 0;
-// }
+    for (k = 0; k < 100; k++) {
+        for (i = 0; i < 3; i++) {
+            for (j = 0; j < 3; j++) {
+                t1 = cpucycles();
+#    if defined(FASTGENA_SLOWMUL) || defined(FASTGENA_FASTMUL)
+                GenAInTime(poly, seed, 1 - i - j);
+#    elif defined(SLOWGENA_FASTMUL)
+                GenAInTime(poly, seed, i, j);
+#    endif
+                t2 = cpucycles();
+                sum1 += (t2 - t1);
+            }
+            // t1 = cpucycles();
+            // GenSInTime(poly, seed, i);
+            // t2 = cpucycles();
+            // sum2 += (t2 - t1);
+        }
+        // t1 = cpucycles();
+        // GenSecret(s, seed);
+        // t2 = cpucycles();
+        // sum3 += (t2 - t1);
+    }
+    printf("GenAInTime*9 / GenSInTime*3: %u/%u\n", (uint32_t)sum1 / NTESTS,
+           (uint32_t)sum2 / NTESTS);
+    printf("GenSecret: %u\n", (uint32_t)sum3 / NTESTS);
+    return 0;
+}
 
 static int TestKeccak(void)
 {
@@ -469,18 +476,18 @@ int main(void)
     PrintConfig();
     DisableWatchDog();
     // TestCPA();
-    TestCCA();
+    // TestCCA();
 #ifndef HOST
     // SpeedCPA();
     // TestPolyMul();
     // SpeedCPA();
-    SpeedCCA();
+    // SpeedCCA();
     // TestCenR();
     // TestNTT();
     // SpeedCCAKP();
     // SpeedCCAEnc();
     // SpeedCCADec();
-    // TestGen();
+    TestGen();
     // TestKeccak();
 #endif
     // TestNTTRange();

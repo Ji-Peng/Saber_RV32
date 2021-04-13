@@ -64,18 +64,3 @@ int32_t CenReduce(int32_t a)
     a -= mask & M;
     return a;
 }
-
-// int main(void)
-// {
-//     printf("%d\n", MontReduce(((int64_t)409 * M + 3) * RmodM));
-//     printf("%d\n", MontReduce((int64_t)(M - 1) * RmodM));
-//     printf("%d\n", MontReduce((int64_t)(2 * M) * RmodM));
-//     printf("%d\n", MontReduce((int64_t)(2 * M - 1) * RmodM));
-//     printf("%d\n", MontReduce((int64_t)(3 * M) * RmodM));
-//     printf("%d\n", MontReduce((int64_t)(3 * M - 1) * RmodM));
-//     printf("%d\n", BarrettReduce(409 * M - 3));
-//     printf("%d\n", CenteredReduce(M - 1));
-//     printf("%d\n", CenteredReduce(2 * M));
-//     printf("%d\n", CenteredReduce(2 * M - 1));
-//     printf("%d\n", CenteredReduce(M / 2 + 3));
-// }

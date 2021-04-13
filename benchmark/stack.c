@@ -7,10 +7,6 @@
 #include "poly.h"
 #include "poly_mul.h"
 
-// the address of a is 0x800035bf
-// the top address of stack is 0x80004000
-// -64 for not clear and check heap memory
-
 volatile unsigned char *p;
 unsigned int c;
 uint8_t canary = 0x42;
@@ -36,6 +32,7 @@ uint8_t canary = 0x42;
 // uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
 uint8_t sk[CRYPTO_SECRETKEYBYTES];
 uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
+// -128 for avoiding affecting heap memory
 #    define MAX_SIZE (0x1a00 - 128)
 unsigned int canary_size = MAX_SIZE;
 uint8_t *pk = sk;
