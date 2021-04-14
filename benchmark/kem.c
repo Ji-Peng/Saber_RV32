@@ -318,6 +318,29 @@ static int SpeedCCADec(void)
     return 0;
 }
 
+static int SpeedMatrixVector()
+{
+    uint16_t a[SABER_K][SABER_K][SABER_N];
+    // uint16_t skpv[SABER_K][SABER_N];
+    // uint32_t bw_ar[SABER_K][7][NUM_POLY_MID][N_SB_16];
+    uint16_t* skpv = a;
+    uint32_t* bw_ar = a;
+    uint16_t* res = a;
+    int i, j;
+    uint64_t t1, t2, sum = 0;
+
+    for (j = 0; j < NTESTS; j++) {
+        t1 = cpucycles();
+        // pre-computation B
+        for (i = 0; i < SABER_K; i++)
+            evaluation_single((const uint16_t*)skpv[i], bw_ar[i]);
+        MatrixVectorMul(a, bw_ar, res, SABER_Q - 1, 1);
+        t2 = cpucycles();
+        sum += (t2 - t1);
+    }
+    printf("MatrixVectorMul %s\n", ullu(sum / NTESTS));
+}
+
 #endif
 static void PrintConfig(void)
 {
@@ -351,8 +374,8 @@ int main(void)
 {
     PrintConfig();
     DisableWatchDog();
-    TestCPA();
-    TestCCA();
+    // TestCPA();
+    // TestCCA();
 #ifndef HOST
     // SpeedCPA();
     // TestPolyMul();
@@ -363,8 +386,9 @@ int main(void)
     // SpeedCCAKP();
     // SpeedCCAEnc();
     // SpeedCCADec();
-    TestGen();
+    // TestGen();
     // TestKeccak();
+    SpeedMatrixVector();
 #endif
     // TestNTTRange();
     return 0;
