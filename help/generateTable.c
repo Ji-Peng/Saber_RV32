@@ -10,6 +10,7 @@
 // 512th root is 23394
 // 256th root = 23394^2 = 1913168
 // 128th root = 23394^4 = 8406460;
+// 64th  root = 23394^8 = 3176733;
 int32_t root = 0;
 int64_t R = (int64_t)1 << 32;
 
@@ -328,6 +329,44 @@ void GenTables_512Merged(void)
     printf("\n");
 }
 
+int32_t treeNTT_32[] = {16, 8,  24, 4,  20, 12, 28, 2,  18, 10, 26,
+                        6,  22, 14, 30, 1,  17, 9,  25, 5,  21, 13,
+                        29, 3,  19, 11, 27, 7,  23, 15, 31};
+
+int32_t treeINTT_32[] = {1,  17, 9,  25, 5,  21, 13, 29, 3,  19, 11,
+                         27, 7,  23, 15, 31, 2,  18, 10, 26, 6,  22,
+                         14, 30, 4,  20, 12, 28, 8,  24, 16};
+
+int32_t treeMulTable_32[] = {1,  33, 17, 49, 9,  41, 25, 57, 5,  37, 21,
+                             53, 13, 45, 29, 61, 3,  35, 19, 51, 11, 43,
+                             27, 59, 7,  39, 23, 55, 15, 47, 31, 63};
+void GenTables_64(void)
+{
+    root = 3176733;
+    int32_t t;
+    for (int j = 0; j < 31; j++) {
+        t = Pow(root, treeNTT_32[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 31; j++) {
+        // root is 64th, -i in intt
+        t = Pow(root, 64 - treeINTT_32[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 32; j++) {
+        t = Pow(root, treeMulTable_32[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n");
+}
+
 int main(void)
 {
     // check();
@@ -335,6 +374,7 @@ int main(void)
     // GenTablesMerged();
     // GenTables_256();
     // GenTables_512();
-    GenTables_512Merged();
+    // GenTables_512Merged();
+    GenTables_64();
     return 0;
 }

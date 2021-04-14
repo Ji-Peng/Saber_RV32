@@ -42,7 +42,7 @@ static char* ullu(uint64_t val)
 #ifdef HOST
 #    define NTESTS 1000
 #else
-#    define NTESTS 10
+#    define NTESTS 100
 #endif
 static void DisableWatchDog(void)
 {
@@ -402,8 +402,13 @@ static int TestKeccak(void)
     uint64_t keccak_state[25];
     uint8_t seed[32], buf[168];
     int i;
-    uint64_t t1, t2, sum1, sum2;
-    sum1 = sum2 = 0;
+    uint64_t t1, t2, sum1, sum2, sum3, sum4;
+    sum1 = sum2 = sum3 = sum4 = 0;
+    uint8_t entropy_input[48];
+
+    for (i = 0; i < 48; i++)
+        entropy_input[i] = i + 1;
+    RandomBytesInit(entropy_input, NULL);
 
     for (i = 0; i < 25; i++) {
         keccak_state[i] = 0;
@@ -419,10 +424,72 @@ static int TestKeccak(void)
         keccak_squeezeblocks(buf, 1, keccak_state, SHAKE128_RATE);
         t2 = cpucycles();
         sum2 += (t2 - t1);
+
+        t1 = cpucycles();
+        RandomBytes(seed, SABER_SEEDBYTES);
+        t2 = cpucycles();
+        sum3 += (t2 - t1);
+
+        t1 = cpucycles();
+        shake128(seed, SABER_SEEDBYTES, seed, SABER_SEEDBYTES);
+        t2 = cpucycles();
+        sum4 += (t2 - t1);
     }
 
     printf("keccak_absorb/squeeze: %s/", ullu(sum1 / NTESTS));
     printf("%s\n", ullu(sum2 / NTESTS));
+    printf("RandomBytes/shake128: %s/", ullu(sum3 / NTESTS));
+    printf("%s\n", ullu(sum4 / NTESTS));
+
+    sum1 = sum2 = 0;
+    for (i = 0; i < NTESTS; i++) {
+        t1 = cpucycles();
+        sha3_256(buf, buf, 64);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+
+        t1 = cpucycles();
+        sha3_512(buf, buf, 64);
+        t2 = cpucycles();
+        sum2 += (t2 - t1);
+    }
+    printf("sha3_256/sha3_512: %s/", ullu(sum1 / NTESTS));
+    printf("%s\n", ullu(sum2 / NTESTS));
+    return 0;
+}
+
+static int SpeedNTT(void)
+{
+    uint64_t t1, t2, sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0;
+    uint16_t a[SABER_N];
+    uint32_t t[SABER_N], b[SABER_N];
+    int k;
+    for (k = 0; k < NTESTS; k++) {
+        t1 = cpucycles();
+        NTT(a, t);
+        t2 = cpucycles();
+        sum1 += (t2 - t1);
+
+        t1 = cpucycles();
+        PolyBaseMul(t, b);
+        t2 = cpucycles();
+        sum2 += (t2 - t1);
+
+        t1 = cpucycles();
+        InvNTT(t, t);
+        t2 = cpucycles();
+        sum3 += (t2 - t1);
+
+        t1 = cpucycles();
+        PolyMulAcc((uint16_t*)a, (uint16_t*)t, (uint16_t*)b);
+        t2 = cpucycles();
+        sum4 += (t2 - t1);
+    }
+    printf("Overhead of NTT/BaseMul/INTT/PolyMulAcc is:");
+    printf("%s/", ullu(sum1 / NTESTS));
+    printf("%s/", ullu(sum2 / NTESTS));
+    printf("%s/", ullu(sum3 / NTESTS));
+    printf("%s\n", ullu(sum4 / NTESTS));
     return 0;
 }
 
@@ -476,19 +543,20 @@ int main(void)
     PrintConfig();
     DisableWatchDog();
     // TestCPA();
-    // TestCCA();
+    TestCCA();
 #ifndef HOST
     // SpeedCPA();
     // TestPolyMul();
     // SpeedCPA();
-    // SpeedCCA();
+    SpeedCCA();
     // TestCenR();
     // TestNTT();
     // SpeedCCAKP();
     // SpeedCCAEnc();
     // SpeedCCADec();
-    TestGen();
+    // TestGen();
     // TestKeccak();
+    // SpeedNTT();
 #endif
     // TestNTTRange();
     return 0;

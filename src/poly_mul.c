@@ -85,6 +85,29 @@ void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     BaseMul(a, b);
 }
+#elif defined(FIVE_LAYER_NTT)
+int32_t mulTable[] = {
+    -2683848, 2683848,  -4582610, 4582610,  -709618,  709618,   3211370,
+    -3211370, -2422739, 2422739,  2533938,  -2533938, -3724866, 3724866,
+    4226394,  -4226394, 3515215,  -3515215, -5214712, 5214712,  4180628,
+    -4180628, -4354273, 4354273,  1961582,  -1961582, -1469009, 1469009,
+    3661715,  -3661715, 5089826,  -5089826};
+
+/*************************************************
+ * Name:        PolyBaseMul
+ *
+ * Description: Multiplication of two polynomials in NTT domain
+ *
+ * Arguments:   - a: pointer to first input polynomial and also output
+ *              - b: pointer to second input polynomial
+ **************************************************/
+void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
+{
+    unsigned int i;
+    for (i = 0; i < SABER_N / 8; i++) {
+        BaseMul(&a[8 * i], &b[8 * i], mulTable[i]);
+    }
+}
 #endif
 
 /**
