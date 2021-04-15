@@ -719,9 +719,6 @@ void NTT(const uint16_t in[256], int32_t out[256])
     unsigned int len, start, j, k;
     int32_t t, zeta;
 
-    uint64_t t1, t2, sum;
-    int32_t temp = 0;
-
     k = 0;
     len = 128;
     zeta = rootTable[k++];
@@ -758,7 +755,8 @@ void InvNTT(int32_t in[256], int32_t out[256])
     unsigned int start, len, j, k;
     int32_t t, zeta;
     // mont^2/32 mod M = (2^32)^2/32 mod M
-    const int32_t f = ((((int64_t)1 << 32) >> 5) * ((int64_t)1 << 32)) % M;
+    const int32_t f =
+        (((((int64_t)1 << 32) >> 5) % M) * (((int64_t)1 << 32) % M)) % M;
 
     k = 0;
     len = 8;
@@ -820,6 +818,7 @@ void BaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
     a6 = a[6];
     a7 = a[7];
 
+    // c0
     t = (int64_t)a1 * b[7];
     t += (int64_t)a2 * b[6];
     t += (int64_t)a3 * b[5];
@@ -831,6 +830,7 @@ void BaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
     a[0] = FqMul(a[0], zeta);
     a[0] += FqMul(a0, b[0]);
 
+    // c1
     t = (int64_t)a2 * b[7];
     t += (int64_t)a3 * b[6];
     t += (int64_t)a4 * b[5];
@@ -843,6 +843,7 @@ void BaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
     t += (int64_t)a1 * b[0];
     a[1] += MontReduce(t);
 
+    // c2
     t = (int64_t)a3 * b[7];
     t += (int64_t)a4 * b[6];
     t += (int64_t)a5 * b[5];
@@ -854,7 +855,7 @@ void BaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
     t += (int64_t)a1 * b[1];
     t += (int64_t)a2 * b[0];
     a[2] += MontReduce(t);
-
+    // c3
     t = (int64_t)a4 * b[7];
     t += (int64_t)a5 * b[6];
     t += (int64_t)a6 * b[5];
@@ -866,7 +867,7 @@ void BaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
     t += (int64_t)a2 * b[1];
     t += (int64_t)a3 * b[0];
     a[3] += MontReduce(t);
-
+    // c4
     t = (int64_t)a5 * b[7];
     t += (int64_t)a6 * b[6];
     t += (int64_t)a7 * b[5];
@@ -878,7 +879,7 @@ void BaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
     t += (int64_t)a3 * b[1];
     t += (int64_t)a4 * b[0];
     a[4] += MontReduce(t);
-
+    // c5
     t = (int64_t)a6 * b[7];
     t += (int64_t)a7 * b[6];
     a[5] = MontReduce(t);
@@ -890,7 +891,7 @@ void BaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
     t += (int64_t)a4 * b[1];
     t += (int64_t)a5 * b[0];
     a[5] += MontReduce(t);
-
+    // c6
     a[6] = FqMul(a7, b[7]);
     a[6] = FqMul(a[6], zeta);
     t = (int64_t)a0 * b[6];
@@ -901,7 +902,7 @@ void BaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
     t += (int64_t)a5 * b[1];
     t += (int64_t)a6 * b[0];
     a[6] += MontReduce(t);
-
+    // c7
     t = (int64_t)a0 * b[7];
     t += (int64_t)a1 * b[6];
     t += (int64_t)a2 * b[5];

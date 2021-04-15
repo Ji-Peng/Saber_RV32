@@ -2,16 +2,16 @@
 #define PARAMS_H
 
 /* Change this for different security strengths */
-#define SABER_L 2 /* LightSaber */
-// #define SABER_L 3 /* Saber */
+// #define SABER_L 2 /* LightSaber */
+#define SABER_L 3 /* Saber */
 // #define SABER_L 4 /* FireSaber */
 
 #if SABER_L == 2
 #    define SABER_MU 10
 #    define SABER_ET 3
 #    define FASTGENA_FASTMUL
-// #    define COMPLETE_NTT
-#    define FIVE_LAYER_NTT
+#    define COMPLETE_NTT
+// #    define FIVE_LAYER_NTT
 #elif SABER_L == 3
 #    define SABER_MU 8
 #    define SABER_ET 4
