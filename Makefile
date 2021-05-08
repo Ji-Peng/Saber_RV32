@@ -30,10 +30,17 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					-Os
 HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
 					-DHOST \
-					-fomit-frame-pointer -fno-tree-vectorize -march=native \
+					-fomit-frame-pointer -fno-tree-vectorize \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
 					-O3
-
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	HOST_CFLAGS += -march=native
+endif
+# no need to add -march=native on macos
+ifeq ($(UNAME_S),Darwin)
+	HOST_CFLAGS +=
+endif
 # L=2: stack_size=0x1b00, L=3/4: stack_size=0x2550
 RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
