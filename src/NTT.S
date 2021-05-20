@@ -1,7 +1,10 @@
 .text
 
 # M * Mprime = -1 mod R (R=2^32), M and Mprime are used for montgomery reduce
-.equ Mprime, 0x6007ff
+# .equ Mprime, 0x6007ff
+
+# M * Mprime = 1 mod R (R=2^32), M and Mprime are used for montgomery reduce
+.equ Mprime, 0xff9ff801
 .equ M, 0xa00801
 # v = (((int64_t)1 << 48) + M / 2) / M is used for barrett reduce
 .equ V, 0x199851d
@@ -12,36 +15,30 @@
 
 # int64_t a=in1*in2
 # int32_t t=a*Mprime
-# t=((int64_t)a+(int64_t)t*M)>>32
+# t=((int64_t)a-(int64_t)t*M)>>32
 .macro MontMul in1, in2, out, CM, CMprime, tmp1
-    # out=low(in1*in2)=a_low
+    # out=low(in1*in2)=aLo
     mul \out, \in1, \in2
-    # a_low=0: carry=0, a_low!=0: carry=1
-    snez \tmp1, \out
-    # out=t=a_low*Mprime
+    # aLo=aLo*M'
     mul \out, \out, \CMprime
-    # out=high(t*M)
+    # aLo=aLo*M, only high-libm is needed
     mulh \out, \out, \CM
-    # add carry
-    add \out, \out, \tmp1
-    # high(in1*in2)
-    mulh \tmp1, \in1, \in2
-    add \out, \out, \tmp1
+    # in2=high(in1*in2)=aHi
+    mulh \in2, \in1, \in2
+    # out=aHi-aLo
+    sub \out, \in2, \out
 .endm
 
 # int64_t a=inHi&&inLo
 # inHi and inLo wille be rewrited
+# t=(a mod R)*M' mod R, a=(a-t*M)/R
 .macro MontReduce inLo, inHi, out, CM, CMPrime
-    # t=out=low(a*Mprime)
-    mul \out, \inLo, \CMPrime
-    # a_low=0: carry=0; a_low!=0: carry=1
-    snez \inLo, \inLo
-    # out=high(t*M)
-    mulh \out, \out, \CM
-    # high(t*M)+a_high
-    add \out, \out, \inHi
-    # add carry
-    add \out, \out, \inLo
+    # inLo=inLo*M'
+    mul \inLo, \inLo, \CMprime
+    # inLo=inLo*M only high-limb is needed, because the low-limb is same
+    mulh \inLo, \inLo, \CM
+    # out=inHi-inLo
+    sub \out, \inHi, \inLo
 .endm
 
 # input: int32_t a
