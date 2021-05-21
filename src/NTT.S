@@ -24,15 +24,15 @@
     # aLo=aLo*M, only high-libm is needed
     mulh \out, \out, \CM
     # in2=high(in1*in2)=aHi
-    mulh \in2, \in1, \in2
+    mulh \tmp1, \in1, \in2
     # out=aHi-aLo
-    sub \out, \in2, \out
+    sub \out, \tmp1, \out
 .endm
 
 # int64_t a=inHi&&inLo
 # inHi and inLo wille be rewrited
 # t=(a mod R)*M' mod R, a=(a-t*M)/R
-.macro MontReduce inLo, inHi, out, CM, CMPrime
+.macro MontReduce inLo, inHi, out, CM, CMprime
     # inLo=inLo*M'
     mul \inLo, \inLo, \CMprime
     # inLo=inLo*M only high-limb is needed, because the low-limb is same
@@ -76,13 +76,8 @@
 # Butterfly Unit for INTT
 # in1, in2: t=in1; in1=t+in2; in2=t-in2; in2=zeta*in2
 .macro BFUINTT in1, in2, zeta, CM, CMprime, tmp1, tmp2
-    # t=in1
-    mv \tmp1, \in1
-    # in1=t+in2
-    add \in1, \tmp1, \in2
-    # t=t-in2
-    sub \tmp1, \tmp1, \in2
-    # in2=zeta*t
+    sub \tmp1, \in1, \in2
+    add \in1, \in1, \in2
     MontMul \zeta, \tmp1, \in2, \CM, \CMprime, \tmp2
 .endm
 
