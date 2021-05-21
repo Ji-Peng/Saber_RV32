@@ -1,8 +1,5 @@
 .text
 
-# M * Mprime = -1 mod R (R=2^32), M and Mprime are used for montgomery reduce
-# .equ Mprime, 0x6007ff
-
 # M * Mprime = 1 mod R (R=2^32), M and Mprime are used for montgomery reduce
 .equ Mprime, 0xff9ff801
 .equ M, 0xa00801
@@ -23,10 +20,27 @@
     mul \out, \out, \CMprime
     # aLo=aLo*M, only high-libm is needed
     mulh \out, \out, \CM
-    # in2=high(in1*in2)=aHi
-    mulh \in2, \in1, \in2
+    # tmp1=high(in1*in2)=aHi
+    mulh \tmp1, \in1, \in2
     # out=aHi-aLo
-    sub \out, \in2, \out
+    sub \out, \tmp1, \out
+.endm
+
+# int64_t a=in1*in2
+# int32_t t=a*Mprime
+# t=((int64_t)a-(int64_t)t*M)>>32
+# in1 will be overwritten, in2 will not be overwritten
+.macro MontMulNew in1, in2, out, CM, CMprime
+    # out=low(in1*in2)=aLo
+    mul \out, \in1, \in2
+    # aLo=aLo*M'
+    mul \out, \out, \CMprime
+    # aLo=aLo*M, only high-libm is needed
+    mulh \out, \out, \CM
+    # in1=high(in1*in2)=aHi
+    mulh \in1, \in1, \in2
+    # out=aHi-aLo
+    sub \out, \in1, \out
 .endm
 
 # int64_t a=inHi&&inLo
@@ -73,17 +87,31 @@
     add \in1, \in1, \tmp1
 .endm
 
+# Butterfly Unit for NTT
+# in1, in2: t=zeta*in2, in2=in1-t; in1=in1+t;
+.macro BFUNew in1, in2, zeta, CM, CMprime, tmp1
+    # tmp1=zeta*in1
+    MontMulNew \in2, \zeta, \tmp1, \CM, \CMprime
+    # in2=in1-t
+    sub \in2, \in1, \tmp1
+    # in1=in1+t
+    add \in1, \in1, \tmp1
+.endm
+
 # Butterfly Unit for INTT
-# in1, in2: t=in1; in1=t+in2; in2=t-in2; in2=zeta*in2
+# in1, in2: t=in1-in2, in1=in1+in2, in2=t*zeta
 .macro BFUINTT in1, in2, zeta, CM, CMprime, tmp1, tmp2
-    # t=in1
-    mv \tmp1, \in1
-    # in1=t+in2
-    add \in1, \tmp1, \in2
-    # t=t-in2
-    sub \tmp1, \tmp1, \in2
-    # in2=zeta*t
-    MontMul \zeta, \tmp1, \in2, \CM, \CMprime, \tmp2
+    sub \tmp1, \in1, \in2
+    add \in1, \in1, \in2
+    MontMul \tmp1, \zeta, \in2, \CM, \CMprime, \tmp2
+.endm
+
+# Butterfly Unit for INTT
+# in1, in2: t=in1-in2, in1=in1+in2, in2=t*zeta
+.macro BFUINTTNew in1, in2, zeta, CM, CMprime, tmp1
+    sub \tmp1, \in1, \in2
+    add \in1, \in1, \in2
+    MontMulNew \tmp1, \zeta, \in2, \CM, \CMprime
 .endm
 
 # int32_t mask;
@@ -115,6 +143,8 @@
 .endm
 
 # revert to Standard domain and reduce to Centered representation
+# s0-s7: 8 coefficients, a3: NINV, s8-s9: temp
+# a6-a7: M, Mprime, s10: MDiv2
 .macro SCReduce
     # reduce s0
     MontMul s0, a3, s8, a6, a7, s9
@@ -129,16 +159,12 @@
     MontMul s3, a3, s8, a6, a7, s9
     CenReduce s8, s3, a6, s10, s9
     # reduce s4
-    # MontMul s4, a3, s8, a6, a7, s9
     CenReduce s4, s4, a6, s10, s9
     # reduce s5
-    # MontMul s5, a3, s8, a6, a7, s9
     CenReduce s5, s5, a6, s10, s9
     # reduce s6
-    # MontMul s6, a3, s8, a6, a7, s9
     CenReduce s6, s6, a6, s10, s9
     # reduce s7
-    # MontMul s7, a3, s8, a6, a7, s9
     CenReduce s7, s7, a6, s10, s9
 .endm
 
