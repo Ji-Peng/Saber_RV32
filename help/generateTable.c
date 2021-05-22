@@ -171,6 +171,20 @@ int32_t FqMul(int32_t a, int32_t b)
     return MontReduce((int64_t)a * b);
 }
 
+int32_t MontReduceNew(int64_t a)
+{
+    int32_t t;
+
+    t = (int32_t)a * (int32_t)0xff9ff801;
+    t = ((int64_t)a - (int64_t)t * M) >> 32;
+    return t;
+}
+
+int32_t FqMulNew(int32_t a, int32_t b)
+{
+    return MontReduceNew((int64_t)a * b);
+}
+
 int32_t Pow(int32_t root, int32_t n)
 {
     int32_t t = 1;
@@ -374,6 +388,8 @@ int main(void)
     // GenTables_256();
     // GenTables_512();
     // GenTables_512Merged();
-    GenTables_64();
+    // GenTables_64();
+    printf("%d\n",FqMul(2, RmodM));
+    printf("%d\n",FqMulNew(2, RmodM));
     return 0;
 }

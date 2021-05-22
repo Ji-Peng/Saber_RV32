@@ -24,9 +24,9 @@
 #    define SIX_LAYER_NTT
 #endif
 
-// #ifndef HOST
-// #    define NTTASM
-// #endif
+#ifndef HOST
+#    define NTTASM
+#endif
 
 // check computation strategy
 #if !defined(FASTGENA_SLOWMUL) && !defined(FASTGENA_FASTMUL) && \
