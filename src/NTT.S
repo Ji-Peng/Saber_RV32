@@ -78,18 +78,7 @@
 
 # Butterfly Unit for NTT
 # in1, in2: t=zeta*in2, in2=in1-t; in1=in1+t;
-.macro BFU in1, in2, zeta, CM, CMprime, tmp1, tmp2
-    # tmp1=zeta*in1
-    MontMul \in2, \zeta, \tmp1, \CM, \CMprime, \tmp2
-    # in2=in1-t
-    sub \in2, \in1, \tmp1
-    # in1=in1+t
-    add \in1, \in1, \tmp1
-.endm
-
-# Butterfly Unit for NTT
-# in1, in2: t=zeta*in2, in2=in1-t; in1=in1+t;
-.macro BFUNew in1, in2, zeta, CM, CMprime, tmp1
+.macro BFU in1, in2, zeta, CM, CMprime, tmp1
     # tmp1=zeta*in1
     MontMulNew \in2, \zeta, \tmp1, \CM, \CMprime
     # in2=in1-t
@@ -100,15 +89,7 @@
 
 # Butterfly Unit for INTT
 # in1, in2: t=in1-in2, in1=in1+in2, in2=t*zeta
-.macro BFUINTT in1, in2, zeta, CM, CMprime, tmp1, tmp2
-    sub \tmp1, \in1, \in2
-    add \in1, \in1, \in2
-    MontMul \tmp1, \zeta, \in2, \CM, \CMprime, \tmp2
-.endm
-
-# Butterfly Unit for INTT
-# in1, in2: t=in1-in2, in1=in1+in2, in2=t*zeta
-.macro BFUINTTNew in1, in2, zeta, CM, CMprime, tmp1
+.macro BFUINTT in1, in2, zeta, CM, CMprime, tmp1
     sub \tmp1, \in1, \in2
     add \in1, \in1, \in2
     MontMulNew \tmp1, \zeta, \in2, \CM, \CMprime
@@ -147,16 +128,16 @@
 # a6-a7: M, Mprime, s10: MDiv2
 .macro SCReduce
     # reduce s0
-    MontMul s0, a3, s8, a6, a7, s9
+    MontMulNew s0, a3, s8, a6, a7
     CenReduce s8, s0, a6, s10, s9
     # reduce s1
-    MontMul s1, a3, s8, a6, a7, s9
+    MontMulNew s1, a3, s8, a6, a7
     CenReduce s8, s1, a6, s10, s9
     # reduce s2
-    MontMul s2, a3, s8, a6, a7, s9
+    MontMulNew s2, a3, s8, a6, a7
     CenReduce s8, s2, a6, s10, s9
     # reduce s3
-    MontMul s3, a3, s8, a6, a7, s9
+    MontMulNew s3, a3, s8, a6, a7
     CenReduce s8, s3, a6, s10, s9
     # reduce s4
     CenReduce s4, s4, a6, s10, s9
@@ -249,20 +230,20 @@ looper_123:
     # s0-s7 = a[0,32,64,...,224]
     LoadS h, 32, 2, a0
     # level1
-    BFU s0, s4, t0, a6, a7, s8, s9
-    BFU s1, s5, t0, a6, a7, s8, s9
-    BFU s2, s6, t0, a6, a7, s8, s9
-    BFU s3, s7, t0, a6, a7, s8, s9
+    BFU s0, s4, t0, a6, a7, s8
+    BFU s1, s5, t0, a6, a7, s8
+    BFU s2, s6, t0, a6, a7, s8
+    BFU s3, s7, t0, a6, a7, s8
     # level2
-    BFU s0, s2, t1, a6, a7, s8, s9
-    BFU s1, s3, t1, a6, a7, s8, s9
-    BFU s4, s6, t2, a6, a7, s8, s9
-    BFU s5, s7, t2, a6, a7, s8, s9
+    BFU s0, s2, t1, a6, a7, s8
+    BFU s1, s3, t1, a6, a7, s8
+    BFU s4, s6, t2, a6, a7, s8
+    BFU s5, s7, t2, a6, a7, s8
     # level3
-    BFU s0, s1, t3, a6, a7, s8, s9
-    BFU s2, s3, t4, a6, a7, s8, s9
-    BFU s4, s5, t5, a6, a7, s8, s9
-    BFU s6, s7, t6, a6, a7, s8, s9
+    BFU s0, s1, t3, a6, a7, s8
+    BFU s2, s3, t4, a6, a7, s8
+    BFU s4, s5, t5, a6, a7, s8
+    BFU s6, s7, t6, a6, a7, s8
     //save results
     StoreS 32, a1
 
@@ -287,20 +268,20 @@ outer_456:
         # a[0,4,...,28]
         LoadS w, 4, 4, a1
         # level1
-        BFU s0, s4, t0, a6, a7, s8, s9
-        BFU s1, s5, t0, a6, a7, s8, s9
-        BFU s2, s6, t0, a6, a7, s8, s9
-        BFU s3, s7, t0, a6, a7, s8, s9
+        BFU s0, s4, t0, a6, a7, s8
+        BFU s1, s5, t0, a6, a7, s8
+        BFU s2, s6, t0, a6, a7, s8
+        BFU s3, s7, t0, a6, a7, s8
         # level2
-        BFU s0, s2, t1, a6, a7, s8, s9
-        BFU s1, s3, t1, a6, a7, s8, s9
-        BFU s4, s6, t2, a6, a7, s8, s9
-        BFU s5, s7, t2, a6, a7, s8, s9
+        BFU s0, s2, t1, a6, a7, s8
+        BFU s1, s3, t1, a6, a7, s8
+        BFU s4, s6, t2, a6, a7, s8
+        BFU s5, s7, t2, a6, a7, s8
         # level3
-        BFU s0, s1, t3, a6, a7, s8, s9
-        BFU s2, s3, t4, a6, a7, s8, s9
-        BFU s4, s5, t5, a6, a7, s8, s9
-        BFU s6, s7, t6, a6, a7, s8, s9
+        BFU s0, s1, t3, a6, a7, s8
+        BFU s2, s3, t4, a6, a7, s8
+        BFU s4, s5, t5, a6, a7, s8
+        BFU s6, s7, t6, a6, a7, s8
 
         //save results
         StoreS 4, a1
@@ -362,20 +343,20 @@ outer_123:
         # a[0,4,...,28]
         LoadS w, 4, 4, a0
         # level1
-        BFUINTT s0, s1, t0, a6, a7, s8, s9
-        BFUINTT s2, s3, t1, a6, a7, s8, s9
-        BFUINTT s4, s5, t2, a6, a7, s8, s9
-        BFUINTT s6, s7, t3, a6, a7, s8, s9
+        BFUINTT s0, s1, t0, a6, a7, s8
+        BFUINTT s2, s3, t1, a6, a7, s8
+        BFUINTT s4, s5, t2, a6, a7, s8
+        BFUINTT s6, s7, t3, a6, a7, s8
         # level2
-        BFUINTT s0, s2, t4, a6, a7, s8, s9
-        BFUINTT s1, s3, t4, a6, a7, s8, s9
-        BFUINTT s4, s6, t5, a6, a7, s8, s9
-        BFUINTT s5, s7, t5, a6, a7, s8, s9
+        BFUINTT s0, s2, t4, a6, a7, s8
+        BFUINTT s1, s3, t4, a6, a7, s8
+        BFUINTT s4, s6, t5, a6, a7, s8
+        BFUINTT s5, s7, t5, a6, a7, s8
         # level3
-        BFUINTT s0, s4, t6, a6, a7, s8, s9
-        BFUINTT s1, s5, t6, a6, a7, s8, s9
-        BFUINTT s2, s6, t6, a6, a7, s8, s9
-        BFUINTT s3, s7, t6, a6, a7, s8, s9
+        BFUINTT s0, s4, t6, a6, a7, s8
+        BFUINTT s1, s5, t6, a6, a7, s8
+        BFUINTT s2, s6, t6, a6, a7, s8
+        BFUINTT s3, s7, t6, a6, a7, s8
 
         //save results
         StoreS 4, a1
@@ -403,20 +384,20 @@ looper_456:
     # s0-s7 = a[0,32,64,...,224]
     LoadS w, 32, 4, a1
     # level1
-    BFUINTT s0, s1, t0, a6, a7, s8, s9
-    BFUINTT s2, s3, t1, a6, a7, s8, s9
-    BFUINTT s4, s5, t2, a6, a7, s8, s9
-    BFUINTT s6, s7, t3, a6, a7, s8, s9
+    BFUINTT s0, s1, t0, a6, a7, s8
+    BFUINTT s2, s3, t1, a6, a7, s8
+    BFUINTT s4, s5, t2, a6, a7, s8
+    BFUINTT s6, s7, t3, a6, a7, s8
     # level2
-    BFUINTT s0, s2, t4, a6, a7, s8, s9
-    BFUINTT s1, s3, t4, a6, a7, s8, s9
-    BFUINTT s4, s6, t5, a6, a7, s8, s9
-    BFUINTT s5, s7, t5, a6, a7, s8, s9
+    BFUINTT s0, s2, t4, a6, a7, s8
+    BFUINTT s1, s3, t4, a6, a7, s8
+    BFUINTT s4, s6, t5, a6, a7, s8
+    BFUINTT s5, s7, t5, a6, a7, s8
     # level3
-    BFUINTT s0, s4, t6, a6, a7, s8, s9
-    BFUINTT s1, s5, t6, a6, a7, s8, s9
-    BFUINTT s2, s6, t6, a6, a7, s8, s9
-    BFUINTT s3, s7, t6, a6, a7, s8, s9
+    BFUINTT s0, s4, t6, a6, a7, s8
+    BFUINTT s1, s5, t6, a6, a7, s8
+    BFUINTT s2, s6, t6, a6, a7, s8
+    BFUINTT s3, s7, t6, a6, a7, s8
     # revert to standard domain and reduce to centered representation
     SCReduce
     # save results
