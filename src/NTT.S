@@ -87,6 +87,19 @@
     add \in1, \in1, \tmp1
 .endm
 
+# Butterfly Unit for NTT, zetaP=zeta*CMprime mod R
+# in1, in2: t=zeta*in2, in2=in1-t; in1=in1+t;
+.macro BFUNew in1, in2, zeta, zetaP, CM, CMprime, tmp1
+    mul  \tmp1, \in2, \zetaP
+    mulh \in2, \in2, \zeta
+    mulh \tmp1, \tmp1, \CM
+    sub  \tmp1, \in2, \tmp1
+    # in2=in1-t
+    sub \in2, \in1, \tmp1
+    # in1=in1+t
+    add \in1, \in1, \tmp1
+.endm
+
 # Butterfly Unit for INTT
 # in1, in2: t=in1-in2, in1=in1+in2, in2=t*zeta
 .macro BFUINTT in1, in2, zeta, CM, CMprime, tmp1
@@ -221,6 +234,8 @@ ntt_asm:
 
     # zeta, M, Mprime
     LoadZetas
+    # load zetaP
+    lw s9, (0+63)*4(a2)
     li a6, M
     li a7, Mprime
     # loop control, a0+64=a[32], 32: loop numbers, 2: uint16_t=2B
@@ -230,6 +245,7 @@ looper_123:
     # s0-s7 = a[0,32,64,...,224]
     LoadS h, 32, 2, a0
     # level1
+    # BFUNew s0, s4, t0, s9, a6, a7, s8
     BFU s0, s4, t0, a6, a7, s8
     BFU s1, s5, t0, a6, a7, s8
     BFU s2, s6, t0, a6, a7, s8
