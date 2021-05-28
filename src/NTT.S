@@ -108,6 +108,17 @@
     MontMulNew \tmp1, \zeta, \in2, \CM, \CMprime
 .endm
 
+# Butterfly Unit for INTT
+# in1, in2: t=in1-in2, in1=in1+in2, in2=t*zeta
+.macro BFUINTTNew in1, in2, zeta, zetaP, CM, CMprime, tmp1
+    sub \tmp1, \in1, in2
+    add \in1, \in1, \in2
+    mul  \in2, \tmp1, \zetaP
+    mulh \tmp1, \tmp1, \zeta
+    mulh \in2, \in2, \CM
+    sub  \in2, \tmp1, \in2
+.endm
+
 # int32_t mask;
 # mask = (a + M / 2) >> 31;
 # a += mask & M;
@@ -234,8 +245,6 @@ ntt_asm:
 
     # zeta, M, Mprime
     LoadZetas
-    # load zetaP
-    lw s9, (0+63)*4(a2)
     li a6, M
     li a7, Mprime
     # loop control, a0+64=a[32], 32: loop numbers, 2: uint16_t=2B
@@ -244,22 +253,49 @@ ntt_asm:
 looper_123:
     # s0-s7 = a[0,32,64,...,224]
     LoadS h, 32, 2, a0
+    # load zetaP
+    lw s9, (0+63)*4(a2)
     # level1
-    # BFUNew s0, s4, t0, s9, a6, a7, s8
-    BFU s0, s4, t0, a6, a7, s8
-    BFU s1, s5, t0, a6, a7, s8
-    BFU s2, s6, t0, a6, a7, s8
-    BFU s3, s7, t0, a6, a7, s8
+    BFUNew s0, s4, t0, s9, a6, a7, s8
+    # BFU s0, s4, t0, a6, a7, s8
+    BFUNew s1, s5, t0, s9, a6, a7, s8
+    # BFU s1, s5, t0, a6, a7, s8
+    BFUNew s2, s6, t0, s9, a6, a7, s8
+    # BFU s2, s6, t0, a6, a7, s8
+    BFUNew s3, s7, t0, s9, a6, a7, s8
+    # BFU s3, s7, t0, a6, a7, s8
+
     # level2
-    BFU s0, s2, t1, a6, a7, s8
-    BFU s1, s3, t1, a6, a7, s8
-    BFU s4, s6, t2, a6, a7, s8
-    BFU s5, s7, t2, a6, a7, s8
+    # load zetaP
+    lw s9, (1+63)*4(a2)
+    # BFU s0, s2, t1, a6, a7, s8
+    BFUNew s0, s2, t1, s9, a6, a7, s8
+    # BFU s1, s3, t1, a6, a7, s8
+    BFUNew s1, s3, t1, s9, a6, a7, s8
+    # load zetaP
+    lw s9, (2+63)*4(a2)
+    # BFU s4, s6, t2, a6, a7, s8
+    BFUNew s4, s6, t2, s9, a6, a7, s8
+    # BFU s5, s7, t2, a6, a7, s8
+    BFUNew s5, s7, t2, s9, a6, a7, s8
+
     # level3
-    BFU s0, s1, t3, a6, a7, s8
-    BFU s2, s3, t4, a6, a7, s8
-    BFU s4, s5, t5, a6, a7, s8
-    BFU s6, s7, t6, a6, a7, s8
+    # load zetaP
+    lw s9, (3+63)*4(a2)
+    # BFU s0, s1, t3, a6, a7, s8
+    BFUNew s0, s1, t3, s9, a6, a7, s8
+    # load zetaP
+    lw s9, (4+63)*4(a2)
+    # BFU s2, s3, t4, a6, a7, s8
+    BFUNew s2, s3, t4, s9, a6, a7, s8
+    # load zetaP
+    lw s9, (5+63)*4(a2)
+    # BFU s4, s5, t5, a6, a7, s8
+    BFUNew s4, s5, t5, s9, a6, a7, s8
+    # load zetaP
+    lw s9, (6+63)*4(a2)
+    # BFU s6, s7, t6, a6, a7, s8
+    BFUNew s6, s7, t6, s9, a6, a7, s8
     //save results
     StoreS 32, a1
 
