@@ -1,11 +1,12 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define M 10487809      // M = 512 * 20484 + 1 < 2^24
-#define Mprime 6293503  // M * Mprime = -1 mod R (R=2^32)
-#define MINV -6293503   // M * MINV = 1 mod R
-#define RmodM 5453415   // R mod M
-#define NINV 2466627    // R^2 * (1/64) mod M
+#define M 10487809        // M = 512 * 20484 + 1 < 2^24
+#define Mprime 6293503    // M * Mprime = -1 mod R (R=2^32)
+#define MpNew 0xff9ff801  // M*MpNew = 1 mod R (R=2^32)
+#define MINV -6293503     // M * MINV = 1 mod R
+#define RmodM 5453415     // R mod M
+#define NINV 2466627      // R^2 * (1/64) mod M
 
 // 512th root is 23394 for 8-layer NTT
 // 256th root = 23394^2 = 1913168 for 7-layer NTT
@@ -260,21 +261,39 @@ void GenTables(void)
 void GenTablesMerged(void)
 {
     root = 8406460;
-    int32_t t;
+    int32_t t, table[128] = {0}, tableInv[128] = {0};
     for (int j = 0; j < 63; j++) {
         t = Pow(root, treeNTTMerged[j]);
         t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
+        table[j] = t;
+        t = t * MpNew;
+        table[j + 63] = t;
+        // printf("%d, ", t);
     }
-    printf("\n");
+    for (int j = 0; j < 126; j++) {
+        printf("%d, ", table[j]);
+    }
+    printf("\n\n");
 
     for (int j = 0; j < 63; j++) {
         // root is 128th, -i in intt
         t = Pow(root, 128 - treeINTTMergedU[j]);
         t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
+        tableInv[j] = t;
+        t = t * MpNew;
+        tableInv[j + 63] = t;
+        // printf("%d, ", t);
     }
-    printf("\n");
+    for (int j = 0; j < 126; j++) {
+        printf("%d, ", tableInv[j]);
+    }
+    printf("\n\n");
+
+    printf("tableInv[62]=%d\n", tableInv[62]);
+    t = FqMul(((int64_t)tableInv[62] * RmodM) % M, (1 << 26));
+    printf("tableInv[62]*R*(1/64) mod M = %d\n", t);
+
+    printf("%d\n", (t * MpNew));
 }
 
 void GenTables_256(void)
@@ -384,12 +403,12 @@ int main(void)
 {
     // check();
     // GenTables();
-    // GenTablesMerged();
+    GenTablesMerged();
     // GenTables_256();
     // GenTables_512();
     // GenTables_512Merged();
     // GenTables_64();
-    printf("%d\n",FqMul(2, RmodM));
-    printf("%d\n",FqMulNew(2, RmodM));
+    // printf("%d\n",FqMul(2, RmodM));
+    // printf("%d\n",FqMulNew(2, RmodM));
     return 0;
 }
