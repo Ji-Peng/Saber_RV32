@@ -87,36 +87,12 @@
     add \in1, \in1, \tmp1
 .endm
 
-# Butterfly Unit for NTT, zetaP=zeta*CMprime mod R
-# in1, in2: t=zeta*in2, in2=in1-t; in1=in1+t;
-.macro BFUNew in1, in2, zeta, zetaP, CM, CMprime, tmp1
-    mul  \tmp1, \in2, \zetaP
-    mulh \in2, \in2, \zeta
-    mulh \tmp1, \tmp1, \CM
-    sub  \tmp1, \in2, \tmp1
-    # in2=in1-t
-    sub \in2, \in1, \tmp1
-    # in1=in1+t
-    add \in1, \in1, \tmp1
-.endm
-
 # Butterfly Unit for INTT
 # in1, in2: t=in1-in2, in1=in1+in2, in2=t*zeta
 .macro BFUINTT in1, in2, zeta, CM, CMprime, tmp1
     sub \tmp1, \in1, \in2
     add \in1, \in1, \in2
     MontMulNew \tmp1, \zeta, \in2, \CM, \CMprime
-.endm
-
-# Butterfly Unit for INTT
-# in1, in2: t=in1-in2, in1=in1+in2, in2=t*zeta
-.macro BFUINTTNew in1, in2, zeta, zetaP, CM, CMprime, tmp1
-    sub \tmp1, \in1, \in2
-    add \in1, \in1, \in2
-    mul  \in2, \tmp1, \zetaP
-    mulh \tmp1, \tmp1, \zeta
-    mulh \in2, \in2, \CM
-    sub  \in2, \tmp1, \in2
 .endm
 
 # int32_t mask;
@@ -253,49 +229,21 @@ ntt_asm:
 looper_123:
     # s0-s7 = a[0,32,64,...,224]
     LoadS h, 32, 2, a0
-    # load zetaP
-    lw s9, (0+63)*4(a2)
     # level1
-    BFUNew s0, s4, t0, s9, a6, a7, s8
-    # BFU s0, s4, t0, a6, a7, s8
-    BFUNew s1, s5, t0, s9, a6, a7, s8
-    # BFU s1, s5, t0, a6, a7, s8
-    BFUNew s2, s6, t0, s9, a6, a7, s8
-    # BFU s2, s6, t0, a6, a7, s8
-    BFUNew s3, s7, t0, s9, a6, a7, s8
-    # BFU s3, s7, t0, a6, a7, s8
-
+    BFU s0, s4, t0, a6, a7, s8
+    BFU s1, s5, t0, a6, a7, s8
+    BFU s2, s6, t0, a6, a7, s8
+    BFU s3, s7, t0, a6, a7, s8
     # level2
-    # load zetaP
-    lw s9, (1+63)*4(a2)
-    # BFU s0, s2, t1, a6, a7, s8
-    BFUNew s0, s2, t1, s9, a6, a7, s8
-    # BFU s1, s3, t1, a6, a7, s8
-    BFUNew s1, s3, t1, s9, a6, a7, s8
-    # load zetaP
-    lw s9, (2+63)*4(a2)
-    # BFU s4, s6, t2, a6, a7, s8
-    BFUNew s4, s6, t2, s9, a6, a7, s8
-    # BFU s5, s7, t2, a6, a7, s8
-    BFUNew s5, s7, t2, s9, a6, a7, s8
-
+    BFU s0, s2, t1, a6, a7, s8
+    BFU s1, s3, t1, a6, a7, s8
+    BFU s4, s6, t2, a6, a7, s8
+    BFU s5, s7, t2, a6, a7, s8
     # level3
-    # load zetaP
-    lw s9, (3+63)*4(a2)
-    # BFU s0, s1, t3, a6, a7, s8
-    BFUNew s0, s1, t3, s9, a6, a7, s8
-    # load zetaP
-    lw s9, (4+63)*4(a2)
-    # BFU s2, s3, t4, a6, a7, s8
-    BFUNew s2, s3, t4, s9, a6, a7, s8
-    # load zetaP
-    lw s9, (5+63)*4(a2)
-    # BFU s4, s5, t5, a6, a7, s8
-    BFUNew s4, s5, t5, s9, a6, a7, s8
-    # load zetaP
-    lw s9, (6+63)*4(a2)
-    # BFU s6, s7, t6, a6, a7, s8
-    BFUNew s6, s7, t6, s9, a6, a7, s8
+    BFU s0, s1, t3, a6, a7, s8
+    BFU s2, s3, t4, a6, a7, s8
+    BFU s4, s5, t5, a6, a7, s8
+    BFU s6, s7, t6, a6, a7, s8
     //save results
     StoreS 32, a1
 
@@ -320,27 +268,20 @@ outer_456:
         # a[0,4,...,28]
         LoadS w, 4, 4, a1
         # level1
-        lw s9, (0+63)*4(a2)
-        BFUNew s0, s4, t0, s9, a6, a7, s8
-        BFUNew s1, s5, t0, s9, a6, a7, s8
-        BFUNew s2, s6, t0, s9, a6, a7, s8
-        BFUNew s3, s7, t0, s9, a6, a7, s8
+        BFU s0, s4, t0, a6, a7, s8
+        BFU s1, s5, t0, a6, a7, s8
+        BFU s2, s6, t0, a6, a7, s8
+        BFU s3, s7, t0, a6, a7, s8
         # level2
-        lw s9, (1+63)*4(a2)
-        BFUNew s0, s2, t1, s9, a6, a7, s8
-        BFUNew s1, s3, t1, s9, a6, a7, s8
-        lw s9, (2+63)*4(a2)
-        BFUNew s4, s6, t2, s9, a6, a7, s8
-        BFUNew s5, s7, t2, s9, a6, a7, s8
+        BFU s0, s2, t1, a6, a7, s8
+        BFU s1, s3, t1, a6, a7, s8
+        BFU s4, s6, t2, a6, a7, s8
+        BFU s5, s7, t2, a6, a7, s8
         # level3
-        lw s9, (3+63)*4(a2)
-        BFUNew s0, s1, t3, s9, a6, a7, s8
-        lw s9, (4+63)*4(a2)
-        BFUNew s2, s3, t4, s9, a6, a7, s8
-        lw s9, (5+63)*4(a2)
-        BFUNew s4, s5, t5, s9, a6, a7, s8
-        lw s9, (6+63)*4(a2)
-        BFUNew s6, s7, t6, s9, a6, a7, s8
+        BFU s0, s1, t3, a6, a7, s8
+        BFU s2, s3, t4, a6, a7, s8
+        BFU s4, s5, t5, a6, a7, s8
+        BFU s6, s7, t6, a6, a7, s8
 
         //save results
         StoreS 4, a1
@@ -402,28 +343,20 @@ outer_123:
         # a[0,4,...,28]
         LoadS w, 4, 4, a0
         # level1
-        lw s9, (0+63)*4(a2)
-        # BFUINTT s0, s1, t0, a6, a7, s8
-        BFUINTTNew s0, s1, t0, s9, a6, a7, s8
-        lw s9, (1+63)*4(a2)
-        BFUINTTNew s2, s3, t1, s9, a6, a7, s8
-        lw s9, (2+63)*4(a2)
-        BFUINTTNew s4, s5, t2, s9, a6, a7, s8
-        lw s9, (3+63)*4(a2)
-        BFUINTTNew s6, s7, t3, s9, a6, a7, s8
+        BFUINTT s0, s1, t0, a6, a7, s8
+        BFUINTT s2, s3, t1, a6, a7, s8
+        BFUINTT s4, s5, t2, a6, a7, s8
+        BFUINTT s6, s7, t3, a6, a7, s8
         # level2
-        lw s9, (4+63)*4(a2)
-        BFUINTTNew s0, s2, t4, s9, a6, a7, s8
-        BFUINTTNew s1, s3, t4, s9, a6, a7, s8
-        lw s9, (5+63)*4(a2)
-        BFUINTTNew s4, s6, t5, s9, a6, a7, s8
-        BFUINTTNew s5, s7, t5, s9, a6, a7, s8
+        BFUINTT s0, s2, t4, a6, a7, s8
+        BFUINTT s1, s3, t4, a6, a7, s8
+        BFUINTT s4, s6, t5, a6, a7, s8
+        BFUINTT s5, s7, t5, a6, a7, s8
         # level3
-        lw s9, (6+63)*4(a2)
-        BFUINTTNew s0, s4, t6, s9, a6, a7, s8
-        BFUINTTNew s1, s5, t6, s9, a6, a7, s8
-        BFUINTTNew s2, s6, t6, s9, a6, a7, s8
-        BFUINTTNew s3, s7, t6, s9, a6, a7, s8
+        BFUINTT s0, s4, t6, a6, a7, s8
+        BFUINTT s1, s5, t6, a6, a7, s8
+        BFUINTT s2, s6, t6, a6, a7, s8
+        BFUINTT s3, s7, t6, a6, a7, s8
 
         //save results
         StoreS 4, a1
@@ -451,27 +384,20 @@ looper_456:
     # s0-s7 = a[0,32,64,...,224]
     LoadS w, 32, 4, a1
     # level1
-    lw s9, (0+63)*4(a2)
-    BFUINTTNew s0, s1, t0, s9, a6, a7, s8
-    lw s9, (1+63)*4(a2)
-    BFUINTTNew s2, s3, t1, s9, a6, a7, s8
-    lw s9, (2+63)*4(a2)
-    BFUINTTNew s4, s5, t2, s9, a6, a7, s8
-    lw s9, (3+63)*4(a2)
-    BFUINTTNew s6, s7, t3, s9, a6, a7, s8
+    BFUINTT s0, s1, t0, a6, a7, s8
+    BFUINTT s2, s3, t1, a6, a7, s8
+    BFUINTT s4, s5, t2, a6, a7, s8
+    BFUINTT s6, s7, t3, a6, a7, s8
     # level2
-    lw s9, (4+63)*4(a2)
-    BFUINTTNew s0, s2, t4, s9, a6, a7, s8
-    BFUINTTNew s1, s3, t4, s9, a6, a7, s8
-    lw s9, (5+63)*4(a2)
-    BFUINTTNew s4, s6, t5, s9, a6, a7, s8
-    BFUINTTNew s5, s7, t5, s9, a6, a7, s8
+    BFUINTT s0, s2, t4, a6, a7, s8
+    BFUINTT s1, s3, t4, a6, a7, s8
+    BFUINTT s4, s6, t5, a6, a7, s8
+    BFUINTT s5, s7, t5, a6, a7, s8
     # level3
-    lw s9, (6+63)*4(a2)
-    BFUINTTNew s0, s4, t6, s9, a6, a7, s8
-    BFUINTTNew s1, s5, t6, s9, a6, a7, s8
-    BFUINTTNew s2, s6, t6, s9, a6, a7, s8
-    BFUINTTNew s3, s7, t6, s9, a6, a7, s8
+    BFUINTT s0, s4, t6, a6, a7, s8
+    BFUINTT s1, s5, t6, a6, a7, s8
+    BFUINTT s2, s6, t6, a6, a7, s8
+    BFUINTT s3, s7, t6, a6, a7, s8
     # revert to standard domain and reduce to centered representation
     SCReduce
     # save results
