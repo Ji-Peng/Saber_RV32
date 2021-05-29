@@ -320,33 +320,32 @@ outer_456:
         # a[0,4,...,28]
         LoadS w, 4, 4, a1
         # level1
-        lw s9, (7+63)*4(a2)
-        BFU s0, s4, t0, a6, a7, s8
-        BFU s1, s5, t0, a6, a7, s8
-        BFU s2, s6, t0, a6, a7, s8
-        BFU s3, s7, t0, a6, a7, s8
+        lw s9, (0+63)*4(a2)
+        BFUNew s0, s4, t0, s9, a6, a7, s8
+        BFUNew s1, s5, t0, s9, a6, a7, s8
+        BFUNew s2, s6, t0, s9, a6, a7, s8
+        BFUNew s3, s7, t0, s9, a6, a7, s8
         # level2
-        lw s9, (8+63)*4(a2)
-        BFU s0, s2, t1, a6, a7, s8
-        BFU s1, s3, t1, a6, a7, s8
-        lw s9, (9+63)*4(a2)
-        BFU s4, s6, t2, a6, a7, s8
-        BFU s5, s7, t2, a6, a7, s8
+        lw s9, (1+63)*4(a2)
+        BFUNew s0, s2, t1, s9, a6, a7, s8
+        BFUNew s1, s3, t1, s9, a6, a7, s8
+        lw s9, (2+63)*4(a2)
+        BFUNew s4, s6, t2, s9, a6, a7, s8
+        BFUNew s5, s7, t2, s9, a6, a7, s8
         # level3
-        lw s9, (10+63)*4(a2)
-        BFU s0, s1, t3, a6, a7, s8
-        lw s9, (11+63)*4(a2)
-        BFU s2, s3, t4, a6, a7, s8
-        lw s9, (12+63)*4(a2)
-        BFU s4, s5, t5, a6, a7, s8
-        lw s9, (13+63)*4(a2)
-        BFU s6, s7, t6, a6, a7, s8
+        lw s9, (3+63)*4(a2)
+        BFUNew s0, s1, t3, s9, a6, a7, s8
+        lw s9, (4+63)*4(a2)
+        BFUNew s2, s3, t4, s9, a6, a7, s8
+        lw s9, (5+63)*4(a2)
+        BFUNew s4, s5, t5, s9, a6, a7, s8
+        lw s9, (6+63)*4(a2)
+        BFUNew s6, s7, t6, s9, a6, a7, s8
 
         //save results
         StoreS 4, a1
         # looper control register changes
         addi a1, a1, 4
-        addi a2, a2, 7*4
         bne a4, a1, inner_456
     # a1 points to next block, a2 points to next 7 zetas
     # each block has 32 words, inner loop's increment is 4 words
