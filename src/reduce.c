@@ -19,8 +19,14 @@ int32_t MontReduce(int64_t a)
     int32_t t;
 
     t = (int32_t)a * Mprime;
-    t = ((int64_t)a - (int64_t)t * M) >> 32;
+    t = (((int64_t)a) >> 32) - (((int64_t)t * M) >> 32);
     return t;
+
+    // int32_t t;
+
+    // t = (int32_t)a * (-Mprime);
+    // t = ((int64_t)a + (int64_t)t * M) >> 32;
+    // return t;
 }
 
 /*************************************************
