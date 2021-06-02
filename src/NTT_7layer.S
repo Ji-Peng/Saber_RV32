@@ -160,7 +160,7 @@
     lw t6, 6*4(a2)
 .endm
 
-.macro LoadS hw, len, wordLen, reg
+.macro LoadS_3layer hw, len, wordLen, reg
     l\hw s0, \len*\wordLen*0(\reg)
     l\hw s1, \len*\wordLen*1(\reg)
     l\hw s2, \len*\wordLen*2(\reg)
@@ -171,7 +171,7 @@
     l\hw s7, \len*\wordLen*7(\reg)
 .endm
 
-.macro StoreS len, reg
+.macro StoreS_3layer len, reg
     sw s0, \len*4*0(\reg)
     sw s1, \len*4*1(\reg)
     sw s2, \len*4*2(\reg)
@@ -180,6 +180,44 @@
     sw s5, \len*4*5(\reg)
     sw s6, \len*4*6(\reg)
     sw s7, \len*4*7(\reg)
+.endm
+
+.macro LoadS_4layer hw, len, wordLen, reg
+    l\hw s0, \len*\wordLen*0(\reg)
+    l\hw s1, \len*\wordLen*1(\reg)
+    l\hw s2, \len*\wordLen*2(\reg)
+    l\hw s3, \len*\wordLen*3(\reg)
+    l\hw s4, \len*\wordLen*4(\reg)
+    l\hw s5, \len*\wordLen*5(\reg)
+    l\hw s6, \len*\wordLen*6(\reg)
+    l\hw s7, \len*\wordLen*7(\reg)
+    l\hw s8, \len*\wordLen*8(\reg)
+    l\hw s9, \len*\wordLen*9(\reg)
+    l\hw s10, \len*\wordLen*10(\reg)
+    l\hw s11, \len*\wordLen*11(\reg)
+    l\hw a3, \len*\wordLen*12(\reg)
+    l\hw a4, \len*\wordLen*13(\reg)
+    l\hw a5, \len*\wordLen*14(\reg)
+    l\hw a6, \len*\wordLen*15(\reg)
+.endm
+
+.macro StoreS_4layer len, reg
+    sw s0, \len*4*0(\reg)
+    sw s1, \len*4*1(\reg)
+    sw s2, \len*4*2(\reg)
+    sw s3, \len*4*3(\reg)
+    sw s4, \len*4*4(\reg)
+    sw s5, \len*4*5(\reg)
+    sw s6, \len*4*6(\reg)
+    sw s7, \len*4*7(\reg)
+    sw s8, \len*4*8(\reg)
+    sw s9, \len*4*9(\reg)
+    sw s10, \len*4*10(\reg)
+    sw s11, \len*4*11(\reg)
+    sw a3, \len*4*12(\reg)
+    sw a4, \len*4*13(\reg)
+    sw a5, \len*4*14(\reg)
+    sw a6, \len*4*15(\reg)
 .endm
 
 # {hi,lo}=in1*in2
@@ -202,12 +240,20 @@
 
 # void ntt_asm(const uint16_t in[256], int32_t out[256],
 # const int32_t rootTable[64]);
-# register usage: a0-a2: parameter, t0-t7: zetas, s0-s7: 8 coefficients
-# s8, s9 temporary usage, a6/a7: M/Mprime, a4/a5: looper control
+# register usage for 3-layer merging: 
+# a0-a2: parameter, s0-s7: 8 coefficients, t0-t6: zetas
+# s8/s9: temporary usage, gp/ra: M/Mprime, s10/s11: looper control
+
+# register usage for 4-layer merging:
+# a0-a2: parameter, s0-s11+a3-a6: 16 coefficients
+# t4/t5: temporary usage, gp/ra: M/Mprime, t6/a7: looper control
+# t0-t3+tp: zetas
+
+# 3-layer merging + 4-layer merging
 .globl ntt_asm_7layer
 .align 2
 ntt_asm_7layer:
-    addi sp, sp, -4*10
+    addi sp, sp, -4*15
     sw s0, 0*4(sp)
     sw s1, 1*4(sp)
     sw s2, 2*4(sp)
@@ -218,81 +264,120 @@ ntt_asm_7layer:
     sw s7, 7*4(sp)
     sw s8, 8*4(sp)
     sw s9, 9*4(sp)
+    sw s10,10*4(sp)
+    sw s11,11*4(sp)
+    sw gp, 12*4(sp)
+    sw tp, 13*4(sp)
+    sw ra, 14*4(sp)
 
     # zeta, M, Mprime
     LoadZetas
-    li a6, M
-    li a7, Mprime
-    # loop control, a0+64=a[32], 32: loop numbers, 2: uint16_t=2B
-    addi a4, a0, 32*2
+    li gp, M
+    li ra, Mprime
+    # loop control, loop counter is 256/8=32, 2: uint16_t=2B
+    addi s10, a0, 32*2
 # 123 layers, input is uint16_t in[N], output is int32_t out[N]
 looper_123:
     # s0-s7 = a[0,32,64,...,224]
-    LoadS h, 32, 2, a0
+    LoadS_3layer h, 32, 2, a0
     # level1
-    BFU s0, s4, t0, a6, a7, s8
-    BFU s1, s5, t0, a6, a7, s8
-    BFU s2, s6, t0, a6, a7, s8
-    BFU s3, s7, t0, a6, a7, s8
+    BFU s0, s4, t0, gp, ra, s8
+    BFU s1, s5, t0, gp, ra, s8
+    BFU s2, s6, t0, gp, ra, s8
+    BFU s3, s7, t0, gp, ra, s8
     # level2
-    BFU s0, s2, t1, a6, a7, s8
-    BFU s1, s3, t1, a6, a7, s8
-    BFU s4, s6, t2, a6, a7, s8
-    BFU s5, s7, t2, a6, a7, s8
+    BFU s0, s2, t1, gp, ra, s8
+    BFU s1, s3, t1, gp, ra, s8
+    BFU s4, s6, t2, gp, ra, s8
+    BFU s5, s7, t2, gp, ra, s8
     # level3
-    BFU s0, s1, t3, a6, a7, s8
-    BFU s2, s3, t4, a6, a7, s8
-    BFU s4, s5, t5, a6, a7, s8
-    BFU s6, s7, t6, a6, a7, s8
+    BFU s0, s1, t3, gp, ra, s8
+    BFU s2, s3, t4, gp, ra, s8
+    BFU s4, s5, t5, gp, ra, s8
+    BFU s6, s7, t6, gp, ra, s8
     //save results
-    StoreS 32, a1
+    StoreS_3layer 32, a1
 
     addi a0, a0, 2
     addi a1, a1, 4
-    bne a4, a0, looper_123
+    bne s10, a0, looper_123
 
-# ============== level 4-6 ============== #
+# ============== level 4-7 ============== #
 # reset a1, 32: inner loop number, 4: wordLen
 addi a1, a1, -32*4
 # a2 points to next 7 zetas
 addi a2, a2, 4*7
-# set outer loop control register a5, 8: inner loop number
-addi a5, a2, 8*4*7
+# set outer loop control register t6, loop counter is 8, each loop uses 15 zetas
+addi t6, a2, 8*4*15
 
-outer_456:
-    LoadZetas
-    # set looper control register a4, inner loop's increment is 4 words
-    addi a4, a1, 4*4
+outer_4567:
+    # set looper control register a7, inner loop count is 2, each block has 2*16 coefficients
+    addi a7, a1, 2*4
 
-    inner_456:
-        # a[0,4,...,28]
-        LoadS w, 4, 4, a1
-        # level1
-        BFU s0, s4, t0, a6, a7, s8
-        BFU s1, s5, t0, a6, a7, s8
-        BFU s2, s6, t0, a6, a7, s8
-        BFU s3, s7, t0, a6, a7, s8
-        # level2
-        BFU s0, s2, t1, a6, a7, s8
-        BFU s1, s3, t1, a6, a7, s8
-        BFU s4, s6, t2, a6, a7, s8
-        BFU s5, s7, t2, a6, a7, s8
-        # level3
-        BFU s0, s1, t3, a6, a7, s8
-        BFU s2, s3, t4, a6, a7, s8
-        BFU s4, s5, t5, a6, a7, s8
-        BFU s6, s7, t6, a6, a7, s8
-
+    lw  t0, 0*4(a2)
+    lw  t1, 1*4(a2)
+    lw  t2, 2*4(a2)
+    lw  t3, 3*4(a2)
+    lw  t4, 4*4(a2)
+    inner_4567:
+        # a[0,2,...,30]
+        LoadS_4layer w, 2, 4, a1
+        # level 4
+        BFU s0, s8,  t0, gp, ra, t5
+        BFU s1, s9,  t0, gp, ra, t5
+        BFU s2, s10, t0, gp, ra, t5
+        BFU s3, s11, t0, gp, ra, t5
+        BFU s4, a3,  t0, gp, ra, t5
+        BFU s5, a4,  t0, gp, ra, t5
+        BFU s6, a5,  t0, gp, ra, t5
+        BFU s7, a6,  t0, gp, ra, t5
+        # level 5
+        BFU s0,  s4,  t1, gp, ra, t5
+        BFU s1,  s5,  t1, gp, ra, t5
+        BFU s2,  s6,  t1, gp, ra, t5
+        BFU s3,  s7,  t1, gp, ra, t5
+        BFU s8,  a3,  t2, gp, ra, t5
+        BFU s9,  a4,  t2, gp, ra, t5
+        BFU s10, a5,  t2, gp, ra, t5
+        BFU s11, a6,  t2, gp, ra, t5
+        # level 6
+        BFU s0,  s2,  t3, gp, ra, t5
+        BFU s1,  s3,  t3, gp, ra, t5
+        BFU s4,  s6,  t4, gp, ra, t5
+        BFU s5,  s7,  t4, gp, ra, t5 
+        lw  tp,  5*4(a2)
+        BFU s8,  s10, tp, gp, ra, t5
+        BFU s9,  s11, tp, gp, ra, t5
+        lw  tp,  6*4(a2)
+        BFU a3,  a5,  tp, gp, ra, t5
+        BFU a4,  a6,  tp, gp, ra, t5
+        # level 7
+        lw  tp,  7*4(a2)
+        BFU s0,  s1,  tp, gp, ra, t5
+        lw  tp,  8*4(a2)
+        BFU s2,  s3,  tp, gp, ra, t5
+        lw  tp,  9*4(a2)
+        BFU s4,  s5,  tp, gp, ra, t5
+        lw  tp,  10*4(a2)
+        BFU s6,  s7,  tp, gp, ra, t5
+        lw  tp,  11*4(a2)
+        BFU s8,  s9,  tp, gp, ra, t5
+        lw  tp,  12*4(a2)
+        BFU s10, s11, tp, gp, ra, t5
+        lw  tp,  13*4(a2)
+        BFU a3,  a4,  tp, gp, ra, t5
+        lw  tp,  14*4(a2)
+        BFU a5,  a6,  tp, gp, ra, t5
         //save results
-        StoreS 4, a1
+        StoreS_4layer 2, a1
         # looper control register changes
         addi a1, a1, 4
-        bne a4, a1, inner_456
-    # a1 points to next block, a2 points to next 7 zetas
+        bne a7, a1, inner_4567
+    # a1 points to next block, a2 points to next 15 zetas
     # each block has 32 words, inner loop's increment is 4 words
-    addi a1, a1, 32*4-4*4
-    addi a2, a2, 4*7
-    bne  a5, a2, outer_456
+    addi a1, a1, 32*4-2*4
+    addi a2, a2, 4*15
+    bne  t6, a2, outer_4567
 
     lw s0, 0*4(sp)
     lw s1, 1*4(sp)
@@ -304,7 +389,12 @@ outer_456:
     lw s7, 7*4(sp)
     lw s8, 8*4(sp)
     lw s9, 9*4(sp)
-    addi sp, sp, 4*10
+    lw s10,10*4(sp)
+    lw s11,11*4(sp)
+    lw gp, 12*4(sp)
+    lw tp, 13*4(sp)
+    lw ra, 14*4(sp)
+    addi sp, sp, 4*15
     ret
 
 # void intt_asm(const uint32_t in[256], int32_t out[256],
@@ -317,7 +407,7 @@ outer_456:
 .globl intt_asm_7layer
 .align 2
 intt_asm_7layer:
-    addi sp, sp, -4*11
+    addi sp, sp, -4*14
     sw s0, 0*4(sp)
     sw s1, 1*4(sp)
     sw s2, 2*4(sp)
@@ -329,6 +419,9 @@ intt_asm_7layer:
     sw s8, 8*4(sp)
     sw s9, 9*4(sp)
     sw s10, 10*4(sp)
+    sw s11, 11*4(sp)
+    sw gp,  12*4(sp)
+    sw tp,  13*4(sp)
 
 # set outer loop control register a5, 8: inner loop number
 addi a5, a2, 8*4*7
@@ -417,7 +510,10 @@ looper_456:
     lw s8, 8*4(sp)
     lw s9, 9*4(sp)
     lw s10, 10*4(sp)
-    addi sp, sp, 4*11
+    lw s11, 11*4(sp)
+    lw gp,  12*4(sp)
+    lw tp,  13*4(sp)    
+    addi sp, sp, 4*14
     ret    
 
 # void basemul_asm(int32_t a[4], const int32_t b[4], int32_t zeta)
