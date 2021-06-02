@@ -14,46 +14,56 @@
 int32_t root = 0;
 int64_t R = (int64_t)1 << 32;
 
-// NTT：normal bit reverse order
-// br(1,2,3,...,63)
-int32_t treeNTT[] = {32, 16, 48, 8,  40, 24, 56, 4,  36, 20, 52, 12, 44,
-                     28, 60, 2,  34, 18, 50, 10, 42, 26, 58, 6,  38, 22,
-                     54, 14, 46, 30, 62, 1,  33, 17, 49, 9,  41, 25, 57,
-                     5,  37, 21, 53, 13, 45, 29, 61, 3,  35, 19, 51, 11,
-                     43, 27, 59, 7,  39, 23, 55, 15, 47, 31, 63};
+int32_t treeNTT_5layer[] = {16, 8,  24, 4,  20, 12, 28, 2,  18, 10, 26,
+                            6,  22, 14, 30, 1,  17, 9,  25, 5,  21, 13,
+                            29, 3,  19, 11, 27, 7,  23, 15, 31};
 
-int32_t treeINTT[] = {1,  33, 17, 49, 9,  41, 25, 57, 5,  37, 21, 53, 13,
-                      45, 29, 61, 3,  35, 19, 51, 11, 43, 27, 59, 7,  39,
-                      23, 55, 15, 47, 31, 63, 2,  34, 18, 50, 10, 42, 26,
-                      58, 6,  38, 22, 54, 14, 46, 30, 62, 4,  36, 20, 52,
-                      12, 44, 28, 60, 8,  40, 24, 56, 16, 48, 32};
+int32_t treeINTT_5layer[] = {1,  17, 9,  25, 5,  21, 13, 29, 3,  19, 11,
+                             27, 7,  23, 15, 31, 2,  18, 10, 26, 6,  22,
+                             14, 30, 4,  20, 12, 28, 8,  24, 16};
 
-int32_t treeNTTMerged[] = {32, 16, 48, 8,  40, 24, 56, 4,  2,  34, 1,  33, 17,
-                           49, 36, 18, 50, 9,  41, 25, 57, 20, 10, 42, 5,  37,
-                           21, 53, 52, 26, 58, 13, 45, 29, 61, 12, 6,  38, 3,
-                           35, 19, 51, 44, 22, 54, 11, 43, 27, 59, 28, 14, 46,
-                           7,  39, 23, 55, 60, 30, 62, 15, 47, 31, 63};
+int32_t treeMulTable_5layer[] = {1,  33, 17, 49, 9,  41, 25, 57, 5,  37, 21,
+                                 53, 13, 45, 29, 61, 3,  35, 19, 51, 11, 43,
+                                 27, 59, 7,  39, 23, 55, 15, 47, 31, 63};
 
-int32_t treeINTTMerged[] = {4,  2,  34, 1,  33, 17, 49, 36, 18, 50, 9,  41, 25,
-                            57, 20, 10, 42, 5,  37, 21, 53, 52, 26, 58, 13, 45,
-                            29, 61, 12, 6,  38, 3,  35, 19, 51, 44, 22, 54, 11,
-                            43, 27, 59, 28, 14, 46, 7,  39, 23, 55, 60, 30, 62,
-                            15, 47, 31, 63, 32, 16, 48, 8,  40, 24, 56};
+int32_t treeNTT_6layer[] = {32, 16, 48, 8,  40, 24, 56, 4,  36, 20, 52, 12, 44,
+                            28, 60, 2,  34, 18, 50, 10, 42, 26, 58, 6,  38, 22,
+                            54, 14, 46, 30, 62, 1,  33, 17, 49, 9,  41, 25, 57,
+                            5,  37, 21, 53, 13, 45, 29, 61, 3,  35, 19, 51, 11,
+                            43, 27, 59, 7,  39, 23, 55, 15, 47, 31, 63};
 
-// order of usage, for more details see search_root.ipynb
-int32_t treeINTTMergedU[] = {1,  33, 17, 49, 2,  34, 4,  9,  41, 25, 57, 18, 50,
-                             36, 5,  37, 21, 53, 10, 42, 20, 13, 45, 29, 61, 26,
-                             58, 52, 3,  35, 19, 51, 6,  38, 12, 11, 43, 27, 59,
-                             22, 54, 44, 7,  39, 23, 55, 14, 46, 28, 15, 47, 31,
-                             63, 30, 62, 60, 8,  40, 24, 56, 16, 48, 32};
+int32_t treeINTT_6layer[] = {1,  33, 17, 49, 9,  41, 25, 57, 5,  37, 21, 53, 13,
+                             45, 29, 61, 3,  35, 19, 51, 11, 43, 27, 59, 7,  39,
+                             23, 55, 15, 47, 31, 63, 2,  34, 18, 50, 10, 42, 26,
+                             58, 6,  38, 22, 54, 14, 46, 30, 62, 4,  36, 20, 52,
+                             12, 44, 28, 60, 8,  40, 24, 56, 16, 48, 32};
 
-int32_t treeMulTable[] = {
+int32_t treeNTTMerged_6layer[] = {
+    32, 16, 48, 8,  40, 24, 56, 4,  2,  34, 1,  33, 17, 49, 36, 18,
+    50, 9,  41, 25, 57, 20, 10, 42, 5,  37, 21, 53, 52, 26, 58, 13,
+    45, 29, 61, 12, 6,  38, 3,  35, 19, 51, 44, 22, 54, 11, 43, 27,
+    59, 28, 14, 46, 7,  39, 23, 55, 60, 30, 62, 15, 47, 31, 63};
+
+int32_t treeINTTMerged_6layer[] = {
+    4,  2,  34, 1,  33, 17, 49, 36, 18, 50, 9,  41, 25, 57, 20, 10,
+    42, 5,  37, 21, 53, 52, 26, 58, 13, 45, 29, 61, 12, 6,  38, 3,
+    35, 19, 51, 44, 22, 54, 11, 43, 27, 59, 28, 14, 46, 7,  39, 23,
+    55, 60, 30, 62, 15, 47, 31, 63, 32, 16, 48, 8,  40, 24, 56};
+
+// order of usage, for more details see searchRoot.ipynb
+int32_t treeINTTMergedU_6layer[] = {
+    1,  33, 17, 49, 2,  34, 4,  9,  41, 25, 57, 18, 50, 36, 5,  37,
+    21, 53, 10, 42, 20, 13, 45, 29, 61, 26, 58, 52, 3,  35, 19, 51,
+    6,  38, 12, 11, 43, 27, 59, 22, 54, 44, 7,  39, 23, 55, 14, 46,
+    28, 15, 47, 31, 63, 30, 62, 60, 8,  40, 24, 56, 16, 48, 32};
+
+int32_t treeMulTable_6layer[] = {
     1, 65, 33, 97,  17, 81, 49, 113, 9,  73, 41, 105, 25, 89, 57, 121,
     5, 69, 37, 101, 21, 85, 53, 117, 13, 77, 45, 109, 29, 93, 61, 125,
     3, 67, 35, 99,  19, 83, 51, 115, 11, 75, 43, 107, 27, 91, 59, 123,
     7, 71, 39, 103, 23, 87, 55, 119, 15, 79, 47, 111, 31, 95, 63, 127};
 
-int32_t treeNTT_256[] = {
+int32_t treeNTT_7layer[] = {
     64, 32, 96,  16, 80, 48, 112, 8,  72, 40, 104, 24, 88, 56, 120, 4,
     68, 36, 100, 20, 84, 52, 116, 12, 76, 44, 108, 28, 92, 60, 124, 2,
     66, 34, 98,  18, 82, 50, 114, 10, 74, 42, 106, 26, 90, 58, 122, 6,
@@ -63,7 +73,7 @@ int32_t treeNTT_256[] = {
     67, 35, 99,  19, 83, 51, 115, 11, 75, 43, 107, 27, 91, 59, 123, 7,
     71, 39, 103, 23, 87, 55, 119, 15, 79, 47, 111, 31, 95, 63, 127};
 
-int32_t treeINTT_256[] = {
+int32_t treeINTT_7layer[] = {
     1, 65, 33, 97,  17, 81, 49, 113, 9,  73, 41, 105, 25, 89, 57, 121,
     5, 69, 37, 101, 21, 85, 53, 117, 13, 77, 45, 109, 29, 93, 61, 125,
     3, 67, 35, 99,  19, 83, 51, 115, 11, 75, 43, 107, 27, 91, 59, 123,
@@ -73,7 +83,29 @@ int32_t treeINTT_256[] = {
     4, 68, 36, 100, 20, 84, 52, 116, 12, 76, 44, 108, 28, 92, 60, 124,
     8, 72, 40, 104, 24, 88, 56, 120, 16, 80, 48, 112, 32, 96, 64};
 
-int32_t treeMulTable_256[] = {
+int32_t treeNTTMerged_7layer[] = {
+    64, 32, 96,  16, 80, 48, 112, 8,   4,  68,  2,  66, 34, 98,  1,
+    65, 33, 97,  17, 81, 49, 113, 72,  36, 100, 18, 82, 50, 114, 9,
+    73, 41, 105, 25, 89, 57, 121, 40,  20, 84,  10, 74, 42, 106, 5,
+    69, 37, 101, 21, 85, 53, 117, 104, 52, 116, 26, 90, 58, 122, 13,
+    77, 45, 109, 29, 93, 61, 125, 24,  12, 76,  6,  70, 38, 102, 3,
+    67, 35, 99,  19, 83, 51, 115, 88,  44, 108, 22, 86, 54, 118, 11,
+    75, 43, 107, 27, 91, 59, 123, 56,  28, 92,  14, 78, 46, 110, 7,
+    71, 39, 103, 23, 87, 55, 119, 120, 60, 124, 30, 94, 62, 126, 15,
+    79, 47, 111, 31, 95, 63, 127};
+
+int32_t treeINTTMerged_7layer[] = {
+    1,  65, 33, 97,  17, 81, 49, 113, 2,  66, 34, 98,  4,  68,  8,
+    9,  73, 41, 105, 25, 89, 57, 121, 18, 82, 50, 114, 36, 100, 72,
+    5,  69, 37, 101, 21, 85, 53, 117, 10, 74, 42, 106, 20, 84,  40,
+    13, 77, 45, 109, 29, 93, 61, 125, 26, 90, 58, 122, 52, 116, 104,
+    3,  67, 35, 99,  19, 83, 51, 115, 6,  70, 38, 102, 12, 76,  24,
+    11, 75, 43, 107, 27, 91, 59, 123, 22, 86, 54, 118, 44, 108, 88,
+    7,  71, 39, 103, 23, 87, 55, 119, 14, 78, 46, 110, 28, 92,  56,
+    15, 79, 47, 111, 31, 95, 63, 127, 30, 94, 62, 126, 60, 124, 120,
+    16, 80, 48, 112, 32, 96, 64};
+
+int32_t treeMulTable_7layer[] = {
     1,  129, 65, 193, 33, 161, 97,  225, 17, 145, 81, 209, 49, 177, 113, 241,
     9,  137, 73, 201, 41, 169, 105, 233, 25, 153, 89, 217, 57, 185, 121, 249,
     5,  133, 69, 197, 37, 165, 101, 229, 21, 149, 85, 213, 53, 181, 117, 245,
@@ -83,7 +115,7 @@ int32_t treeMulTable_256[] = {
     7,  135, 71, 199, 39, 167, 103, 231, 23, 151, 87, 215, 55, 183, 119, 247,
     15, 143, 79, 207, 47, 175, 111, 239, 31, 159, 95, 223, 63, 191, 127, 255};
 
-int32_t treeNTT_512[] = {
+int32_t treeNTT_8layer[] = {
     128, 64, 192, 32, 160, 96,  224, 16, 144, 80, 208, 48, 176, 112, 240, 8,
     136, 72, 200, 40, 168, 104, 232, 24, 152, 88, 216, 56, 184, 120, 248, 4,
     132, 68, 196, 36, 164, 100, 228, 20, 148, 84, 212, 52, 180, 116, 244, 12,
@@ -101,7 +133,7 @@ int32_t treeNTT_512[] = {
     135, 71, 199, 39, 167, 103, 231, 23, 151, 87, 215, 55, 183, 119, 247, 15,
     143, 79, 207, 47, 175, 111, 239, 31, 159, 95, 223, 63, 191, 127, 255};
 
-int32_t treeINTT_512[] = {
+int32_t treeINTT_8layer[] = {
     1,  129, 65, 193, 33, 161, 97,  225, 17, 145, 81, 209, 49, 177, 113, 241,
     9,  137, 73, 201, 41, 169, 105, 233, 25, 153, 89, 217, 57, 185, 121, 249,
     5,  133, 69, 197, 37, 165, 101, 229, 21, 149, 85, 213, 53, 181, 117, 245,
@@ -119,7 +151,7 @@ int32_t treeINTT_512[] = {
     8,  136, 72, 200, 40, 168, 104, 232, 24, 152, 88, 216, 56, 184, 120, 248,
     16, 144, 80, 208, 48, 176, 112, 240, 32, 160, 96, 224, 64, 192, 128};
 
-int32_t treeNTT_512Merged[] = {
+int32_t treeNTTMerged_8layer[] = {
     128, 64,  192, 32, 160, 96,  224, 16, 144, 80, 208, 48, 176, 112, 240,
     8,   4,   132, 2,  130, 66,  194, 1,  129, 65, 193, 33, 161, 97,  225,
     136, 68,  196, 34, 162, 98,  226, 17, 145, 81, 209, 49, 177, 113, 241,
@@ -138,7 +170,7 @@ int32_t treeNTT_512Merged[] = {
     120, 60,  188, 30, 158, 94,  222, 15, 143, 79, 207, 47, 175, 111, 239,
     248, 124, 252, 62, 190, 126, 254, 31, 159, 95, 223, 63, 191, 127, 255};
 
-int32_t treeINTT_512Merged[] = {
+int32_t treeINTTMerged_8layer[] = {
     1,  129, 65, 193, 33, 161, 97,  225, 2,  130, 66,  194, 4,   132, 8,
     17, 145, 81, 209, 49, 177, 113, 241, 34, 162, 98,  226, 68,  196, 136,
     9,  137, 73, 201, 41, 169, 105, 233, 18, 146, 82,  210, 36,  164, 72,
@@ -217,134 +249,12 @@ void check(void)
     printf("===============check end===============\n");
 }
 
-void GenTables(void)
-{
-    int32_t t;
-    for (int j = 0; j < 63; j++) {
-        t = Pow(root, treeNTT[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n");
-
-    for (int j = 0; j < 63; j++) {
-        // root is 128th, -i in intt
-        t = Pow(root, 128 - treeINTT[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n");
-
-    for (int j = 0; j < 64; j++) {
-        t = Pow(root, treeMulTable[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n");
-}
-
-void GenTablesMerged(void)
-{
-    root = 8406460;
-    int32_t t;
-    for (int j = 0; j < 63; j++) {
-        t = Pow(root, treeNTTMerged[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n");
-
-    for (int j = 0; j < 63; j++) {
-        // root is 128th, -i in intt
-        t = Pow(root, 128 - treeINTTMergedU[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n");
-}
-
-void GenTables_256(void)
-{
-    root = 1913168;
-    int32_t t;
-    for (int j = 0; j < 127; j++) {
-        t = Pow(root, treeNTT_256[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n\n");
-
-    for (int j = 0; j < 127; j++) {
-        // root is 256th, -i in intt
-        t = Pow(root, 256 - treeINTT_256[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n\n");
-
-    for (int j = 0; j < 128; j++) {
-        t = Pow(root, treeMulTable_256[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n");
-}
-
-void GenTables_512(void)
-{
-    root = 23394;
-    int32_t t;
-    for (int j = 0; j < 255; j++) {
-        t = Pow(root, treeNTT_512[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n\n");
-
-    for (int j = 0; j < 255; j++) {
-        // root is 512th, -i in intt
-        t = Pow(root, 512 - treeINTT_512[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n");
-}
-
-void GenTables_512Merged(void)
-{
-    root = 23394;
-    int32_t t;
-    for (int j = 0; j < 255; j++) {
-        t = Pow(root, treeNTT_512Merged[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n\n");
-
-    for (int j = 0; j < 255; j++) {
-        // root is 512th, -i in intt
-        t = Pow(root, 512 - treeINTT_512Merged[j]);
-        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
-        printf("%d, ", t);
-    }
-    printf("\n");
-}
-
-int32_t treeNTT_32[] = {16, 8,  24, 4,  20, 12, 28, 2,  18, 10, 26,
-                        6,  22, 14, 30, 1,  17, 9,  25, 5,  21, 13,
-                        29, 3,  19, 11, 27, 7,  23, 15, 31};
-int32_t treeINTT_32[] = {1,  17, 9,  25, 5,  21, 13, 29, 3,  19, 11,
-                         27, 7,  23, 15, 31, 2,  18, 10, 26, 6,  22,
-                         14, 30, 4,  20, 12, 28, 8,  24, 16};
-int32_t treeMulTable_32[] = {1,  33, 17, 49, 9,  41, 25, 57, 5,  37, 21,
-                             53, 13, 45, 29, 61, 3,  35, 19, 51, 11, 43,
-                             27, 59, 7,  39, 23, 55, 15, 47, 31, 63};
-void GenTables_64(void)
+void GenTables_5layer(void)
 {
     root = 3176733;
     int32_t t;
     for (int j = 0; j < 31; j++) {
-        t = Pow(root, treeNTT_32[j]);
+        t = Pow(root, treeNTT_5layer[j]);
         t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
         printf("%d, ", t);
     }
@@ -352,28 +262,146 @@ void GenTables_64(void)
 
     for (int j = 0; j < 31; j++) {
         // root is 64th, -i in intt
-        t = Pow(root, 64 - treeINTT_32[j]);
+        t = Pow(root, 64 - treeINTT_5layer[j]);
         t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
         printf("%d, ", t);
     }
     printf("\n\n");
 
     for (int j = 0; j < 32; j++) {
-        t = Pow(root, treeMulTable_32[j]);
+        t = Pow(root, treeMulTable_5layer[j]);
         t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
         printf("%d, ", t);
     }
-    printf("\n");
+    printf("\n\n");
+}
+
+void GenTables_6layer(void)
+{
+    root = 8406460;
+
+    int32_t t;
+    for (int j = 0; j < 63; j++) {
+        t = Pow(root, treeNTT_6layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 63; j++) {
+        // root is 128th, -i in intt
+        t = Pow(root, 128 - treeINTT_6layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 64; j++) {
+        t = Pow(root, treeMulTable_6layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 63; j++) {
+        t = Pow(root, treeNTTMerged_6layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 63; j++) {
+        // root is 128th, -i in intt
+        t = Pow(root, 128 - treeINTTMergedU_6layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+}
+
+void GenTables_7layer(void)
+{
+    root = 1913168;
+    int32_t t;
+    for (int j = 0; j < 127; j++) {
+        t = Pow(root, treeNTT_7layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 127; j++) {
+        // root is 256th, -i in intt
+        t = Pow(root, 256 - treeINTT_7layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 128; j++) {
+        t = Pow(root, treeMulTable_7layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 127; j++) {
+        t = Pow(root, treeNTTMerged_7layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 127; j++) {
+        // root is 256th, -i in intt
+        t = Pow(root, 256 - treeINTTMerged_7layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+}
+
+void GenTables_8layer(void)
+{
+    root = 23394;
+    int32_t t;
+    for (int j = 0; j < 255; j++) {
+        t = Pow(root, treeNTT_8layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 255; j++) {
+        // root is 512th, -i in intt
+        t = Pow(root, 512 - treeINTT_8layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 255; j++) {
+        t = Pow(root, treeNTTMerged_8layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 255; j++) {
+        // root is 512th, -i in intt
+        t = Pow(root, 512 - treeINTTMerged_8layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
 }
 
 int main(void)
 {
     // check();
-    // GenTables();
-    // GenTablesMerged();
-    // GenTables_256();
-    // GenTables_512();
-    // GenTables_512Merged();
-    GenTables_64();
+    // GenTables_5layer();
+    // GenTables_6layer();
+    GenTables_7layer();
+    // GenTables_8layer();
     return 0;
 }
