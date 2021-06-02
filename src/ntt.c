@@ -266,25 +266,25 @@ int32_t invRootTableMerged[] = {
     -1250,       -1150913,    -2896842,    4582610,     2683848,
     3450405,     1927818,     5071803,     1672980,     -4859845,
     4362766,     3836025,     -1468258};
-extern void ntt_asm(const uint16_t in[SABER_N], int32_t out[SABER_N],
+extern void ntt_asm_6layer(const uint16_t in[SABER_N], int32_t out[SABER_N],
                     int32_t rootTableMerged[SABER_N / 4]);
-extern void intt_asm(int32_t in[SABER_N], int32_t out[SABER_N],
+extern void intt_asm_6layer(int32_t in[SABER_N], int32_t out[SABER_N],
                      int32_t invRootTableMerged[SABER_N / 4]);
-extern void basemul_asm(int32_t a[4], const int32_t b[4], int32_t zeta);
+extern void basemul_asm_6layer(int32_t a[4], const int32_t b[4], int32_t zeta);
 
 void NTT(const uint16_t in[SABER_N], int32_t out[SABER_N])
 {
-    ntt_asm(in, out, rootTableMerged);
+    ntt_asm_6layer(in, out, rootTableMerged);
 }
 
 void InvNTT(int32_t in[SABER_N], int32_t out[SABER_N])
 {
-    intt_asm(in, out, invRootTableMerged);
+    intt_asm_6layer(in, out, invRootTableMerged);
 }
 
 void BaseMul(int32_t a[4], const int32_t b[4], int32_t zeta)
 {
-    basemul_asm(a, b, zeta);
+    basemul_asm_6layer(a, b, zeta);
 }
 #    else
 
@@ -501,6 +501,26 @@ int32_t invRootTableMerged[] = {
     4787907,  771147,   -1250,    -1150913, -2896842, 4582610,  2683848,
     3450405,  1927818,  5071803,  1672980,  -4859845, 4362766,  3836025,
     -734129};
+extern void ntt_asm_7layer(const uint16_t in[SABER_N], int32_t out[SABER_N],
+                    int32_t rootTableMerged[SABER_N / 4]);
+extern void intt_asm_7layer(int32_t in[SABER_N], int32_t out[SABER_N],
+                     int32_t invRootTableMerged[SABER_N / 4]);
+extern void basemul_asm_7layer(int32_t a[4], const int32_t b[4], int32_t zeta);
+
+void NTT(const uint16_t in[SABER_N], int32_t out[SABER_N])
+{
+    ntt_asm_7layer(in, out, rootTableMerged);
+}
+
+void InvNTT(int32_t in[SABER_N], int32_t out[SABER_N])
+{
+    intt_asm_7layer(in, out, invRootTableMerged);
+}
+
+void BaseMul(int32_t a[4], const int32_t b[4], int32_t zeta)
+{
+    basemul_asm_7layer(a, b, zeta);
+}
 #    else
 int32_t rootTable[] = {
     -280030,  -3836025, -4362766, 4859845,  -1672980, -5071803, -1927818,

@@ -204,9 +204,9 @@
 # const int32_t rootTable[64]);
 # register usage: a0-a2: parameter, t0-t7: zetas, s0-s7: 8 coefficients
 # s8, s9 temporary usage, a6/a7: M/Mprime, a4/a5: looper control
-.globl ntt_asm_6layer
+.globl ntt_asm_7layer
 .align 2
-ntt_asm_6layer:
+ntt_asm_7layer:
     addi sp, sp, -4*10
     sw s0, 0*4(sp)
     sw s1, 1*4(sp)
@@ -314,9 +314,9 @@ outer_456:
 # t0-t6: zetas
 # s0-s7: 8 coefficients
 # s8, s9 temporary usage, s10: M/2 for CenReduce
-.globl intt_asm_6layer
+.globl intt_asm_7layer
 .align 2
-intt_asm_6layer:
+intt_asm_7layer:
     addi sp, sp, -4*11
     sw s0, 0*4(sp)
     sw s1, 1*4(sp)
@@ -423,9 +423,9 @@ looper_456:
 # void basemul_asm(int32_t a[4], const int32_t b[4], int32_t zeta)
 # save results to a[4]
 # register usage: a0,a1,a2 parameters; t0-t3 save a0-a3; t4,t5,t6,a7 save b0-b3; a3,a4,a5,a6 temporary usage; s0=M, s1=Mprime
-.globl basemul_asm_6layer
+.globl basemul_asm_7layer
 .align 2
-basemul_asm_6layer:
+basemul_asm_7layer:
     addi sp, sp, -3*4
     sw s0, 0*4(sp)
     sw s1, 1*4(sp)
