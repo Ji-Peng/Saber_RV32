@@ -16,7 +16,8 @@
 #    define SABER_MU 8
 #    define SABER_ET 4
 #    define SLOWGENA_FASTMUL
-#    define SIX_LAYER_NTT
+// #    define SIX_LAYER_NTT
+#    define SEVEN_LAYER_NTT
 #elif SABER_L == 4
 #    define SABER_MU 6
 #    define SABER_ET 6
@@ -24,9 +25,9 @@
 #    define SIX_LAYER_NTT
 #endif
 
-// #ifndef HOST
-// #    define NTTASM
-// #endif
+#ifndef HOST
+#    define NTTASM
+#endif
 
 // check computation strategy
 #if !defined(FASTGENA_SLOWMUL) && !defined(FASTGENA_FASTMUL) && \
