@@ -37,7 +37,7 @@ static char* ullu(uint64_t val)
 #ifdef HOST
 #    define NTESTS 1000
 #else
-#    define NTESTS 100
+#    define NTESTS 10
 #endif
 static void DisableWatchDog(void)
 {
@@ -113,7 +113,7 @@ static int SpeedCCA(void)
         entropy_input[i] = i + 1;
     RandomBytesInit(entropy_input, NULL);
 
-    for (j = 0; j < NTESTS; j++) {
+    for (j = 0; j < NTESTS * 10; j++) {
         t1 = cpucycles();
         crypto_kem_keypair(pk, sk);
         t2 = cpucycles();
@@ -128,10 +128,10 @@ static int SpeedCCA(void)
         sum3 += (t2 - t1);
     }
     printf("crypto_kem_keypair/enc/dec/all: ");
-    printf("%s/", ullu(sum1 / NTESTS));
-    printf("%s/", ullu(sum2 / NTESTS));
-    printf("%s/", ullu(sum3 / NTESTS));
-    printf("%s\n", ullu((sum1 + sum2 + sum3) / NTESTS));
+    printf("%s/", ullu(sum1 / (NTESTS * 10)));
+    printf("%s/", ullu(sum2 / (NTESTS * 10)));
+    printf("%s/", ullu(sum3 / (NTESTS * 10)));
+    printf("%s\n", ullu((sum1 + sum2 + sum3) / (NTESTS * 10)));
     return 0;
 }
 
@@ -255,7 +255,7 @@ static int TestPolyMul(void)
 static int TestGen(void)
 {
     uint16_t s[3][SABER_N];
-    uint16_t* poly = s;
+    uint16_t* poly = (uint16_t*)s;
     uint8_t seed[SABER_SEEDBYTES];
     int i, j, k;
     uint64_t t1, t2, t3, sum1, sum2, sum3;
@@ -439,6 +439,9 @@ int main(void)
     TestCCA();
 #ifndef HOST
     SpeedCCA();
+    // SpeedCCAKP();
+    // SpeedCCAEnc();
+    // SpeedCCADec();
 #endif
     return 0;
 }

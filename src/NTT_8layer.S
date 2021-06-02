@@ -1,7 +1,7 @@
 .text
 
-# M * Mprime = -1 mod R (R=2^32), M and Mprime are used for montgomery reduce
-.equ Mprime, 0x6007ff
+# M * Mprime = 1 mod R (R=2^32), M and Mprime are used for montgomery reduce
+.equ Mprime, 0xff9ff801
 .equ M, 0xa00801
 # v = (((int64_t)1 << 48) + M / 2) / M is used for barrett reduce
 .equ V, 0x199851d
@@ -14,36 +14,47 @@
 
 # int64_t a=in1*in2
 # int32_t t=a*Mprime
-# t=((int64_t)a+(int64_t)t*M)>>32
+# t=((int64_t)a-(int64_t)t*M)>>32
 .macro MontMul in1, in2, out, CM, CMprime, tmp1
-    # out=low(in1*in2)=a_low
+    # out=low(in1*in2)=aLo
     mul \out, \in1, \in2
-    # a_low=0: carry=0, a_low!=0: carry=1
-    snez \tmp1, \out
-    # out=t=a_low*Mprime
+    # aLo=aLo*M'
     mul \out, \out, \CMprime
-    # out=high(t*M)
+    # aLo=aLo*M, only high-libm is needed
     mulh \out, \out, \CM
-    # add carry
-    add \out, \out, \tmp1
-    # high(in1*in2)
+    # tmp1=high(in1*in2)=aHi
     mulh \tmp1, \in1, \in2
-    add \out, \out, \tmp1
+    # out=aHi-aLo
+    sub \out, \tmp1, \out
+.endm
+
+# int64_t a=in1*in2
+# int32_t t=a*Mprime
+# t=((int64_t)a-(int64_t)t*M)>>32
+# in1 will be overwritten, in2 will not be overwritten
+.macro MontMulNew in1, in2, out, CM, CMprime
+    # out=low(in1*in2)=aLo
+    mul \out, \in1, \in2
+    # aLo=aLo*M'
+    mul \out, \out, \CMprime
+    # aLo=aLo*M, only high-libm is needed
+    mulh \out, \out, \CM
+    # in1=high(in1*in2)=aHi
+    mulh \in1, \in1, \in2
+    # out=aHi-aLo
+    sub \out, \in1, \out
 .endm
 
 # int64_t a=inHi&&inLo
 # inHi and inLo wille be rewrited
-.macro MontReduce inLo, inHi, out, CM, CMPrime
-    # t=out=low(a*Mprime)
-    mul \out, \inLo, \CMPrime
-    # a_low=0: carry=0; a_low!=0: carry=1
-    snez \inLo, \inLo
-    # out=high(t*M)
-    mulh \out, \out, \CM
-    # high(t*M)+a_high
-    add \out, \out, \inHi
-    # add carry
-    add \out, \out, \inLo
+# t=(a mod R)*M' mod R, a=(a-t*M)/R
+.macro MontReduce inLo, inHi, out, CM, CMprime
+    # inLo=inLo*M'
+    mul \inLo, \inLo, \CMprime
+    # inLo=inLo*M only high-limb is needed, because the low-limb is same
+    mulh \inLo, \inLo, \CM
+    # out=inHi-inLo
+    sub \out, \inHi, \inLo
 .endm
 
 # input: int32_t a
@@ -69,9 +80,9 @@
 
 # Butterfly Unit for NTT
 # in1, in2: t=zeta*in2, in2=in1-t; in1=in1+t;
-.macro BFU in1, in2, zeta, CM, CMprime, tmp1, tmp2
+.macro BFU in1, in2, zeta, CM, CMprime, tmp1
     # tmp1=zeta*in1
-    MontMul \in2, \zeta, \tmp1, \CM, \CMprime, \tmp2
+    MontMulNew \in2, \zeta, \tmp1, \CM, \CMprime
     # in2=in1-t
     sub \in2, \in1, \tmp1
     # in1=in1+t
@@ -80,15 +91,10 @@
 
 # Butterfly Unit for INTT
 # in1, in2: t=in1; in1=t+in2; in2=t-in2; in2=zeta*in2
-.macro BFUINTT in1, in2, zeta, CM, CMprime, tmp1, tmp2
-    # t=in1
-    mv \tmp1, \in1
-    # in1=t+in2
-    add \in1, \tmp1, \in2
-    # t=t-in2
-    sub \tmp1, \tmp1, \in2
-    # in2=zeta*t
-    MontMul \zeta, \tmp1, \in2, \CM, \CMprime, \tmp2
+.macro BFUINTT in1, in2, zeta, CM, CMprime, tmp1
+    sub \tmp1, \in1, \in2
+    add \in1, \in1, \in2
+    MontMulNew \tmp1, \zeta, \in2, \CM, \CMprime
 .endm
 
 # int32_t mask;
@@ -122,22 +128,22 @@
 # revert to Standard domain and reduce to Centered representation
 # tp is NINV, t0 is M/2
 .macro SCReduce
-    MontMul s0, tp, t4, t6, a7, t5
+    MontMulNew s0, tp, t4, t6, a7
     CenReduce t4, s0, t6, t0, t5
-    MontMul s1, tp, t4, t6, a7, t5
+    MontMulNew s1, tp, t4, t6, a7
     CenReduce t4, s1, t6, t0, t5
-    MontMul s2, tp, t4, t6, a7, t5
+    MontMulNew s2, tp, t4, t6, a7
     CenReduce t4, s2, t6, t0, t5
-    MontMul s3, tp, t4, t6, a7, t5
+    MontMulNew s3, tp, t4, t6, a7
     CenReduce t4, s3, t6, t0, t5
 
-    MontMul s4, tp, t4, t6, a7, t5
+    MontMulNew s4, tp, t4, t6, a7
     CenReduce t4, s4, t6, t0, t5
-    MontMul s5, tp, t4, t6, a7, t5
+    MontMulNew s5, tp, t4, t6, a7
     CenReduce t4, s5, t6, t0, t5
-    MontMul s6, tp, t4, t6, a7, t5
+    MontMulNew s6, tp, t4, t6, a7
     CenReduce t4, s6, t6, t0, t5
-    MontMul s7, tp, t4, t6, a7, t5
+    MontMulNew s7, tp, t4, t6, a7
     CenReduce t4, s7, t6, t0, t5
 
     # second half coefficients have been multiply by R*(1/N), 
@@ -251,52 +257,52 @@ looper_1234:
     # a[0,16,32,...,240]
     LoadS h, 16, 2, a0
     # level1
-    BFU s0, s8,  t0, t6, a7, t4, t5
-    BFU s1, s9,  t0, t6, a7, t4, t5
-    BFU s2, s10, t0, t6, a7, t4, t5
-    BFU s3, s11, t0, t6, a7, t4, t5
-    BFU s4, a3,  t0, t6, a7, t4, t5
-    BFU s5, a4,  t0, t6, a7, t4, t5
-    BFU s6, a5,  t0, t6, a7, t4, t5
-    BFU s7, a6,  t0, t6, a7, t4, t5    
+    BFU s0, s8,  t0, t6, a7, t4
+    BFU s1, s9,  t0, t6, a7, t4
+    BFU s2, s10, t0, t6, a7, t4
+    BFU s3, s11, t0, t6, a7, t4
+    BFU s4, a3,  t0, t6, a7, t4
+    BFU s5, a4,  t0, t6, a7, t4
+    BFU s6, a5,  t0, t6, a7, t4
+    BFU s7, a6,  t0, t6, a7, t4    
     # level2
-    BFU s0,  s4, t1, t6, a7, t4, t5
-    BFU s1,  s5, t1, t6, a7, t4, t5
-    BFU s2,  s6, t1, t6, a7, t4, t5
-    BFU s3,  s7, t1, t6, a7, t4, t5 
-    BFU s8,  a3, t2, t6, a7, t4, t5
-    BFU s9,  a4, t2, t6, a7, t4, t5
-    BFU s10, a5, t2, t6, a7, t4, t5
-    BFU s11, a6, t2, t6, a7, t4, t5     
+    BFU s0,  s4, t1, t6, a7, t4
+    BFU s1,  s5, t1, t6, a7, t4
+    BFU s2,  s6, t1, t6, a7, t4
+    BFU s3,  s7, t1, t6, a7, t4 
+    BFU s8,  a3, t2, t6, a7, t4
+    BFU s9,  a4, t2, t6, a7, t4
+    BFU s10, a5, t2, t6, a7, t4
+    BFU s11, a6, t2, t6, a7, t4     
     # level3
-    BFU s0,  s2,  t3, t6, a7, t4, t5
-    BFU s1,  s3,  t3, t6, a7, t4, t5
+    BFU s0,  s2,  t3, t6, a7, t4
+    BFU s1,  s3,  t3, t6, a7, t4
     lw  tp,  4*4(a2)
-    BFU s4,  s6,  tp, t6, a7, t4, t5
-    BFU s5,  s7,  tp, t6, a7, t4, t5 
+    BFU s4,  s6,  tp, t6, a7, t4
+    BFU s5,  s7,  tp, t6, a7, t4 
     lw  tp,  5*4(a2)
-    BFU s8,  s10, tp, t6, a7, t4, t5
-    BFU s9,  s11, tp, t6, a7, t4, t5
+    BFU s8,  s10, tp, t6, a7, t4
+    BFU s9,  s11, tp, t6, a7, t4
     lw  tp,  6*4(a2)
-    BFU a3,  a5,  tp, t6, a7, t4, t5
-    BFU a4,  a6,  tp, t6, a7, t4, t5
+    BFU a3,  a5,  tp, t6, a7, t4
+    BFU a4,  a6,  tp, t6, a7, t4
     # level4
     lw  tp,  7*4(a2)
-    BFU s0,  s1,  tp, t6, a7, t4, t5
+    BFU s0,  s1,  tp, t6, a7, t4
     lw  tp,  8*4(a2)
-    BFU s2,  s3,  tp, t6, a7, t4, t5
+    BFU s2,  s3,  tp, t6, a7, t4
     lw  tp,  9*4(a2)
-    BFU s4,  s5,  tp, t6, a7, t4, t5
+    BFU s4,  s5,  tp, t6, a7, t4
     lw  tp,  10*4(a2)
-    BFU s6,  s7,  tp, t6, a7, t4, t5
+    BFU s6,  s7,  tp, t6, a7, t4
     lw  tp,  11*4(a2)
-    BFU s8,  s9,  tp, t6, a7, t4, t5
+    BFU s8,  s9,  tp, t6, a7, t4
     lw  tp,  12*4(a2)
-    BFU s10, s11, tp, t6, a7, t4, t5
+    BFU s10, s11, tp, t6, a7, t4
     lw  tp,  13*4(a2)
-    BFU a3,  a4,  tp, t6, a7, t4, t5
+    BFU a3,  a4,  tp, t6, a7, t4
     lw  tp,  14*4(a2)
-    BFU a5,  a6,  tp, t6, a7, t4, t5  
+    BFU a5,  a6,  tp, t6, a7, t4  
     //save results
     StoreS 16, a1
 
@@ -321,52 +327,52 @@ looper_5678:
     lw  t2, 2*4(a2)
     lw  t3, 3*4(a2)
     # level5
-    BFU s0, s8,  t0, t6, a7, t4, t5
-    BFU s1, s9,  t0, t6, a7, t4, t5
-    BFU s2, s10, t0, t6, a7, t4, t5
-    BFU s3, s11, t0, t6, a7, t4, t5
-    BFU s4, a3,  t0, t6, a7, t4, t5
-    BFU s5, a4,  t0, t6, a7, t4, t5
-    BFU s6, a5,  t0, t6, a7, t4, t5
-    BFU s7, a6,  t0, t6, a7, t4, t5 
+    BFU s0, s8,  t0, t6, a7, t4
+    BFU s1, s9,  t0, t6, a7, t4
+    BFU s2, s10, t0, t6, a7, t4
+    BFU s3, s11, t0, t6, a7, t4
+    BFU s4, a3,  t0, t6, a7, t4
+    BFU s5, a4,  t0, t6, a7, t4
+    BFU s6, a5,  t0, t6, a7, t4
+    BFU s7, a6,  t0, t6, a7, t4 
     # level6
-    BFU s0,  s4,  t1, t6, a7, t4, t5
-    BFU s1,  s5,  t1, t6, a7, t4, t5
-    BFU s2,  s6,  t1, t6, a7, t4, t5
-    BFU s3,  s7,  t1, t6, a7, t4, t5
-    BFU s8,  a3,  t2, t6, a7, t4, t5
-    BFU s9,  a4,  t2, t6, a7, t4, t5
-    BFU s10, a5,  t2, t6, a7, t4, t5
-    BFU s11, a6,  t2, t6, a7, t4, t5 
+    BFU s0,  s4,  t1, t6, a7, t4
+    BFU s1,  s5,  t1, t6, a7, t4
+    BFU s2,  s6,  t1, t6, a7, t4
+    BFU s3,  s7,  t1, t6, a7, t4
+    BFU s8,  a3,  t2, t6, a7, t4
+    BFU s9,  a4,  t2, t6, a7, t4
+    BFU s10, a5,  t2, t6, a7, t4
+    BFU s11, a6,  t2, t6, a7, t4 
     # level7
-    BFU s0,  s2,  t3, t6, a7, t4, t5
-    BFU s1,  s3,  t3, t6, a7, t4, t5
+    BFU s0,  s2,  t3, t6, a7, t4
+    BFU s1,  s3,  t3, t6, a7, t4
     lw  t0, 4*4(a2)
     lw  t1, 5*4(a2)
     lw  t2, 6*4(a2)
     lw  t3, 7*4(a2)
-    BFU s4,  s6,  t0, t6, a7, t4, t5
-    BFU s5,  s7,  t0, t6, a7, t4, t5
-    BFU s8,  s10, t1, t6, a7, t4, t5
-    BFU s9,  s11, t1, t6, a7, t4, t5
-    BFU a3,  a5,  t2, t6, a7, t4, t5
-    BFU a4,  a6,  t2, t6, a7, t4, t5 
+    BFU s4,  s6,  t0, t6, a7, t4
+    BFU s5,  s7,  t0, t6, a7, t4
+    BFU s8,  s10, t1, t6, a7, t4
+    BFU s9,  s11, t1, t6, a7, t4
+    BFU a3,  a5,  t2, t6, a7, t4
+    BFU a4,  a6,  t2, t6, a7, t4 
     # level8
-    BFU s0,  s1,  t3, t6, a7, t4, t5
+    BFU s0,  s1,  t3, t6, a7, t4
     lw  t0, 8*4(a2)
     lw  t1, 9*4(a2)
     lw  t2, 10*4(a2)
     lw  t3, 11*4(a2)
-    BFU s2,  s3,  t0, t6, a7, t4, t5
-    BFU s4,  s5,  t1, t6, a7, t4, t5
-    BFU s6,  s7,  t2, t6, a7, t4, t5
-    BFU s8,  s9,  t3, t6, a7, t4, t5
+    BFU s2,  s3,  t0, t6, a7, t4
+    BFU s4,  s5,  t1, t6, a7, t4
+    BFU s6,  s7,  t2, t6, a7, t4
+    BFU s8,  s9,  t3, t6, a7, t4
     lw  t0, 12*4(a2)
     lw  t1, 13*4(a2)
     lw  t2, 14*4(a2)
-    BFU s10, s11, t0, t6, a7, t4, t5
-    BFU a3,  a4,  t1, t6, a7, t4, t5
-    BFU a5,  a6,  t2, t6, a7, t4, t5 
+    BFU s10, s11, t0, t6, a7, t4
+    BFU a3,  a4,  t1, t6, a7, t4
+    BFU a5,  a6,  t2, t6, a7, t4 
     //save results
     StoreS 1, a1
     # a1 points to next block, a2 points to next 7 zetas
@@ -430,52 +436,52 @@ inv_looper_1234:
     lw  t1, 1*4(a2)
     lw  t2, 2*4(a2)
     lw  t3, 3*4(a2)
-    BFUINTT s0, s1, t0, t6, a7, t4, t5
-    BFUINTT s2, s3, t1, t6, a7, t4, t5
-    BFUINTT s4, s5, t2, t6, a7, t4, t5
-    BFUINTT s6, s7, t3, t6, a7, t4, t5
+    BFUINTT s0, s1, t0, t6, a7, t4
+    BFUINTT s2, s3, t1, t6, a7, t4
+    BFUINTT s4, s5, t2, t6, a7, t4
+    BFUINTT s6, s7, t3, t6, a7, t4
     lw  t0, 4*4(a2)
     lw  t1, 5*4(a2)
     lw  t2, 6*4(a2)
     lw  t3, 7*4(a2)
-    BFUINTT s8,  s9,  t0, t6, a7, t4, t5
-    BFUINTT s10, s11, t1, t6, a7, t4, t5
-    BFUINTT a3,  a4,  t2, t6, a7, t4, t5
-    BFUINTT a5,  a6,  t3, t6, a7, t4, t5    
+    BFUINTT s8,  s9,  t0, t6, a7, t4
+    BFUINTT s10, s11, t1, t6, a7, t4
+    BFUINTT a3,  a4,  t2, t6, a7, t4
+    BFUINTT a5,  a6,  t3, t6, a7, t4    
     # level2
     lw  t0, 8*4(a2)
     lw  t1, 9*4(a2)
     lw  t2, 10*4(a2)
     lw  t3, 11*4(a2)
-    BFUINTT s0, s2,  t0, t6, a7, t4, t5
-    BFUINTT s1, s3,  t0, t6, a7, t4, t5
-    BFUINTT s4, s6,  t1, t6, a7, t4, t5
-    BFUINTT s5, s7,  t1, t6, a7, t4, t5
-    BFUINTT s8, s10, t2, t6, a7, t4, t5
-    BFUINTT s9, s11, t2, t6, a7, t4, t5
-    BFUINTT a3, a5,  t3, t6, a7, t4, t5
-    BFUINTT a4, a6,  t3, t6, a7, t4, t5          
+    BFUINTT s0, s2,  t0, t6, a7, t4
+    BFUINTT s1, s3,  t0, t6, a7, t4
+    BFUINTT s4, s6,  t1, t6, a7, t4
+    BFUINTT s5, s7,  t1, t6, a7, t4
+    BFUINTT s8, s10, t2, t6, a7, t4
+    BFUINTT s9, s11, t2, t6, a7, t4
+    BFUINTT a3, a5,  t3, t6, a7, t4
+    BFUINTT a4, a6,  t3, t6, a7, t4          
     # level3
     lw  t0, 12*4(a2)
     lw  t1, 13*4(a2)
-    BFUINTT s0,  s4,  t0, t6, a7, t4, t5
-    BFUINTT s1,  s5,  t0, t6, a7, t4, t5
-    BFUINTT s2,  s6,  t0, t6, a7, t4, t5
-    BFUINTT s3,  s7,  t0, t6, a7, t4, t5
-    BFUINTT s8,  a3,  t1, t6, a7, t4, t5
-    BFUINTT s9,  a4,  t1, t6, a7, t4, t5
-    BFUINTT s10, a5,  t1, t6, a7, t4, t5
-    BFUINTT s11, a6,  t1, t6, a7, t4, t5
+    BFUINTT s0,  s4,  t0, t6, a7, t4
+    BFUINTT s1,  s5,  t0, t6, a7, t4
+    BFUINTT s2,  s6,  t0, t6, a7, t4
+    BFUINTT s3,  s7,  t0, t6, a7, t4
+    BFUINTT s8,  a3,  t1, t6, a7, t4
+    BFUINTT s9,  a4,  t1, t6, a7, t4
+    BFUINTT s10, a5,  t1, t6, a7, t4
+    BFUINTT s11, a6,  t1, t6, a7, t4
     # level4
     lw  t0, 14*4(a2)
-    BFUINTT s0, s8,  t0, t6, a7, t4, t5
-    BFUINTT s1, s9,  t0, t6, a7, t4, t5
-    BFUINTT s2, s10, t0, t6, a7, t4, t5
-    BFUINTT s3, s11, t0, t6, a7, t4, t5
-    BFUINTT s4, a3,  t0, t6, a7, t4, t5
-    BFUINTT s5, a4,  t0, t6, a7, t4, t5
-    BFUINTT s6, a5,  t0, t6, a7, t4, t5
-    BFUINTT s7, a6,  t0, t6, a7, t4, t5    
+    BFUINTT s0, s8,  t0, t6, a7, t4
+    BFUINTT s1, s9,  t0, t6, a7, t4
+    BFUINTT s2, s10, t0, t6, a7, t4
+    BFUINTT s3, s11, t0, t6, a7, t4
+    BFUINTT s4, a3,  t0, t6, a7, t4
+    BFUINTT s5, a4,  t0, t6, a7, t4
+    BFUINTT s6, a5,  t0, t6, a7, t4
+    BFUINTT s7, a6,  t0, t6, a7, t4    
     //save results
     StoreS 1, a1
     # a0,a1 point to next block, a2 points to next 7 zetas
@@ -509,53 +515,53 @@ inv_looper_5678:
     LoadS w, 16, 4, a1
     # level1
     lw  t3,  0*4(a2)
-    BFUINTT s0,  s1,  t3, t6, a7, t4, t5
+    BFUINTT s0,  s1,  t3, t6, a7, t4
     lw  t3,  1*4(a2)
-    BFUINTT s2,  s3,  t3, t6, a7, t4, t5
+    BFUINTT s2,  s3,  t3, t6, a7, t4
     lw  t3,  2*4(a2)
-    BFUINTT s4,  s5,  t3, t6, a7, t4, t5
+    BFUINTT s4,  s5,  t3, t6, a7, t4
     lw  t3,  3*4(a2)
-    BFUINTT s6,  s7,  t3, t6, a7, t4, t5
+    BFUINTT s6,  s7,  t3, t6, a7, t4
     lw  t3,  4*4(a2)
-    BFUINTT s8,  s9,  t3, t6, a7, t4, t5
+    BFUINTT s8,  s9,  t3, t6, a7, t4
     lw  t3,  5*4(a2)
-    BFUINTT s10, s11, t3, t6, a7, t4, t5
+    BFUINTT s10, s11, t3, t6, a7, t4
     lw  t3,  6*4(a2)
-    BFUINTT a3,  a4,  t3, t6, a7, t4, t5
+    BFUINTT a3,  a4,  t3, t6, a7, t4
     lw  t3,  7*4(a2)
-    BFUINTT a5,  a6,  t3, t6, a7, t4, t5  
+    BFUINTT a5,  a6,  t3, t6, a7, t4  
     # level2
     lw  t3,  8*4(a2)
-    BFUINTT s0,  s2,  t3, t6, a7, t4, t5
-    BFUINTT s1,  s3,  t3, t6, a7, t4, t5
+    BFUINTT s0,  s2,  t3, t6, a7, t4
+    BFUINTT s1,  s3,  t3, t6, a7, t4
     lw  t3,  9*4(a2)
-    BFUINTT s4,  s6,  t3, t6, a7, t4, t5
-    BFUINTT s5,  s7,  t3, t6, a7, t4, t5 
+    BFUINTT s4,  s6,  t3, t6, a7, t4
+    BFUINTT s5,  s7,  t3, t6, a7, t4 
     lw  t3,  10*4(a2)
-    BFUINTT s8,  s10, t3, t6, a7, t4, t5
-    BFUINTT s9,  s11, t3, t6, a7, t4, t5
+    BFUINTT s8,  s10, t3, t6, a7, t4
+    BFUINTT s9,  s11, t3, t6, a7, t4
     lw  t3,  11*4(a2)
-    BFUINTT a3,  a5,  t3, t6, a7, t4, t5
-    BFUINTT a4,  a6,  t3, t6, a7, t4, t5    
+    BFUINTT a3,  a5,  t3, t6, a7, t4
+    BFUINTT a4,  a6,  t3, t6, a7, t4    
     # level3
     lw  t3,  12*4(a2)
-    BFUINTT s0,  s4, t3, t6, a7, t4, t5
-    BFUINTT s1,  s5, t3, t6, a7, t4, t5
-    BFUINTT s2,  s6, t3, t6, a7, t4, t5
-    BFUINTT s3,  s7, t3, t6, a7, t4, t5 
-    BFUINTT s8,  a3, t1, t6, a7, t4, t5
-    BFUINTT s9,  a4, t1, t6, a7, t4, t5
-    BFUINTT s10, a5, t1, t6, a7, t4, t5
-    BFUINTT s11, a6, t1, t6, a7, t4, t5      
+    BFUINTT s0,  s4, t3, t6, a7, t4
+    BFUINTT s1,  s5, t3, t6, a7, t4
+    BFUINTT s2,  s6, t3, t6, a7, t4
+    BFUINTT s3,  s7, t3, t6, a7, t4 
+    BFUINTT s8,  a3, t1, t6, a7, t4
+    BFUINTT s9,  a4, t1, t6, a7, t4
+    BFUINTT s10, a5, t1, t6, a7, t4
+    BFUINTT s11, a6, t1, t6, a7, t4      
     # level4
-    BFUINTT s0, s8,  t2, t6, a7, t4, t5
-    BFUINTT s1, s9,  t2, t6, a7, t4, t5
-    BFUINTT s2, s10, t2, t6, a7, t4, t5
-    BFUINTT s3, s11, t2, t6, a7, t4, t5
-    BFUINTT s4, a3,  t2, t6, a7, t4, t5
-    BFUINTT s5, a4,  t2, t6, a7, t4, t5
-    BFUINTT s6, a5,  t2, t6, a7, t4, t5
-    BFUINTT s7, a6,  t2, t6, a7, t4, t5     
+    BFUINTT s0, s8,  t2, t6, a7, t4
+    BFUINTT s1, s9,  t2, t6, a7, t4
+    BFUINTT s2, s10, t2, t6, a7, t4
+    BFUINTT s3, s11, t2, t6, a7, t4
+    BFUINTT s4, a3,  t2, t6, a7, t4
+    BFUINTT s5, a4,  t2, t6, a7, t4
+    BFUINTT s6, a5,  t2, t6, a7, t4
+    BFUINTT s7, a6,  t2, t6, a7, t4     
     # revert to standard domain and reduce to centered representation
     SCReduce
     # save results
