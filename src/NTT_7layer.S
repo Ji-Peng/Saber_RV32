@@ -44,7 +44,7 @@
 .endm
 
 # int64_t a=inHi&&inLo
-# inHi and inLo wille be rewrited
+# inLo will be rewrited
 # t=(a mod R)*M' mod R, a=(a-t*M)/R
 .macro MontReduce inLo, inHi, out, CM, CMprime
     # inLo=inLo*M'
@@ -555,29 +555,33 @@ looper_567:
     addi sp, sp, 4*15
     ret    
 
-# void basemul_asm(int32_t a[2], const int32_t b[2], int32_t zeta)
-# save results to a[2]
-# register usage: a0,a1,a2 parameters; a3-a4 save a[0]-a[1], a5-a6 save b[0]-b[1]
-# t0, t1 save M/Mprime; t2-t6+a7: temp
+# void basemul_asm(int32_t a[N], const int32_t b[N], int32_t zeta[N/2])
+# save results to a[N]
+# register usage: a0,a1,a2 parameters; a3-a4: a[0]-a[1], a5-a6: b[0]-b[1], a7: zetas
+# t0, t1: M/Mprime; t2-t5: temp, t6: loop control
 .globl basemul_asm_7layer
 .align 2
 basemul_asm_7layer:
     # Load M, Mprime
     li t0, M
     li t1, Mprime
+    # each loop processes 2 elements, loop number is 128
+    addi t6, a0, 128*2*4
+base_looper:    
     # load input
     lw a3, 0*4(a0) # a0
     lw a4, 1*4(a0) # a1
     lw a5, 0*4(a1) # b0
     lw a6, 1*4(a1) # b1
+    lw a7, 0*4(a2) # zeta
 
     # r0=a0b0+zeta*(a1b1)
     # t2=FqMul(a0,b0)
-    MontMul a3, a5, t2, t0, t1, a7
+    MontMul a3, a5, t2, t0, t1, t5
     # t3=FqMul(a1,b1)
-    MontMul a4, a6, t3, t0, t1, a7
+    MontMul a4, a6, t3, t0, t1, t5
     # t4=FqMul(zeta,t3)
-    MontMul a2, t3, t4, t0, t1, a7
+    MontMul a7, t3, t4, t0, t1, t5
     # t2+t4
     add t2, t2, t4
     sw  t2, 0*4(a0)
@@ -590,6 +594,12 @@ basemul_asm_7layer:
     # a0b1+a1b0
     ADD64 t2, t3, t4, t5
     # MontReduce(t5||t4)
-    MontReduce t4, t5, a7, t0, t1
-    sw a7, 1*4(a0)
+    MontReduce t4, t5, t2, t0, t1
+    sw t2, 1*4(a0)
+
+    # update index
+    addi a0, a0, 2*4
+    addi a1, a1, 2*4
+    addi a2, a2, 1*4
+    bne t6, a0, base_looper
     ret

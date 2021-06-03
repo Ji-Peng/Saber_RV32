@@ -450,6 +450,26 @@ void BaseMul(int32_t a[4], const int32_t b[4], int32_t zeta)
 #    endif
 
 #elif defined(SEVEN_LAYER_NTT)
+int32_t mulTable[] = {
+    -4787907, 4787907,  4312107,  -4312107, -563551,  563551,   -2485656,
+    2485656,  -4934765, 4934765,  -1274402, 1274402,  4806806,  -4806806,
+    -2404203, 2404203,  844313,   -844313,  -5047542, 5047542,  -315757,
+    315757,   1140755,  -1140755, -913766,  913766,   917326,   -917326,
+    -1367707, 1367707,  -5171082, 5171082,  883183,   -883183,  2100688,
+    -2100688, -3038201, 3038201,  -4533557, 4533557,  1436016,  -1436016,
+    -4273149, 4273149,  3975068,  -3975068, 5163653,  -5163653, 4695769,
+    -4695769, 2573915,  -2573915, -653503,  653503,   434027,   -434027,
+    4192924,  -4192924, -881546,  881546,   -2887756, 2887756,  2791875,
+    -2791875, -909077,  909077,   -4601548, 4601548,  239548,   -239548,
+    -3183857, 3183857,  5136869,  -5136869, 3554108,  -3554108, -5221924,
+    5221924,  128531,   -128531,  -4205624, 4205624,  -4707996, 4707996,
+    2940826,  -2940826, 4825397,  -4825397, -3821535, 3821535,  -1387751,
+    1387751,  1063300,  -1063300, -4465789, 4465789,  -3282628, 3282628,
+    -2174102, 2174102,  -4896547, 4896547,  1107666,  -1107666, -3193337,
+    3193337,  658585,   -658585,  3591289,  -3591289, -2710765, 2710765,
+    2655674,  -2655674, -622899,  622899,   3866337,  -3866337, -4722017,
+    4722017,  -842149,  842149,   4652240,  -4652240, 1066461,  -1066461,
+    -1272644, 1272644};
 #    ifdef NTTASM
 int32_t rootTableMerged[] = {
     -280030,  -3836025, -4362766, 4859845,  -1672980, -5071803, -1927818,
@@ -497,7 +517,8 @@ extern void ntt_asm_7layer(const uint16_t in[SABER_N], int32_t out[SABER_N],
                            int32_t rootTableMerged[127]);
 extern void intt_asm_7layer(int32_t in[SABER_N], int32_t out[SABER_N],
                             int32_t invRootTableMerged[127]);
-extern void basemul_asm_7layer(int32_t a[2], const int32_t b[2], int32_t zeta);
+extern void basemul_asm_7layer(int32_t a[SABER_N], const int32_t b[SABER_N],
+                               int32_t zeta[SABER_N / 2]);
 
 void NTT(const uint16_t in[SABER_N], int32_t out[SABER_N])
 {
@@ -509,9 +530,9 @@ void InvNTT(int32_t in[SABER_N], int32_t out[SABER_N])
     intt_asm_7layer(in, out, invRootTableMerged);
 }
 
-void BaseMul(int32_t a[2], const int32_t b[2], int32_t zeta)
+void BaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
-    basemul_asm_7layer(a, b, zeta);
+    basemul_asm_7layer(a, b, mulTable);
 }
 #    else
 int32_t rootTable[] = {
@@ -556,7 +577,6 @@ int32_t invRootTable[] = {
     717683,   2775101,  650362,   199509,   5052843,  -3724084, -723028,
     3450405,  1927818,  5071803,  1672980,  -4859845, 4362766,  3836025,
     -734129};
-
 /*************************************************
  * Name:        NTT
  *
@@ -652,28 +672,30 @@ void InvNTT(int32_t in[256], int32_t out[256])
  * Description: Multiplication of polynomials in Zq[X]/(X^2-zeta)
  * used for multiplication of elements in Rq in NTT domain
  *
- * Arguments:   - int32_t a[2]: pointer to the first polynomial, is also output
- *              - const int32_t b[2]: pointer to the second polynomial
- *              - int32_t zeta: integer defining the reduction polynomial
+ * Arguments:   - int32_t a[SABER_N]: pointer to the first polynomial, is also
+ *output
+ *              - const int32_t b[SABER_N]: pointer to the second polynomial
  **************************************************/
-void BaseMul(int32_t a[2], const int32_t b[2], int32_t zeta)
+void BaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     int64_t t;
     int32_t a0, a1;
+    int i;
+    for (i = 0; i < SABER_N / 2; i++) {
+        // get values from memory for storing result
+        a0 = a[i * 2 + 0];
+        a1 = a[i * 2 + 1];
 
-    // get values from memory for storing result
-    a0 = a[0];
-    a1 = a[1];
+        // r0=a0b0+zeta*(a1b1)
+        t = FqMul(a1, b[2 * i + 1]);
+        t = FqMul(t, mulTable[i]);
+        a[2 * i + 0] = t + FqMul(a0, b[2 * i + 0]);
 
-    // r0=a0b0+zeta*(a1b1)
-    t = FqMul(a1, b[1]);
-    t = FqMul(t, zeta);
-    a[0] = t + FqMul(a0, b[0]);
-
-    // r1=a0b1+a1b0
-    t = (int64_t)a0 * b[1];
-    t += (int64_t)a1 * b[0];
-    a[1] = MontReduce(t);
+        // r1=a0b1+a1b0
+        t = (int64_t)a0 * b[2 * i + 1];
+        t += (int64_t)a1 * b[2 * i + 0];
+        a[2 * i + 1] = MontReduce(t);
+    }
 }
 #    endif
 #elif defined(COMPLETE_NTT)
