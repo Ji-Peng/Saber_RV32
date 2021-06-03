@@ -5,8 +5,6 @@
 
 #include "SABER_params.h"
 
-void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N]);
-
 void PolyAdd(uint16_t res[SABER_N], int32_t in[SABER_N]);
 
 void PolyMulAcc(uint16_t a[2 * SABER_N], const uint16_t b[SABER_N],

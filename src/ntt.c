@@ -30,7 +30,12 @@ int32_t invRootTable[32] = {
     4582610,  2683848,  717683,  2775101,  650362,  199509,   5052843,
     -3724084, -723028,  3450405, 1927818,  5071803, 1672980,  -4859845,
     4362766,  3836025,  -2936516};
-
+int32_t mulTable[] = {
+    -2683848, 2683848,  -4582610, 4582610,  -709618,  709618,   3211370,
+    -3211370, -2422739, 2422739,  2533938,  -2533938, -3724866, 3724866,
+    4226394,  -4226394, 3515215,  -3515215, -5214712, 5214712,  4180628,
+    -4180628, -4354273, 4354273,  1961582,  -1961582, -1469009, 1469009,
+    3661715,  -3661715, 5089826,  -5089826};
 /*************************************************
  * Name:        NTT
  *
@@ -121,7 +126,7 @@ void InvNTT(int32_t in[256], int32_t out[256])
 }
 
 /*************************************************
- * Name:        BaseMul
+ * Name:        PolyBaseMul
  *
  * Description: Multiplication of polynomials in Zq[X]/(X^4-zeta)
  * used for multiplication of elements in Rq in NTT domain
@@ -130,7 +135,7 @@ void InvNTT(int32_t in[256], int32_t out[256])
  *              - b: pointer to the second polynomial
  *              - int32_t zeta: integer defining the reduction polynomial
  **************************************************/
-void BaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
+void PolyBaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
 {
     int64_t t;
     int32_t a0, a1, a2, a3, a4, a5, a6, a7;
@@ -236,6 +241,18 @@ void BaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
     a[7] = MontReduce(t);
 }
 #elif defined(SIX_LAYER_NTT)
+// point-wise multiplication mod (X^4-zeta^{2br(i)+1}) i=0,1,...,63
+int32_t mulTable[64] = {
+    2896842,  -2896842, 1150913,  -1150913, 1250,     -1250,    -771147,
+    771147,   -3214001, 3214001,  -2216070, 2216070,  2587567,  -2587567,
+    4635835,  -4635835, 1247022,  -1247022, 1133020,  -1133020, 1610224,
+    -1610224, -4652015, 4652015,  4035904,  -4035904, 254135,   -254135,
+    2640679,  -2640679, 1621924,  -1621924, -2966437, 2966437,  -1300452,
+    1300452,  -3963361, 3963361,  3815660,  -3815660, -4635716, 4635716,
+    -4810532, 4810532,  394299,   -394299,  -3565801, 3565801,  723646,
+    -723646,  1340759,  -1340759, 1171195,  -1171195, 4777770,  -4777770,
+    -495362,  495362,   -1032438, 1032438,  -4833797, 4833797,  152199,
+    -152199};
 #    ifdef NTTASM
 int32_t rootTableMerged[] = {
     -280030,  -3836025, -4362766, 4859845,  -1672980, -5071803, -1927818,
@@ -274,7 +291,7 @@ void InvNTT(int32_t in[SABER_N], int32_t out[SABER_N])
     intt_asm_6layer(in, out, invRootTableMerged);
 }
 
-void BaseMul(int32_t a[4], const int32_t b[4], int32_t zeta)
+void PolyBaseMul(int32_t a[4], const int32_t b[4], int32_t zeta)
 {
     basemul_asm_6layer(a, b, zeta);
 }
@@ -395,57 +412,58 @@ void InvNTT(int32_t in[256], int32_t out[256])
 }
 
 /*************************************************
- * Name:        BaseMul
+ * Name:        PolyBaseMul
  *
  * Description: Multiplication of polynomials in Zq[X]/(X^4-zeta)
  * used for multiplication of elements in Rq in NTT domain
  *
- * Arguments:   - int32_t a[4]: pointer to the first polynomial, is also output
- *              - const int32_t b[4]: pointer to the second polynomial
- *              - int32_t zeta: integer defining the reduction polynomial
+ * Arguments:   - int32_t a[SABER_N]: pointer to the first polynomial, is also
+ *output
+ *              - const int32_t b[SABER_N]: pointer to the second polynomial
  **************************************************/
-void BaseMul(int32_t a[4], const int32_t b[4], int32_t zeta)
+void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     int64_t t;
-    int32_t a0, a1, a2, a3;
+    int32_t a0, a1, a2, a3, i;
+    for (i = 0; i < SABER_N / 4; i++) {
+        // get values from memory for storing result
+        a0 = a[4 * i + 0];
+        a1 = a[4 * i + 1];
+        a2 = a[4 * i + 2];
+        a3 = a[4 * i + 3];
 
-    // get values from memory for storing result
-    a0 = a[0];
-    a1 = a[1];
-    a2 = a[2];
-    a3 = a[3];
+        // r0=a0b0+zeta*(a1b3+a2b2+a3b1)
+        t = (int64_t)a1 * b[4 * i + 3];
+        t += (int64_t)a2 * b[4 * i + 2];
+        t += (int64_t)a3 * b[4 * i + 1];
+        a[4 * i + 0] = MontReduce(t);
+        a[4 * i + 0] = FqMul(a[4 * i + 0], mulTable[i]);
+        a[4 * i + 0] += FqMul(a0, b[4 * i + 0]);
 
-    // r0=a0b0+zeta*(a1b3+a2b2+a3b1)
-    t = (int64_t)a1 * b[3];
-    t += (int64_t)a2 * b[2];
-    t += (int64_t)a3 * b[1];
-    a[0] = MontReduce(t);
-    a[0] = FqMul(a[0], zeta);
-    a[0] += FqMul(a0, b[0]);
+        // r1=a0b1+a1b0+zeta*(a2b3+a3b2)
+        t = (int64_t)a2 * b[4 * i + 3];
+        t += (int64_t)a3 * b[4 * i + 2];
+        a[4 * i + 1] = MontReduce(t);
+        a[4 * i + 1] = FqMul(a[4 * i + 1], mulTable[i]);
+        t = (int64_t)a0 * b[4 * i + 1];
+        t += (int64_t)a1 * b[4 * i + 0];
+        a[4 * i + 1] += MontReduce(t);
 
-    // r1=a0b1+a1b0+zeta*(a2b3+a3b2)
-    t = (int64_t)a2 * b[3];
-    t += (int64_t)a3 * b[2];
-    a[1] = MontReduce(t);
-    a[1] = FqMul(a[1], zeta);
-    t = (int64_t)a0 * b[1];
-    t += (int64_t)a1 * b[0];
-    a[1] += MontReduce(t);
+        // r2=a0b2+a1b1+a2b0+zeta*(a3b3)
+        a[4 * i + 2] = FqMul(a3, b[4 * i + 3]);
+        a[4 * i + 2] = FqMul(a[4 * i + 2], mulTable[i]);
+        t = (int64_t)a0 * b[4 * i + 2];
+        t += (int64_t)a1 * b[4 * i + 1];
+        t += (int64_t)a2 * b[4 * i + 0];
+        a[4 * i + 2] += MontReduce(t);
 
-    // r2=a0b2+a1b1+a2b0+zeta*(a3b3)
-    a[2] = FqMul(a3, b[3]);
-    a[2] = FqMul(a[2], zeta);
-    t = (int64_t)a0 * b[2];
-    t += (int64_t)a1 * b[1];
-    t += (int64_t)a2 * b[0];
-    a[2] += MontReduce(t);
-
-    // r3=a0b3+a1b2+a2b1+a3b0
-    t = (int64_t)a0 * b[3];
-    t += (int64_t)a1 * b[2];
-    t += (int64_t)a2 * b[1];
-    t += (int64_t)a3 * b[0];
-    a[3] = MontReduce(t);
+        // r3=a0b3+a1b2+a2b1+a3b0
+        t = (int64_t)a0 * b[4 * i + 3];
+        t += (int64_t)a1 * b[4 * i + 2];
+        t += (int64_t)a2 * b[4 * i + 1];
+        t += (int64_t)a3 * b[4 * i + 0];
+        a[4 * i + 3] = MontReduce(t);
+    }
 }
 #    endif
 
@@ -530,7 +548,7 @@ void InvNTT(int32_t in[SABER_N], int32_t out[SABER_N])
     intt_asm_7layer(in, out, invRootTableMerged);
 }
 
-void BaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
+void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     basemul_asm_7layer(a, b, mulTable);
 }
@@ -667,7 +685,7 @@ void InvNTT(int32_t in[256], int32_t out[256])
 }
 
 /*************************************************
- * Name:        BaseMul
+ * Name:        PolyBaseMul
  *
  * Description: Multiplication of polynomials in Zq[X]/(X^2-zeta)
  * used for multiplication of elements in Rq in NTT domain
@@ -676,7 +694,7 @@ void InvNTT(int32_t in[256], int32_t out[256])
  *output
  *              - const int32_t b[SABER_N]: pointer to the second polynomial
  **************************************************/
-void BaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
+void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     int64_t t;
     int32_t a0, a1;
@@ -796,7 +814,7 @@ void InvNTT(int32_t in[SABER_N], int32_t out[SABER_N])
     intt_asm_8layer(in, out, invRootTableMerged);
 }
 
-void BaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
+void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     basemul_asm_8layer(a, b);
 }
@@ -970,7 +988,7 @@ void InvNTT(int32_t in[256], int32_t out[256])
 }
 
 /*************************************************
- * Name:        BaseMul
+ * Name:        PolyBaseMul
  *
  * Description: Multiplication of polynomials in Zq[X]/(X^4-zeta)
  * used for multiplication of elements in Rq in NTT domain
@@ -979,7 +997,7 @@ void InvNTT(int32_t in[256], int32_t out[256])
  *              - const int32_t b[4]: pointer to the second polynomial
  *              - int32_t zeta: integer defining the reduction polynomial
  **************************************************/
-void BaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
+void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     int32_t i;
     for (i = 0; i < SABER_N; i++) {
