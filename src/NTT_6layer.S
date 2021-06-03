@@ -420,19 +420,25 @@ looper_456:
     addi sp, sp, 4*11
     ret    
 
-# void basemul_asm(int32_t a[4], const int32_t b[4], int32_t zeta)
-# save results to a[4]
-# register usage: a0,a1,a2 parameters; t0-t3 save a0-a3; t4,t5,t6,a7 save b0-b3; a3,a4,a5,a6 temporary usage; s0=M, s1=Mprime
+# void basemul_asm(int32_t a[SABER_N], const int32_t b[SABER_N], int32_t zeta[SABER_N/4])
+# save results to a[SABER_N]
+# register usage: a0,a1,a2: parameters; t0-t3: a[0-3]; t4-t6,a7: b[0-3];
+# a3-a6,s2: temporary usage; s0=M, s1=Mprime; s3: loop control
 .globl basemul_asm_6layer
 .align 2
 basemul_asm_6layer:
-    addi sp, sp, -3*4
+    addi sp, sp, -5*4
     sw s0, 0*4(sp)
     sw s1, 1*4(sp)
     sw s2, 2*4(sp)
+    sw s3, 3*4(sp)
+    sw s4, 4*4(sp)
     # Load M, Mprime
     li s0, M
     li s1, Mprime
+    # loop counter
+    addi s3, a0, 64*4*4
+base_looper:
     # load a0-a3 to t0-t3
     lw t0, 0*4(a0) # a0
     lw t1, 1*4(a0) # a1
@@ -443,6 +449,8 @@ basemul_asm_6layer:
     lw t5, 1*4(a1) # b1
     lw t6, 2*4(a1) # b2
     lw a7, 3*4(a1) # b3
+    # zeta
+    lw s4, 0*4(a2)
     // r0=a0b0+zeta*(a1b3+a2b2+a3b1)
     # a1b3
     MUL64 t1, a7, a3, a4
@@ -457,7 +465,7 @@ basemul_asm_6layer:
     # a3=MontReduce(a1b3+a2b2+a3b1)
     MontReduce a5, a6, a3, s0, s1
     # a4=zeta*a3
-    MontMul a2, a3, a4, s0, s1, a5
+    MontMul s4, a3, a4, s0, s1, a5
     # a3=FqMul(a0,b0)
     MontMul t0, t4, a3, s0, s1, a5
     add a3, a3, a4
@@ -474,7 +482,7 @@ basemul_asm_6layer:
     # a3=MontReduce(a2b3+a3b2)
     MontReduce a5, a6, a3, s0, s1
     # s2=zeta*a3
-    MontMul a2, a3, s2, s0, s1, a5
+    MontMul s4, a3, s2, s0, s1, a5
     # a0b1
     MUL64 t0, t5, a3, a4
     # a1b0
@@ -491,7 +499,7 @@ basemul_asm_6layer:
     # a3=FqMul(a3,b3)
     MontMul t3, a7, a3, s0, s1, a4
     # s2=zeta*a3
-    MontMul a2, a3, s2, s0, s1, a5
+    MontMul s4, a3, s2, s0, s1, a5
     # a0b2
     MUL64 t0, t6, a3, a4
     # a1b1
@@ -528,8 +536,16 @@ basemul_asm_6layer:
     # save to a[3]
     sw a3, 3*4(a0)
 
+    # update index
+    addi a0, a0, 4*4
+    addi a1, a1, 4*4
+    addi a2, a2, 4
+    bne s3, a0, base_looper
+
     lw s0, 0*4(sp)
     lw s1, 1*4(sp)
     lw s2, 2*4(sp)
-    addi sp, sp, 3*4
+    lw s3, 3*4(sp)
+    lw s4, 4*4(sp)
+    addi sp, sp, 5*4
     ret

@@ -279,7 +279,8 @@ extern void ntt_asm_6layer(const uint16_t in[SABER_N], int32_t out[SABER_N],
                            int32_t rootTableMerged[SABER_N / 4]);
 extern void intt_asm_6layer(int32_t in[SABER_N], int32_t out[SABER_N],
                             int32_t invRootTableMerged[SABER_N / 4]);
-extern void basemul_asm_6layer(int32_t a[4], const int32_t b[4], int32_t zeta);
+extern void basemul_asm_6layer(int32_t a[SABER_N], const int32_t b[SABER_N],
+                               int32_t zeta[SABER_N / 4]);
 
 void NTT(const uint16_t in[SABER_N], int32_t out[SABER_N])
 {
@@ -291,9 +292,9 @@ void InvNTT(int32_t in[SABER_N], int32_t out[SABER_N])
     intt_asm_6layer(in, out, invRootTableMerged);
 }
 
-void PolyBaseMul(int32_t a[4], const int32_t b[4], int32_t zeta)
+void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
-    basemul_asm_6layer(a, b, zeta);
+    basemul_asm_6layer(a, b, mulTable);
 }
 #    else
 
