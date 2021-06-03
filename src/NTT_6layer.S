@@ -126,27 +126,27 @@
 # revert to Standard domain and reduce to Centered representation
 # s0-s7: 8 coefficients, a3: NINV, s8-s9: temp
 # a6-a7: M, Mprime, s10: MDiv2
-.macro SCReduce
+.macro SCReduce CNINV, CM, CMprime, CMDiv2, tmp1, tmp2
     # reduce s0
-    MontMulNew s0, a3, s8, a6, a7
-    CenReduce s8, s0, a6, s10, s9
+    MontMulNew s0, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s0, \CM, \CMDiv2, \tmp2
     # reduce s1
-    MontMulNew s1, a3, s8, a6, a7
-    CenReduce s8, s1, a6, s10, s9
+    MontMulNew s1, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s1, \CM, \CMDiv2, \tmp2
     # reduce s2
-    MontMulNew s2, a3, s8, a6, a7
-    CenReduce s8, s2, a6, s10, s9
+    MontMulNew s2, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s2, \CM, \CMDiv2, \tmp2
     # reduce s3
-    MontMulNew s3, a3, s8, a6, a7
-    CenReduce s8, s3, a6, s10, s9
+    MontMulNew s3, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s3, \CM, \CMDiv2, \tmp2
     # reduce s4
-    CenReduce s4, s4, a6, s10, s9
+    CenReduce s4, s4, \CM, \CMDiv2, \tmp2
     # reduce s5
-    CenReduce s5, s5, a6, s10, s9
+    CenReduce s5, s5, \CM, \CMDiv2, \tmp2
     # reduce s6
-    CenReduce s6, s6, a6, s10, s9
+    CenReduce s6, s6, \CM, \CMDiv2, \tmp2
     # reduce s7
-    CenReduce s7, s7, a6, s10, s9
+    CenReduce s7, s7, \CM, \CMDiv2, \tmp2
 .endm
 
 .macro LoadZetas
@@ -399,7 +399,7 @@ looper_456:
     BFUINTT s2, s6, t6, a6, a7, s8
     BFUINTT s3, s7, t6, a6, a7, s8
     # revert to standard domain and reduce to centered representation
-    SCReduce
+    SCReduce a3, a6, a7, s10, s8, s9
     # save results
     StoreS 32, a1
 
