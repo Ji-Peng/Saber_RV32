@@ -126,37 +126,38 @@
 .endm
 
 # revert to Standard domain and reduce to Centered representation
-# tp is NINV, t0 is M/2
-.macro SCReduce
-    MontMulNew s0, tp, t4, t6, a7
-    CenReduce t4, s0, t6, t0, t5
-    MontMulNew s1, tp, t4, t6, a7
-    CenReduce t4, s1, t6, t0, t5
-    MontMulNew s2, tp, t4, t6, a7
-    CenReduce t4, s2, t6, t0, t5
-    MontMulNew s3, tp, t4, t6, a7
-    CenReduce t4, s3, t6, t0, t5
+# tp is NINV, t0 is MDiv2, t4-t5 is temp, t6/a7: M/Mprime
+# s0-s11+a3-a6: 16 coefficients
+.macro SCReduce CNINV, CM, CMprime, CMDiv2, tmp1, tmp2
+    MontMulNew s0, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s0, \CM, \CMDiv2, \tmp2
+    MontMulNew s1, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s1, \CM, \CMDiv2, \tmp2
+    MontMulNew s2, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s2, \CM, \CMDiv2, \tmp2
+    MontMulNew s3, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s3, \CM, \CMDiv2, \tmp2
 
-    MontMulNew s4, tp, t4, t6, a7
-    CenReduce t4, s4, t6, t0, t5
-    MontMulNew s5, tp, t4, t6, a7
-    CenReduce t4, s5, t6, t0, t5
-    MontMulNew s6, tp, t4, t6, a7
-    CenReduce t4, s6, t6, t0, t5
-    MontMulNew s7, tp, t4, t6, a7
-    CenReduce t4, s7, t6, t0, t5
+    MontMulNew s4, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s4, \CM, \CMDiv2, \tmp2
+    MontMulNew s5, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s5, \CM, \CMDiv2, \tmp2
+    MontMulNew s6, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s6, \CM, \CMDiv2, \tmp2
+    MontMulNew s7, \CNINV, \tmp1, \CM, \CMprime
+    CenReduce \tmp1, s7, \CM, \CMDiv2, \tmp2
 
     # second half coefficients have been multiply by R*(1/N), 
     # which is included in last table item
-    CenReduce s8, s8, t6, t0, t5
-    CenReduce s9, s9, t6, t0, t5
-    CenReduce s10, s10, t6, t0, t5
-    CenReduce s11, s11, t6, t0, t5
+    CenReduce s8, s8, \CM, \CMDiv2, \tmp2
+    CenReduce s9, s9, \CM, \CMDiv2, \tmp2
+    CenReduce s10, s10, \CM, \CMDiv2, \tmp2
+    CenReduce s11, s11, \CM, \CMDiv2, \tmp2
 
-    CenReduce a3, a3, t6, t0, t5
-    CenReduce a4, a4, t6, t0, t5
-    CenReduce a5, a5, t6, t0, t5
-    CenReduce a6, a6, t6, t0, t5                   
+    CenReduce a3, a3, \CM, \CMDiv2, \tmp2
+    CenReduce a4, a4, \CM, \CMDiv2, \tmp2
+    CenReduce a5, a5, \CM, \CMDiv2, \tmp2
+    CenReduce a6, a6, \CM, \CMDiv2, \tmp2                   
 .endm
 
 
@@ -405,6 +406,7 @@ looper_5678:
 # gp: loop controller, t6/a7: M/Mprime
 # t4, t5: temporary variables
 # t0-t3+tp: zetas
+# t6, a7: M/Mprime
 .globl intt_asm_8layer
 .align 2
 intt_asm_8layer:
@@ -563,7 +565,7 @@ inv_looper_5678:
     BFUINTT s6, a5,  t2, t6, a7, t4
     BFUINTT s7, a6,  t2, t6, a7, t4     
     # revert to standard domain and reduce to centered representation
-    SCReduce
+    SCReduce tp, t6, a7, t0, t4, t5
     # save results
     StoreS 16, a1
 
