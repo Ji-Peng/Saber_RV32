@@ -17,6 +17,48 @@ int32_t FqMul(int32_t a, int32_t b)
     return MontReduce((int64_t)a * b);
 }
 #if defined(FIVE_LAYER_NTT)
+int32_t mulTable[] = {
+    -2683848, 2683848,  -4582610, 4582610,  -709618,  709618,   3211370,
+    -3211370, -2422739, 2422739,  2533938,  -2533938, -3724866, 3724866,
+    4226394,  -4226394, 3515215,  -3515215, -5214712, 5214712,  4180628,
+    -4180628, -4354273, 4354273,  1961582,  -1961582, -1469009, 1469009,
+    3661715,  -3661715, 5089826,  -5089826};
+// #    ifdef NTTASM
+int32_t rootTableMerged[] = {
+    -280030,  -3836025, -4362766, 4859845,  -1672980, -5071803, -1927818,
+    -3450405, -2683848, -4582610, 723028,   -709618,  3211370,  3724084,
+    -2422739, 2533938,  -5052843, -3724866, 4226394,  -199509,  3515215,
+    -5214712, -650362,  4180628,  -4354273, -2775101, 1961582,  -1469009,
+    -717683,  3661715,  5089826};
+// invRootTable[31]=280030*R*(1/32)=-2936516
+int32_t invRootTableMerged[] = {
+    -5089826, -3661715, 717683,  1469009,  -1961582, 2775101,  4354273,
+    -4180628, 650362,   5214712, -3515215, 199509,   -4226394, 3724866,
+    5052843,  -2533938, 2422739, -3724084, -3211370, 709618,   -723028,
+    4582610,  2683848,  3450405, 1927818,  5071803,  1672980,  -4859845,
+    4362766,  3836025,  -2936516};
+extern void ntt_asm_5layer(const uint16_t in[SABER_N], int32_t out[SABER_N],
+                           int32_t rootTableMerged[SABER_N / 8]);
+extern void intt_asm_5layer(int32_t in[SABER_N], int32_t out[SABER_N],
+                            int32_t invRootTableMerged[SABER_N / 8]);
+extern void basemul_asm_5layer(int32_t a[SABER_N], const int32_t b[SABER_N],
+                               int32_t zeta[SABER_N / 8]);
+
+void NTT(const uint16_t in[SABER_N], int32_t out[SABER_N])
+{
+    ntt_asm_5layer(in, out, rootTableMerged);
+}
+
+void InvNTT(int32_t in[SABER_N], int32_t out[SABER_N])
+{
+    intt_asm_5layer(in, out, invRootTableMerged);
+}
+
+// void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
+// {
+//     basemul_asm_5layer(a, b, mulTable);
+// }
+// #    else
 int32_t rootTable[32] = {
     -280030,  -3836025, -4362766, 4859845,  -1672980, -5071803, -1927818,
     -3450405, 723028,   3724084,  -5052843, -199509,  -650362,  -2775101,
@@ -30,12 +72,7 @@ int32_t invRootTable[32] = {
     4582610,  2683848,  717683,  2775101,  650362,  199509,   5052843,
     -3724084, -723028,  3450405, 1927818,  5071803, 1672980,  -4859845,
     4362766,  3836025,  -2936516};
-int32_t mulTable[] = {
-    -2683848, 2683848,  -4582610, 4582610,  -709618,  709618,   3211370,
-    -3211370, -2422739, 2422739,  2533938,  -2533938, -3724866, 3724866,
-    4226394,  -4226394, 3515215,  -3515215, -5214712, 5214712,  4180628,
-    -4180628, -4354273, 4354273,  1961582,  -1961582, -1469009, 1469009,
-    3661715,  -3661715, 5089826,  -5089826};
+
 /*************************************************
  * Name:        NTT
  *
@@ -45,32 +82,32 @@ int32_t mulTable[] = {
  *
  * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
  **************************************************/
-void NTT(const uint16_t in[256], int32_t out[256])
-{
-    unsigned int len, start, j, k;
-    int32_t t, zeta;
+// void NTT(const uint16_t in[256], int32_t out[256])
+// {
+//     unsigned int len, start, j, k;
+//     int32_t t, zeta;
 
-    k = 0;
-    len = 128;
-    zeta = rootTable[k++];
-    // a sepearate first layer for storing results to output polynomial
-    for (j = 0; j < len; j++) {
-        t = FqMul(zeta, (int32_t)(int16_t)in[j + len]);
-        out[j + len] = (int32_t)(int16_t)in[j] - t;
-        out[j] = (int32_t)(int16_t)in[j] + t;
-    }
-    // remaining seven layers
-    for (len = 64; len >= 8; len >>= 1) {
-        for (start = 0; start < 256; start = j + len) {
-            zeta = rootTable[k++];
-            for (j = start; j < start + len; j++) {
-                t = FqMul(zeta, out[j + len]);
-                out[j + len] = out[j] - t;
-                out[j] = out[j] + t;
-            }
-        }
-    }
-}
+//     k = 0;
+//     len = 128;
+//     zeta = rootTable[k++];
+//     // a sepearate first layer for storing results to output polynomial
+//     for (j = 0; j < len; j++) {
+//         t = FqMul(zeta, (int32_t)(int16_t)in[j + len]);
+//         out[j + len] = (int32_t)(int16_t)in[j] - t;
+//         out[j] = (int32_t)(int16_t)in[j] + t;
+//     }
+//     // remaining seven layers
+//     for (len = 64; len >= 8; len >>= 1) {
+//         for (start = 0; start < 256; start = j + len) {
+//             zeta = rootTable[k++];
+//             for (j = start; j < start + len; j++) {
+//                 t = FqMul(zeta, out[j + len]);
+//                 out[j + len] = out[j] - t;
+//                 out[j] = out[j] + t;
+//             }
+//         }
+//     }
+// }
 
 /*************************************************
  * Name:        invntt_tomont
@@ -81,49 +118,49 @@ void NTT(const uint16_t in[256], int32_t out[256])
  *
  * Arguments:   - int32_t in/out[256]: pointer to input/output polynomial
  **************************************************/
-void InvNTT(int32_t in[256], int32_t out[256])
-{
-    unsigned int start, len, j, k;
-    int32_t t, zeta;
-    // mont^2/32 mod M = (2^32)^2/32 mod M
-    const int32_t f = ((((int64_t)1 << 32) >> 5) * ((int64_t)1 << 32)) % M;
+// void InvNTT(int32_t in[256], int32_t out[256])
+// {
+//     unsigned int start, len, j, k;
+//     int32_t t, zeta;
+//     // mont^2/32 mod M = (2^32)^2/32 mod M
+//     const int32_t f = ((((int64_t)1 << 32) >> 5) * ((int64_t)1 << 32)) % M;
 
-    k = 0;
-    len = 8;
-    // a separate first layer for storing results to output polynomial
-    for (start = 0; start < 256; start = j + len) {
-        zeta = invRootTable[k++];
-        for (j = start; j < start + len; j++) {
-            t = in[j];
-            out[j] = t + in[j + len];
-            out[j + len] = t - in[j + len];
-            out[j + len] = FqMul(zeta, out[j + len]);
-        }
-    }
-    // mod M for avoiding overflow
-    // out[0] = FqMul(out[0], ((int64_t)1 << 32) % M);
-    // remaining seven layers
-    for (len = 16; len <= 128; len <<= 1) {
-        for (start = 0; start < 256; start = j + len) {
-            zeta = invRootTable[k++];
-            for (j = start; j < start + len; j++) {
-                t = out[j];
-                out[j] = t + out[j + len];
-                out[j + len] = t - out[j + len];
-                out[j + len] = FqMul(zeta, out[j + len]);
-            }
-        }
-    }
+//     k = 0;
+//     len = 8;
+//     // a separate first layer for storing results to output polynomial
+//     for (start = 0; start < 256; start = j + len) {
+//         zeta = invRootTable[k++];
+//         for (j = start; j < start + len; j++) {
+//             t = in[j];
+//             out[j] = t + in[j + len];
+//             out[j + len] = t - in[j + len];
+//             out[j + len] = FqMul(zeta, out[j + len]);
+//         }
+//     }
+//     // mod M for avoiding overflow
+//     // out[0] = FqMul(out[0], ((int64_t)1 << 32) % M);
+//     // remaining seven layers
+//     for (len = 16; len <= 128; len <<= 1) {
+//         for (start = 0; start < 256; start = j + len) {
+//             zeta = invRootTable[k++];
+//             for (j = start; j < start + len; j++) {
+//                 t = out[j];
+//                 out[j] = t + out[j + len];
+//                 out[j + len] = t - out[j + len];
+//                 out[j + len] = FqMul(zeta, out[j + len]);
+//             }
+//         }
+//     }
 
-    // multiply mont^2/64, reduce to centered representatives
-    for (j = 0; j < SABER_N / 2; j++) {
-        out[j] = FqMul(out[j], f);
-        out[j] = CenReduce(out[j]);
-    }
-    for (j = SABER_N / 2; j < SABER_N; j++) {
-        out[j] = CenReduce(out[j]);
-    }
-}
+//     // multiply mont^2/64, reduce to centered representatives
+//     for (j = 0; j < SABER_N / 2; j++) {
+//         out[j] = FqMul(out[j], f);
+//         out[j] = CenReduce(out[j]);
+//     }
+//     for (j = SABER_N / 2; j < SABER_N; j++) {
+//         out[j] = CenReduce(out[j]);
+//     }
+// }
 
 /*************************************************
  * Name:        PolyBaseMul
@@ -133,113 +170,115 @@ void InvNTT(int32_t in[256], int32_t out[256])
  *
  * Arguments:   - a: pointer to the first polynomial, is also output
  *              - b: pointer to the second polynomial
- *              - int32_t zeta: integer defining the reduction polynomial
  **************************************************/
-void PolyBaseMul(int32_t a[8], const int32_t b[8], int32_t zeta)
+void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     int64_t t;
-    int32_t a0, a1, a2, a3, a4, a5, a6, a7;
-    a0 = a[0];
-    a1 = a[1];
-    a2 = a[2];
-    a3 = a[3];
-    a4 = a[4];
-    a5 = a[5];
-    a6 = a[6];
-    a7 = a[7];
+    int32_t a0, a1, a2, a3, a4, a5, a6, a7, i;
+    for (i = 0; i < SABER_N / 8; i++) {
+        a0 = a[8 * i + 0];
+        a1 = a[8 * i + 1];
+        a2 = a[8 * i + 2];
+        a3 = a[8 * i + 3];
+        a4 = a[8 * i + 4];
+        a5 = a[8 * i + 5];
+        a6 = a[8 * i + 6];
+        a7 = a[8 * i + 7];
 
-    t = (int64_t)a1 * b[7];
-    t += (int64_t)a2 * b[6];
-    t += (int64_t)a3 * b[5];
-    t += (int64_t)a4 * b[4];
-    t += (int64_t)a5 * b[3];
-    t += (int64_t)a6 * b[2];
-    t += (int64_t)a7 * b[1];
-    a[0] = MontReduce(t);
-    a[0] = FqMul(a[0], zeta);
-    a[0] += FqMul(a0, b[0]);
+        t = (int64_t)a1 * b[8 * i + 7];
+        t += (int64_t)a2 * b[8 * i + 6];
+        t += (int64_t)a3 * b[8 * i + 5];
+        t += (int64_t)a4 * b[8 * i + 4];
+        t += (int64_t)a5 * b[8 * i + 3];
+        t += (int64_t)a6 * b[8 * i + 2];
+        t += (int64_t)a7 * b[8 * i + 1];
+        a[8 * i + 0] = MontReduce(t);
+        a[8 * i + 0] = FqMul(a[8 * i + 0], mulTable[i]);
+        a[8 * i + 0] += FqMul(a0, b[8 * i + 0]);
 
-    t = (int64_t)a2 * b[7];
-    t += (int64_t)a3 * b[6];
-    t += (int64_t)a4 * b[5];
-    t += (int64_t)a5 * b[4];
-    t += (int64_t)a6 * b[3];
-    t += (int64_t)a7 * b[2];
-    a[1] = MontReduce(t);
-    a[1] = FqMul(a[1], zeta);
-    t = (int64_t)a0 * b[1];
-    t += (int64_t)a1 * b[0];
-    a[1] += MontReduce(t);
+        t = (int64_t)a2 * b[8 * i + 7];
+        t += (int64_t)a3 * b[8 * i + 6];
+        t += (int64_t)a4 * b[8 * i + 5];
+        t += (int64_t)a5 * b[8 * i + 4];
+        t += (int64_t)a6 * b[8 * i + 3];
+        t += (int64_t)a7 * b[8 * i + 2];
+        a[8 * i + 1] = MontReduce(t);
+        a[8 * i + 1] = FqMul(a[8 * i + 1], mulTable[i]);
+        t = (int64_t)a0 * b[8 * i + 1];
+        t += (int64_t)a1 * b[8 * i + 0];
+        a[8 * i + 1] += MontReduce(t);
 
-    t = (int64_t)a3 * b[7];
-    t += (int64_t)a4 * b[6];
-    t += (int64_t)a5 * b[5];
-    t += (int64_t)a6 * b[4];
-    t += (int64_t)a7 * b[3];
-    a[2] = MontReduce(t);
-    a[2] = FqMul(a[2], zeta);
-    t = (int64_t)a0 * b[2];
-    t += (int64_t)a1 * b[1];
-    t += (int64_t)a2 * b[0];
-    a[2] += MontReduce(t);
+        t = (int64_t)a3 * b[8 * i + 7];
+        t += (int64_t)a4 * b[8 * i + 6];
+        t += (int64_t)a5 * b[8 * i + 5];
+        t += (int64_t)a6 * b[8 * i + 4];
+        t += (int64_t)a7 * b[8 * i + 3];
+        a[8 * i + 2] = MontReduce(t);
+        a[8 * i + 2] = FqMul(a[8 * i + 2], mulTable[i]);
+        t = (int64_t)a0 * b[8 * i + 2];
+        t += (int64_t)a1 * b[8 * i + 1];
+        t += (int64_t)a2 * b[8 * i + 0];
+        a[8 * i + 2] += MontReduce(t);
 
-    t = (int64_t)a4 * b[7];
-    t += (int64_t)a5 * b[6];
-    t += (int64_t)a6 * b[5];
-    t += (int64_t)a7 * b[4];
-    a[3] = MontReduce(t);
-    a[3] = FqMul(a[3], zeta);
-    t = (int64_t)a0 * b[3];
-    t += (int64_t)a1 * b[2];
-    t += (int64_t)a2 * b[1];
-    t += (int64_t)a3 * b[0];
-    a[3] += MontReduce(t);
+        t = (int64_t)a4 * b[8 * i + 7];
+        t += (int64_t)a5 * b[8 * i + 6];
+        t += (int64_t)a6 * b[8 * i + 5];
+        t += (int64_t)a7 * b[8 * i + 4];
+        a[8 * i + 3] = MontReduce(t);
+        a[8 * i + 3] = FqMul(a[8 * i + 3], mulTable[i]);
+        t = (int64_t)a0 * b[8 * i + 3];
+        t += (int64_t)a1 * b[8 * i + 2];
+        t += (int64_t)a2 * b[8 * i + 1];
+        t += (int64_t)a3 * b[8 * i + 0];
+        a[8 * i + 3] += MontReduce(t);
 
-    t = (int64_t)a5 * b[7];
-    t += (int64_t)a6 * b[6];
-    t += (int64_t)a7 * b[5];
-    a[4] = MontReduce(t);
-    a[4] = FqMul(a[4], zeta);
-    t = (int64_t)a0 * b[4];
-    t += (int64_t)a1 * b[3];
-    t += (int64_t)a2 * b[2];
-    t += (int64_t)a3 * b[1];
-    t += (int64_t)a4 * b[0];
-    a[4] += MontReduce(t);
+        t = (int64_t)a5 * b[8 * i + 7];
+        t += (int64_t)a6 * b[8 * i + 6];
+        t += (int64_t)a7 * b[8 * i + 5];
+        a[8 * i + 4] = MontReduce(t);
+        a[8 * i + 4] = FqMul(a[8 * i + 4], mulTable[i]);
+        t = (int64_t)a0 * b[8 * i + 4];
+        t += (int64_t)a1 * b[8 * i + 3];
+        t += (int64_t)a2 * b[8 * i + 2];
+        t += (int64_t)a3 * b[8 * i + 1];
+        t += (int64_t)a4 * b[8 * i + 0];
+        a[8 * i + 4] += MontReduce(t);
 
-    t = (int64_t)a6 * b[7];
-    t += (int64_t)a7 * b[6];
-    a[5] = MontReduce(t);
-    a[5] = FqMul(a[5], zeta);
-    t = (int64_t)a0 * b[5];
-    t += (int64_t)a1 * b[4];
-    t += (int64_t)a2 * b[3];
-    t += (int64_t)a3 * b[2];
-    t += (int64_t)a4 * b[1];
-    t += (int64_t)a5 * b[0];
-    a[5] += MontReduce(t);
+        t = (int64_t)a6 * b[8 * i + 7];
+        t += (int64_t)a7 * b[8 * i + 6];
+        a[8 * i + 5] = MontReduce(t);
+        a[8 * i + 5] = FqMul(a[8 * i + 5], mulTable[i]);
+        t = (int64_t)a0 * b[8 * i + 5];
+        t += (int64_t)a1 * b[8 * i + 4];
+        t += (int64_t)a2 * b[8 * i + 3];
+        t += (int64_t)a3 * b[8 * i + 2];
+        t += (int64_t)a4 * b[8 * i + 1];
+        t += (int64_t)a5 * b[8 * i + 0];
+        a[8 * i + 5] += MontReduce(t);
 
-    a[6] = FqMul(a7, b[7]);
-    a[6] = FqMul(a[6], zeta);
-    t = (int64_t)a0 * b[6];
-    t += (int64_t)a1 * b[5];
-    t += (int64_t)a2 * b[4];
-    t += (int64_t)a3 * b[3];
-    t += (int64_t)a4 * b[2];
-    t += (int64_t)a5 * b[1];
-    t += (int64_t)a6 * b[0];
-    a[6] += MontReduce(t);
+        a[8 * i + 6] = FqMul(a7, b[8 * i + 7]);
+        a[8 * i + 6] = FqMul(a[8 * i + 6], mulTable[i]);
+        t = (int64_t)a0 * b[8 * i + 6];
+        t += (int64_t)a1 * b[8 * i + 5];
+        t += (int64_t)a2 * b[8 * i + 4];
+        t += (int64_t)a3 * b[8 * i + 3];
+        t += (int64_t)a4 * b[8 * i + 2];
+        t += (int64_t)a5 * b[8 * i + 1];
+        t += (int64_t)a6 * b[8 * i + 0];
+        a[8 * i + 6] += MontReduce(t);
 
-    t = (int64_t)a0 * b[7];
-    t += (int64_t)a1 * b[6];
-    t += (int64_t)a2 * b[5];
-    t += (int64_t)a3 * b[4];
-    t += (int64_t)a4 * b[3];
-    t += (int64_t)a5 * b[2];
-    t += (int64_t)a6 * b[1];
-    t += (int64_t)a7 * b[0];
-    a[7] = MontReduce(t);
+        t = (int64_t)a0 * b[8 * i + 7];
+        t += (int64_t)a1 * b[8 * i + 6];
+        t += (int64_t)a2 * b[8 * i + 5];
+        t += (int64_t)a3 * b[8 * i + 4];
+        t += (int64_t)a4 * b[8 * i + 3];
+        t += (int64_t)a5 * b[8 * i + 2];
+        t += (int64_t)a6 * b[8 * i + 1];
+        t += (int64_t)a7 * b[8 * i + 0];
+        a[8 * i + 7] = MontReduce(t);
+    }
 }
+// #    endif
 #elif defined(SIX_LAYER_NTT)
 // point-wise multiplication mod (X^4-zeta^{2br(i)+1}) i=0,1,...,63
 int32_t mulTable[64] = {

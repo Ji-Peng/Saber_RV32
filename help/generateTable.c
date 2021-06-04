@@ -19,9 +19,17 @@ int32_t treeNTT_5layer[] = {16, 8,  24, 4,  20, 12, 28, 2,  18, 10, 26,
                             6,  22, 14, 30, 1,  17, 9,  25, 5,  21, 13,
                             29, 3,  19, 11, 27, 7,  23, 15, 31};
 
+int32_t treeNTTMerged_5layer[] = {16, 8,  24, 4,  20, 12, 28, 2,  1, 17, 18,
+                                  9,  25, 10, 5,  21, 26, 13, 29, 6, 3,  19,
+                                  22, 11, 27, 14, 7,  23, 30, 15, 31};
+
 int32_t treeINTT_5layer[] = {1,  17, 9,  25, 5,  21, 13, 29, 3,  19, 11,
                              27, 7,  23, 15, 31, 2,  18, 10, 26, 6,  22,
                              14, 30, 4,  20, 12, 28, 8,  24, 16};
+
+int32_t treeINTTMerged_5layer[] = {1,  17, 2,  9,  25, 18, 5,  21, 10, 13, 29,
+                                   26, 3,  19, 6,  11, 27, 22, 7,  23, 14, 15,
+                                   31, 30, 4,  20, 12, 28, 8,  24, 16};
 
 int32_t treeMulTable_5layer[] = {1,  33, 17, 49, 9,  41, 25, 57, 5,  37, 21,
                                  53, 13, 45, 29, 61, 3,  35, 19, 51, 11, 43,
@@ -289,6 +297,21 @@ void GenTables_5layer(void)
         printf("%d, ", t);
     }
     printf("\n\n");
+
+    for (int j = 0; j < 31; j++) {
+        t = Pow(root, treeNTTMerged_5layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
+
+    for (int j = 0; j < 31; j++) {
+        // root is 64th, -i in intt
+        t = Pow(root, 64 - treeINTTMerged_5layer[j]);
+        t = FqMul(t, ((int64_t)RmodM * RmodM) % M);
+        printf("%d, ", t);
+    }
+    printf("\n\n");
 }
 
 void GenTables_6layer(void)
@@ -430,14 +453,6 @@ void GenTables_8layer(void)
 
 int main(void)
 {
-    // check();
-    // GenTables();
-    GenTablesMerged();
-    // GenTables_256();
-    // GenTables_512();
-    // GenTables_512Merged();
-    // GenTables_64();
-    // printf("%d\n",FqMul(2, RmodM));
-    // printf("%d\n",FqMulNew(2, RmodM));
+    GenTables_5layer();
     return 0;
 }
