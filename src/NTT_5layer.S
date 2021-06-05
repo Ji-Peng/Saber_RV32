@@ -502,129 +502,308 @@ looper_345:
 
 # void basemul_asm(int32_t a[SABER_N], const int32_t b[SABER_N], int32_t zeta[SABER_N/8])
 # save results to a[SABER_N]
-# register usage: t0-t2: parameters; s0-s7: a[0-7]; a0-a7: b[0-7]
+# register usage: t0-t2: parameters; s0-s7: a[0-7]; a0-a7: b[0-7]; 
+# t3: zeta; t4: loop control; t5/t6: M/Mprime; s8-s11+gp+ra: temp;
 .globl basemul_asm_5layer
 .align 2
 basemul_asm_5layer:
-    addi sp, sp, -5*4
+    addi sp, sp, -4*15
     sw s0, 0*4(sp)
     sw s1, 1*4(sp)
     sw s2, 2*4(sp)
     sw s3, 3*4(sp)
     sw s4, 4*4(sp)
+    sw s5, 5*4(sp)
+    sw s6, 6*4(sp)
+    sw s7, 7*4(sp)
+    sw s8, 8*4(sp)
+    sw s9, 9*4(sp)
+    sw s10,10*4(sp)
+    sw s11,11*4(sp)
+    sw gp, 12*4(sp)
+    sw tp, 13*4(sp)
+    sw ra, 14*4(sp)
+    # parameters
+    mv t0, a0
+    mv t1, a1
+    mv t2, a2
     # Load M, Mprime
-    li s0, M
-    li s1, Mprime
+    li t5, M
+    li t6, Mprime
     # loop counter
-    addi s3, a0, 64*4*4
+    addi t4, t0, 32*8*4
 base_looper:
-    # load a0-a3 to t0-t3
-    lw t0, 0*4(a0) # a0
-    lw t1, 1*4(a0) # a1
-    lw t2, 2*4(a0) # a2
-    lw t3, 3*4(a0) # a3
-    # load b0-b3 to t4,t5,t6,a7
-    lw t4, 0*4(a1) # b0
-    lw t5, 1*4(a1) # b1
-    lw t6, 2*4(a1) # b2
-    lw a7, 3*4(a1) # b3
-    # zeta
-    lw s4, 0*4(a2)
-    // r0=a0b0+zeta*(a1b3+a2b2+a3b1)
-    # a1b3
-    MUL64 t1, a7, a3, a4
-    # a2b2
-    MUL64 t2, t6, a5, a6
-    # a1b3+a2b2
-    ADD64 a3, a4, a5, a6
-    # a3b1
-    MUL64 t3, t5, a3, a4
-    # a1b3+a2b2+a3b1
-    ADD64 a3, a4, a5, a6
-    # a3=MontReduce(a1b3+a2b2+a3b1)
-    MontReduce a5, a6, a3, s0, s1
-    # a4=zeta*a3
-    MontMul s4, a3, a4, s0, s1, a5
-    # a3=FqMul(a0,b0)
-    MontMul t0, t4, a3, s0, s1, a5
-    add a3, a3, a4
-    # save to a[0]
-    sw a3, 0*4(a0)
+    # a[0-7]
+    lw s0, 0*4(t0)
+    lw s1, 1*4(t0)
+    lw s2, 2*4(t0)
+    lw s3, 3*4(t0)
+    lw s4, 4*4(t0)
+    lw s5, 5*4(t0)
+    lw s6, 6*4(t0)
+    lw s7, 7*4(t0)
+    # b[0-7]
+    lw a0, 0*4(t1)
+    lw a1, 1*4(t1)
+    lw a2, 2*4(t1)
+    lw a3, 3*4(t1)
+    lw a4, 4*4(t1)
+    lw a5, 5*4(t1)
+    lw a6, 6*4(t1)
+    lw a7, 7*4(t1)    
+    # t3 = zeta
+    lw t3, 0*4(t2)
+    # r0=a0b0+zeta*(a1b7+a2b6+a3b5+a4b4+a5b3+a6b2+a7b1)
+    MUL64 s1, a7, s8, s9
+    MUL64 s2, a6, s10, s11
+    ADD64 s10, s11, s8, s9
 
-    // r1=a0b1+a1b0+zeta*(a2b3+a3b2)
-    # a2b3
-    MUL64 t2, a7, a3, a4
-    # a3b2
-    MUL64 t3, t6, a5, a6
-    # a2b3+a3b2
-    ADD64 a3, a4, a5, a6
-    # a3=MontReduce(a2b3+a3b2)
-    MontReduce a5, a6, a3, s0, s1
-    # s2=zeta*a3
-    MontMul s4, a3, s2, s0, s1, a5
-    # a0b1
-    MUL64 t0, t5, a3, a4
-    # a1b0
-    MUL64 t1, t4, a5, a6
-    # a0b1+a1b0
-    ADD64 a3, a4, a5, a6
-    # a3=MontReduce(a0b1+a1b0)
-    MontReduce a5, a6, a3, s0, s1
-    add a3, a3, s2
-    # save to a[1]
-    sw a3, 1*4(a0)
+    MUL64 s3, a5, s10, s11
+    ADD64 s10, s11, s8, s9
 
-    // r2=a0b2+a1b1+a2b0+zeta*(a3b3)
-    # a3=FqMul(a3,b3)
-    MontMul t3, a7, a3, s0, s1, a4
-    # s2=zeta*a3
-    MontMul s4, a3, s2, s0, s1, a5
-    # a0b2
-    MUL64 t0, t6, a3, a4
-    # a1b1
-    MUL64 t1, t5, a5, a6
-    # a0b2+a1b1
-    ADD64 a3, a4, a5, a6
-    # a2b0
-    MUL64 t2, t4, a3, a4
-    # a0b2+a1b1+a2b0
-    ADD64 a3, a4, a5, a6
-    # a3=MontReduce(a0b2+a1b1+a2b0)
-    MontReduce a5, a6, a3, s0, s1
-    add a3, a3, s2
-    # save to a[2]
-    sw a3, 2*4(a0)
+    MUL64 s4, a4, s10, s11
+    ADD64 s10, s11, s8, s9
 
-    // r3=a0b3+a1b2+a2b1+a3b0
-    # a0b3
-    MUL64 t0, a7, a3, a4
-    # a1b2
-    MUL64 t1, t6, a5, a6
-    # a0b3+a1b2
-    ADD64 a3, a4, a5, a6
-    # a2b1
-    MUL64 t2, t5, a3, a4
-    # a0b3+a1b2+a2b1
-    ADD64 a3, a4, a5, a6
-    # a3b0
-    MUL64 t3, t4, a3, a4
-    # a0b3+a1b2+a2b1+a3b0
-    ADD64 a3, a4, a5, a6
-    # MontReduce(a0b3+a1b2+a2b1+a3b0)
-    MontReduce a5, a6, a3, s0, s1
-    # save to a[3]
-    sw a3, 3*4(a0)
+    MUL64 s5, a3, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s6, a2, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s7, a1, s10, s11
+    ADD64 s10, s11, s8, s9
+    MontReduce s8, s9, s10, t5, t6
+    # out: s8
+    MontMulNew s10, t3, s8, t5, t6
+    MontMul s0, a0, s9, t5, t6, s10
+    add s8, s8, s9
+    sw  s8, 0*4(t0)
+
+    # r1=a0b1+a1b0+zeta*(a2b7+a3b6+a4b5+a5b4+a6b3+a7b2)
+    MUL64 s2, a7, s8, s9
+    MUL64 s3, a6, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s4, a5, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s5, a4, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s6, a3, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s7, a2, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MontReduce s8, s9, s10, t5, t6
+    # out: gp
+    MontMulNew s10, t3, gp, t5, t6
+
+    MUL64 s0, a1, s8, s9
+    MUL64 s1, a0, s10, s11
+    ADD64 s10, s11, s8, s9
+    # out: s10
+    MontReduce s8, s9, s10, t5, t6
+    add s10, s10, gp
+    sw  s10, 1*4(t0)
+
+    # r2=a0b2+a1b1+a2b0+zeta*(a3b7+a3b6+...+a7b3)
+    MUL64 s3, a7, s8, s9
+    MUL64 s4, a6, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s5, a5, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s6, a4, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s7, a3, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MontReduce s8, s9, s10, t5, t6
+    # out: gp
+    MontMulNew s10, t3, gp, t5, t6
+
+    MUL64 s0, a2, s8, s9
+    MUL64 s1, a1, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s2, a0, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    # out: s10
+    MontReduce s8, s9, s10, t5, t6
+    add s10, s10, gp
+    sw  s10, 2*4(t0)
+
+    # r3=a0b3+a1b2+a2b1+a3b0+zeta*(a4b7+a5b6+...+a7b4)
+    MUL64 s4, a7, s8, s9
+    MUL64 s5, a6, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s6, a5, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s7, a4, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MontReduce s8, s9, s10, t5, t6
+    # out: gp
+    MontMulNew s10, t3, gp, t5, t6
+
+    MUL64 s0, a3, s8, s9
+    MUL64 s1, a2, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s2, a1, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s3, a0, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    # out: s10
+    MontReduce s8, s9, s10, t5, t6
+    add s10, s10, gp
+    sw  s10, 3*4(t0)
+
+    # r4=a0b4+a1b3+a2b2+a3b1+a4b0+zeta*(a5b7+a6b6+a7b5)
+    MUL64 s5, a7, s8, s9
+    MUL64 s6, a6, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s7, a5, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MontReduce s8, s9, s10, t5, t6
+    # out: gp
+    MontMulNew s10, t3, gp, t5, t6
+
+    MUL64 s0, a4, s8, s9
+    MUL64 s1, a3, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s2, a2, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s3, a1, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s4, a0, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    # out: s10
+    MontReduce s8, s9, s10, t5, t6
+    add s10, s10, gp
+    sw  s10, 4*4(t0)
+
+    # r5=a0b5+a1b4+a2b3+a3b2+a4b1+a5b0+zeta*(a6b7+a7b6)
+    MUL64 s6, a7, s8, s9
+    MUL64 s7, a6, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MontReduce s8, s9, s10, t5, t6
+    # out: gp
+    MontMulNew s10, t3, gp, t5, t6
+
+    MUL64 s0, a5, s8, s9
+    MUL64 s1, a4, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s2, a3, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s3, a2, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s4, a1, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s5, a0, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    # out: s10
+    MontReduce s8, s9, s10, t5, t6
+    add s10, s10, gp
+    sw  s10, 5*4(t0)
+
+    # r6=a0b6+a1b5+a2b4+a3b3+a4b2+a5b1+a6b0+zeta*(a7b7)
+    MontMul s7, a7, s10, t5, t6, s8
+    # out: gp
+    MontMulNew s10, t3, gp, t5, t6
+
+    MUL64 s0, a6, s8, s9
+    MUL64 s1, a5, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s2, a4, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s3, a3, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s4, a2, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s5, a1, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s6, a0, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    # out: s10
+    MontReduce s8, s9, s10, t5, t6
+    add s10, s10, gp
+    sw  s10, 6*4(t0)
+
+    # r7=a0b7+a1b6+a2b5+a3b4+a4b3+a5b2+a6b1+a7b0
+    MUL64 s0, a7, s8, s9
+    MUL64 s1, a6, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s2, a5, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s3, a4, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s4, a3, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s5, a2, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s6, a1, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    MUL64 s7, a0, s10, s11
+    ADD64 s10, s11, s8, s9
+
+    # out: s10
+    MontReduce s8, s9, s10, t5, t6
+    sw  s10, 7*4(t0)
 
     # update index
-    addi a0, a0, 4*4
-    addi a1, a1, 4*4
-    addi a2, a2, 4
-    bne s3, a0, base_looper
+    addi t0, t0, 8*4
+    addi t1, t1, 8*4
+    addi t2, t2, 4
+    bne  t4, t0, base_looper
 
     lw s0, 0*4(sp)
     lw s1, 1*4(sp)
     lw s2, 2*4(sp)
     lw s3, 3*4(sp)
     lw s4, 4*4(sp)
-    addi sp, sp, 5*4
+    lw s5, 5*4(sp)
+    lw s6, 6*4(sp)
+    lw s7, 7*4(sp)
+    lw s8, 8*4(sp)
+    lw s9, 9*4(sp)
+    lw s10,10*4(sp)
+    lw s11,11*4(sp)
+    lw gp, 12*4(sp)
+    lw tp, 13*4(sp)
+    lw ra, 14*4(sp)
+    addi sp, sp, 4*15
     ret
