@@ -227,7 +227,7 @@
 .globl ntt_asm_8layer
 .align 2
 ntt_asm_8layer:
-    addi sp, sp, -4*14
+    addi sp, sp, -4*15
     sw s0,  0*4(sp)
     sw s1,  1*4(sp)
     sw s2,  2*4(sp)
@@ -242,12 +242,14 @@ ntt_asm_8layer:
     sw s11, 11*4(sp)
     sw gp,  12*4(sp)
     sw tp,  13*4(sp)
+    sw ra,  14*4(sp)
 
     # zeta, M, Mprime
     lw t0, 0*4(a2)
     lw t1, 1*4(a2)
     lw t2, 2*4(a2)
     lw t3, 3*4(a2)
+    lw ra, 4*4(a2)
 
     li t6, M
     li a7, Mprime
@@ -278,9 +280,8 @@ looper_1234:
     # level3
     BFU s0,  s2,  t3, t6, a7, t4
     BFU s1,  s3,  t3, t6, a7, t4
-    lw  tp,  4*4(a2)
-    BFU s4,  s6,  tp, t6, a7, t4
-    BFU s5,  s7,  tp, t6, a7, t4 
+    BFU s4,  s6,  ra, t6, a7, t4
+    BFU s5,  s7,  ra, t6, a7, t4 
     lw  tp,  5*4(a2)
     BFU s8,  s10, tp, t6, a7, t4
     BFU s9,  s11, tp, t6, a7, t4
@@ -327,6 +328,7 @@ looper_5678:
     lw  t1, 1*4(a2)
     lw  t2, 2*4(a2)
     lw  t3, 3*4(a2)
+    lw  ra, 4*4(a2)
     # level5
     BFU s0, s8,  t0, t6, a7, t4
     BFU s1, s9,  t0, t6, a7, t4
@@ -348,12 +350,11 @@ looper_5678:
     # level7
     BFU s0,  s2,  t3, t6, a7, t4
     BFU s1,  s3,  t3, t6, a7, t4
-    lw  t0, 4*4(a2)
     lw  t1, 5*4(a2)
     lw  t2, 6*4(a2)
     lw  t3, 7*4(a2)
-    BFU s4,  s6,  t0, t6, a7, t4
-    BFU s5,  s7,  t0, t6, a7, t4
+    BFU s4,  s6,  ra, t6, a7, t4
+    BFU s5,  s7,  ra, t6, a7, t4
     BFU s8,  s10, t1, t6, a7, t4
     BFU s9,  s11, t1, t6, a7, t4
     BFU a3,  a5,  t2, t6, a7, t4
@@ -396,7 +397,8 @@ looper_5678:
     lw s11, 11*4(sp)
     lw gp,  12*4(sp)
     lw tp,  13*4(sp)
-    addi sp, sp, 4*14
+    lw ra,  14*4(sp)
+    addi sp, sp, 4*15
     ret
 
 # void intt_asm(const uint32_t in[256], int32_t out[256],
