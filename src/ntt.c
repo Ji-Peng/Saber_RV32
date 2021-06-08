@@ -175,6 +175,7 @@ void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     int64_t t;
     int32_t a0, a1, a2, a3, a4, a5, a6, a7, i;
+    int32_t b0, b1, b2, b3, b4, b5, b6, b7;
     for (i = 0; i < SABER_N / 8; i++) {
         a0 = a[8 * i + 0];
         a1 = a[8 * i + 1];
@@ -185,104 +186,113 @@ void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
         a6 = a[8 * i + 6];
         a7 = a[8 * i + 7];
 
+        b0 = b[8 * i + 0];
+        b1 = b[8 * i + 1];
+        b2 = b[8 * i + 2];
+        b3 = b[8 * i + 3];
+        b4 = b[8 * i + 4];
+        b5 = b[8 * i + 5];
+        b6 = b[8 * i + 6];
+        b7 = b[8 * i + 7];
+
         // r0=a0b0+zeta*(a1b7+a2b6+...+a7b1)
-        t = (int64_t)a1 * b[8 * i + 7];
-        t += (int64_t)a2 * b[8 * i + 6];
-        t += (int64_t)a3 * b[8 * i + 5];
-        t += (int64_t)a4 * b[8 * i + 4];
-        t += (int64_t)a5 * b[8 * i + 3];
-        t += (int64_t)a6 * b[8 * i + 2];
-        t += (int64_t)a7 * b[8 * i + 1];
+        t = (int64_t)a1 * b7;
+        t += (int64_t)a2 * b6;
+        t += (int64_t)a3 * b5;
+        t += (int64_t)a4 * b4;
+        t += (int64_t)a5 * b3;
+        t += (int64_t)a6 * b2;
+        t += (int64_t)a7 * b1;
         a[8 * i + 0] = MontReduce(t);
         a[8 * i + 0] = FqMul(a[8 * i + 0], mulTable[i]);
-        a[8 * i + 0] += FqMul(a0, b[8 * i + 0]);
+        a[8 * i + 0] += FqMul(a0, b0);
 
         // r1=a0b1+a1b0+zeta*(a2b7+a3b6+...+a7b2)
-        t = (int64_t)a2 * b[8 * i + 7];
-        t += (int64_t)a3 * b[8 * i + 6];
-        t += (int64_t)a4 * b[8 * i + 5];
-        t += (int64_t)a5 * b[8 * i + 4];
-        t += (int64_t)a6 * b[8 * i + 3];
-        t += (int64_t)a7 * b[8 * i + 2];
+        t = (int64_t)a2 * b7;
+        t += (int64_t)a3 * b6;
+        t += (int64_t)a4 * b5;
+        t += (int64_t)a5 * b4;
+        t += (int64_t)a6 * b3;
+        t += (int64_t)a7 * b2;
         a[8 * i + 1] = MontReduce(t);
         a[8 * i + 1] = FqMul(a[8 * i + 1], mulTable[i]);
-        t = (int64_t)a0 * b[8 * i + 1];
-        t += (int64_t)a1 * b[8 * i + 0];
+        t = (int64_t)a0 * b1;
+        t += (int64_t)a1 * b0;
         a[8 * i + 1] += MontReduce(t);
 
         // r2=a0b2+a1b1+a2b0+zeta*(a3b7+a3b6+...+a7b3)
-        t = (int64_t)a3 * b[8 * i + 7];
-        t += (int64_t)a4 * b[8 * i + 6];
-        t += (int64_t)a5 * b[8 * i + 5];
-        t += (int64_t)a6 * b[8 * i + 4];
-        t += (int64_t)a7 * b[8 * i + 3];
+        t = (int64_t)a3 * b7;
+        t += (int64_t)a4 * b6;
+        t += (int64_t)a5 * b5;
+        t += (int64_t)a6 * b4;
+        t += (int64_t)a7 * b3;
         a[8 * i + 2] = MontReduce(t);
         a[8 * i + 2] = FqMul(a[8 * i + 2], mulTable[i]);
-        t = (int64_t)a0 * b[8 * i + 2];
-        t += (int64_t)a1 * b[8 * i + 1];
-        t += (int64_t)a2 * b[8 * i + 0];
+        t = (int64_t)a0 * b2;
+        t += (int64_t)a1 * b1;
+        t += (int64_t)a2 * b0;
         a[8 * i + 2] += MontReduce(t);
 
         // r3=a0b3+a1b2+a2b1+a3b0+zeta*(a4b7+a5b6+...+a7b4)
-        t = (int64_t)a4 * b[8 * i + 7];
-        t += (int64_t)a5 * b[8 * i + 6];
-        t += (int64_t)a6 * b[8 * i + 5];
-        t += (int64_t)a7 * b[8 * i + 4];
+        t = (int64_t)a4 * b7;
+        t += (int64_t)a5 * b6;
+        t += (int64_t)a6 * b5;
+        t += (int64_t)a7 * b4;
         a[8 * i + 3] = MontReduce(t);
         a[8 * i + 3] = FqMul(a[8 * i + 3], mulTable[i]);
-        t = (int64_t)a0 * b[8 * i + 3];
-        t += (int64_t)a1 * b[8 * i + 2];
-        t += (int64_t)a2 * b[8 * i + 1];
-        t += (int64_t)a3 * b[8 * i + 0];
+        t = (int64_t)a0 * b3;
+        t += (int64_t)a1 * b2;
+        t += (int64_t)a2 * b1;
+        t += (int64_t)a3 * b0;
         a[8 * i + 3] += MontReduce(t);
 
         // r4=a0b4+a1b3+a2b2+a3b1+a4b0+zeta*(a5b7+a6b6+a7b5)
-        t = (int64_t)a5 * b[8 * i + 7];
-        t += (int64_t)a6 * b[8 * i + 6];
-        t += (int64_t)a7 * b[8 * i + 5];
+        t = (int64_t)a5 * b7;
+        t += (int64_t)a6 * b6;
+        t += (int64_t)a7 * b5;
         a[8 * i + 4] = MontReduce(t);
         a[8 * i + 4] = FqMul(a[8 * i + 4], mulTable[i]);
-        t = (int64_t)a0 * b[8 * i + 4];
-        t += (int64_t)a1 * b[8 * i + 3];
-        t += (int64_t)a2 * b[8 * i + 2];
-        t += (int64_t)a3 * b[8 * i + 1];
-        t += (int64_t)a4 * b[8 * i + 0];
+        t = (int64_t)a0 * b4;
+        t += (int64_t)a1 * b3;
+        t += (int64_t)a2 * b2;
+        t += (int64_t)a3 * b1;
+        t += (int64_t)a4 * b0;
         a[8 * i + 4] += MontReduce(t);
 
         // r5=a0b5+a1b4+a2b3+a3b2+a4b1+a5b0+zeta*(a6b7+a7b6)
-        t = (int64_t)a6 * b[8 * i + 7];
-        t += (int64_t)a7 * b[8 * i + 6];
+        t = (int64_t)a6 * b7;
+        t += (int64_t)a7 * b6;
         a[8 * i + 5] = MontReduce(t);
         a[8 * i + 5] = FqMul(a[8 * i + 5], mulTable[i]);
-        t = (int64_t)a0 * b[8 * i + 5];
-        t += (int64_t)a1 * b[8 * i + 4];
-        t += (int64_t)a2 * b[8 * i + 3];
-        t += (int64_t)a3 * b[8 * i + 2];
-        t += (int64_t)a4 * b[8 * i + 1];
-        t += (int64_t)a5 * b[8 * i + 0];
+        t = (int64_t)a0 * b5;
+        t += (int64_t)a1 * b4;
+        t += (int64_t)a2 * b3;
+        t += (int64_t)a3 * b2;
+        t += (int64_t)a4 * b1;
+        t += (int64_t)a5 * b0;
         a[8 * i + 5] += MontReduce(t);
 
         // r6=a0b6+a1b5+a2b4+a3b3+a4b2+a5b1+a6b0+zeta*(a7b7)
-        a[8 * i + 6] = FqMul(a7, b[8 * i + 7]);
+        a[8 * i + 6] = FqMul(a7, b7);
         a[8 * i + 6] = FqMul(a[8 * i + 6], mulTable[i]);
-        t = (int64_t)a0 * b[8 * i + 6];
-        t += (int64_t)a1 * b[8 * i + 5];
-        t += (int64_t)a2 * b[8 * i + 4];
-        t += (int64_t)a3 * b[8 * i + 3];
-        t += (int64_t)a4 * b[8 * i + 2];
-        t += (int64_t)a5 * b[8 * i + 1];
-        t += (int64_t)a6 * b[8 * i + 0];
+        t = (int64_t)a0 * b6;
+        t += (int64_t)a1 * b5;
+        t += (int64_t)a2 * b4;
+        t += (int64_t)a3 * b3;
+        t += (int64_t)a4 * b2;
+        t += (int64_t)a5 * b1;
+        t += (int64_t)a6 * b0;
         a[8 * i + 6] += MontReduce(t);
 
         // r7=a0b7+a1b6+a2b5+a3b4+a4b3+a5b2+a6b1+a7b0
-        t = (int64_t)a0 * b[8 * i + 7];
-        t += (int64_t)a1 * b[8 * i + 6];
-        t += (int64_t)a2 * b[8 * i + 5];
-        t += (int64_t)a3 * b[8 * i + 4];
-        t += (int64_t)a4 * b[8 * i + 3];
-        t += (int64_t)a5 * b[8 * i + 2];
-        t += (int64_t)a6 * b[8 * i + 1];
-        t += (int64_t)a7 * b[8 * i + 0];
+        t = (int64_t)a0 * b7;
+        t += (int64_t)a1 * b6;
+        t += (int64_t)a2 * b5;
+        t += (int64_t)a3 * b4;
+        t += (int64_t)a4 * b3;
+        t += (int64_t)a5 * b2;
+        t += (int64_t)a6 * b1;
+        t += (int64_t)a7 * b0;
         a[8 * i + 7] = MontReduce(t);
     }
 }
@@ -473,6 +483,7 @@ void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     int64_t t;
     int32_t a0, a1, a2, a3, i;
+    int32_t b0, b1, b2, b3;
     for (i = 0; i < SABER_N / 4; i++) {
         // get values from memory for storing result
         a0 = a[4 * i + 0];
@@ -480,36 +491,41 @@ void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
         a2 = a[4 * i + 2];
         a3 = a[4 * i + 3];
 
+        b0 = b[4 * i + 0];
+        b1 = b[4 * i + 1];
+        b2 = b[4 * i + 2];
+        b3 = b[4 * i + 3];
+
         // r0=a0b0+zeta*(a1b3+a2b2+a3b1)
-        t = (int64_t)a1 * b[4 * i + 3];
-        t += (int64_t)a2 * b[4 * i + 2];
-        t += (int64_t)a3 * b[4 * i + 1];
+        t = (int64_t)a1 * b3;
+        t += (int64_t)a2 * b2;
+        t += (int64_t)a3 * b1;
         a[4 * i + 0] = MontReduce(t);
         a[4 * i + 0] = FqMul(a[4 * i + 0], mulTable[i]);
-        a[4 * i + 0] += FqMul(a0, b[4 * i + 0]);
+        a[4 * i + 0] += FqMul(a0, b0);
 
         // r1=a0b1+a1b0+zeta*(a2b3+a3b2)
-        t = (int64_t)a2 * b[4 * i + 3];
-        t += (int64_t)a3 * b[4 * i + 2];
+        t = (int64_t)a2 * b3;
+        t += (int64_t)a3 * b2;
         a[4 * i + 1] = MontReduce(t);
         a[4 * i + 1] = FqMul(a[4 * i + 1], mulTable[i]);
-        t = (int64_t)a0 * b[4 * i + 1];
-        t += (int64_t)a1 * b[4 * i + 0];
+        t = (int64_t)a0 * b1;
+        t += (int64_t)a1 * b0;
         a[4 * i + 1] += MontReduce(t);
 
         // r2=a0b2+a1b1+a2b0+zeta*(a3b3)
-        a[4 * i + 2] = FqMul(a3, b[4 * i + 3]);
+        a[4 * i + 2] = FqMul(a3, b3);
         a[4 * i + 2] = FqMul(a[4 * i + 2], mulTable[i]);
-        t = (int64_t)a0 * b[4 * i + 2];
-        t += (int64_t)a1 * b[4 * i + 1];
-        t += (int64_t)a2 * b[4 * i + 0];
+        t = (int64_t)a0 * b2;
+        t += (int64_t)a1 * b1;
+        t += (int64_t)a2 * b0;
         a[4 * i + 2] += MontReduce(t);
 
         // r3=a0b3+a1b2+a2b1+a3b0
-        t = (int64_t)a0 * b[4 * i + 3];
-        t += (int64_t)a1 * b[4 * i + 2];
-        t += (int64_t)a2 * b[4 * i + 1];
-        t += (int64_t)a3 * b[4 * i + 0];
+        t = (int64_t)a0 * b3;
+        t += (int64_t)a1 * b2;
+        t += (int64_t)a2 * b1;
+        t += (int64_t)a3 * b0;
         a[4 * i + 3] = MontReduce(t);
     }
 }
@@ -745,22 +761,39 @@ void InvNTT(int32_t in[256], int32_t out[256])
 void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     int64_t t;
-    int32_t a0, a1;
+    int32_t a0, a1, a2, a3, b0, b1, b2, b3;
     int i;
-    for (i = 0; i < SABER_N / 2; i++) {
+    for (i = 0; i < SABER_N / 4; i++) {
         // get values from memory for storing result
-        a0 = a[i * 2 + 0];
-        a1 = a[i * 2 + 1];
+        a0 = a[i * 4 + 0];
+        a1 = a[i * 4 + 1];
+        a2 = a[i * 4 + 2];
+        a3 = a[i * 4 + 3];
+
+        b0 = b[i * 4 + 0];
+        b1 = b[i * 4 + 1];
+        b2 = b[i * 4 + 2];
+        b3 = b[i * 4 + 3];
 
         // r0=a0b0+zeta*(a1b1)
-        t = FqMul(a1, b[2 * i + 1]);
-        t = FqMul(t, mulTable[i]);
-        a[2 * i + 0] = t + FqMul(a0, b[2 * i + 0]);
+        t = FqMul(a1, b1);
+        t = FqMul(t, mulTable[2 * i]);
+        a[4 * i + 0] = t + FqMul(a0, b0);
 
         // r1=a0b1+a1b0
-        t = (int64_t)a0 * b[2 * i + 1];
-        t += (int64_t)a1 * b[2 * i + 0];
-        a[2 * i + 1] = MontReduce(t);
+        t = (int64_t)a0 * b1;
+        t += (int64_t)a1 * b0;
+        a[4 * i + 1] = MontReduce(t);
+
+        // r2
+        t = FqMul(a3, b3);
+        t = FqMul(t, mulTable[2 * i + 1]);
+        a[4 * i + 2] = t + FqMul(a2, b2);
+
+        // r3
+        t = (int64_t)a2 * b3;
+        t += (int64_t)a3 * b2;
+        a[4 * i + 3] = MontReduce(t);
     }
 }
 #    endif
@@ -1048,8 +1081,11 @@ void InvNTT(int32_t in[256], int32_t out[256])
 void PolyBaseMul(int32_t a[SABER_N], const int32_t b[SABER_N])
 {
     int32_t i;
-    for (i = 0; i < SABER_N; i++) {
-        a[i] = FqMul(a[i], b[i]);
+    for (i = 0; i < SABER_N / 4; i++) {
+        a[4 * i + 0] = FqMul(a[4 * i + 0], b[4 * i + 0]);
+        a[4 * i + 1] = FqMul(a[4 * i + 1], b[4 * i + 1]);
+        a[4 * i + 2] = FqMul(a[4 * i + 2], b[4 * i + 2]);
+        a[4 * i + 3] = FqMul(a[4 * i + 3], b[4 * i + 3]);
     }
 }
 #    endif
