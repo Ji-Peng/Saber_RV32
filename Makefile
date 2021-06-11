@@ -41,12 +41,12 @@ endif
 ifeq ($(UNAME_S),Darwin)
 	HOST_CFLAGS +=
 endif
-# L=2: stack_size=0x1b00, L=3: stack_size=0x2450, L=4: stack_size=0x2550
+# L=2: stack_size=0x1b00, L=3: stack_size=0x2300, L=4: stack_size=0x2550
 RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x2400 \
+					-Xlinker --defsym=__stack_size=0x2300 \
 					-Xlinker --defsym=__heap_max=1
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
