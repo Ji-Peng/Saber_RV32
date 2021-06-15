@@ -2,5 +2,39 @@
     "files.associations": {
         "pack_unpack.h": "c",
         "poly_mul.h": "c"
-    }
+	},
+	"files.exclude": {
+		"**/.git": true,
+		"**/.svn": true,
+		"**/.hg": true,
+		"**/CVS": true,
+		"**/.DS_Store": true,
+		".idea": true,
+		".vscode": true,
+		"**/*.aux": true,
+		"**/*.bat": true,
+		"**/*.bbl": true,
+		"**/*.blg": true,
+		"**/*.bst": true,
+		"**/*.dtx": true,
+		"**/*.fdb_latexmk": true,
+		"**/*.fls": true,
+		"**/*.gz": true,
+		"**/*.lof": true,
+		"**/*.log": true,
+		"**/*.lot": true,
+		"**/*.out": true,
+		"**/*.rar": true,
+		"**/*.sh": true,
+		"**/*.toc": true,
+		"**/*.xdv": true,
+		"**/Makefile": false,
+		"demo_chs/Makefile": false,
+		"LICENSE": true,
+		"Makefile": false,
+		"latexmkrc": true,
+		"**/*.cls": true,
+		"demo_chs/latexmkrc": true
+	},
+	"explorerExclude.backup": null
 }
