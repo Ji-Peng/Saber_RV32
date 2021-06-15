@@ -19,7 +19,7 @@ ARCH_FLAGS = -march=rv32imac -mabi=ilp32 -mcmodel=medlow
 SPEC=nano
 MTIME_RATE_HZ_DEF=32768
 PROGRAM_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.S)
-COMMON_SRCS = $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.S)
+COMMON_SRCS = $(COMMON_DIR)/aes.c $(COMMON_DIR)/fips202.c $(COMMON_DIR)/rng.c $(COMMON_DIR)/getcycles.S
 HOST_SRCS = $(wildcard $(HOST_DIR)/*.c)
 
 RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
@@ -51,11 +51,11 @@ RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
 
-.PHONY: host
-host: host_out/kem
-
 .PHONY: all
 all: out/kem.elf
+
+.PHONY: host
+host: host_out/kem
 
 out/%.elf: \
 		benchmark/%.c \

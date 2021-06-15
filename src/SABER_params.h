@@ -10,19 +10,26 @@
 #    define SABER_MU 10
 #    define SABER_ET 3
 #    define FASTGENA_FASTMUL
-#    define COMPLETE_NTT
 // #    define FIVE_LAYER_NTT
+#    define SIX_LAYER_NTT
+// #    define SEVEN_LAYER_NTT
+// #    define COMPLETE_NTT
 #elif SABER_L == 3
 #    define SABER_MU 8
 #    define SABER_ET 4
 #    define SLOWGENA_FASTMUL
-// #    define SIX_LAYER_NTT
-#    define SEVEN_LAYER_NTT
+// #    define FIVE_LAYER_NTT
+#    define SIX_LAYER_NTT
+// #    define SEVEN_LAYER_NTT
+// #    define COMPLETE_NTT
 #elif SABER_L == 4
 #    define SABER_MU 6
 #    define SABER_ET 6
 #    define FASTGENA_SLOWMUL
+// #    define FIVE_LAYER_NTT
 #    define SIX_LAYER_NTT
+// #    define SEVEN_LAYER_NTT
+// #    define COMPLETE_NTT
 #endif
 
 #ifndef HOST

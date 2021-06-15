@@ -6,9 +6,6 @@
 #include "SABER_indcpa.h"
 #include "api.h"
 #include "cpucycles.h"
-#ifndef HOST
-#    include "metal/watchdog.h"
-#endif
 #include "fips202.h"
 #include "ntt.h"
 #include "poly.h"
@@ -39,22 +36,6 @@ static char* ullu(uint64_t val)
 #else
 #    define NTESTS 10
 #endif
-static void DisableWatchDog(void)
-{
-#ifndef HOST
-    int result = 1;
-    struct metal_watchdog* wdog;
-    wdog = metal_watchdog_get_device(0);
-    result = metal_watchdog_run(wdog, METAL_WATCHDOG_STOP);
-    if (result != 0) {
-        printf("watchdog disable failed\n");
-    } else if (result == 0) {
-        // printf("watchdog disable success\n");
-    } else {
-        printf("unknown return value %d\n", result);
-    }
-#endif
-}
 
 static int TestCCA(void)
 {
@@ -71,7 +52,7 @@ static int TestCCA(void)
         entropy_input[i] = i + 1;
     RandomBytesInit(entropy_input, NULL);
     printf("-----------TEST CCA CORRECTNESS-------------\n");
-    for (j = 0; j < NTESTS; j++) {
+    for (j = 0; j < 1; j++) {
         crypto_kem_keypair(pk, sk);
         crypto_kem_enc(ct, ss_a, pk);
         crypto_kem_dec(ss_b, ct, sk);
@@ -88,8 +69,6 @@ static int TestCCA(void)
     }
     if (i == SABER_KEYBYTES) {
         printf("CCA KEM RIGHT\n");
-    } else {
-        printf("CCA KEM ERROR\n");
     }
     return 0;
 }
@@ -113,7 +92,7 @@ static int SpeedCCA(void)
         entropy_input[i] = i + 1;
     RandomBytesInit(entropy_input, NULL);
 
-    for (j = 0; j < NTESTS * 10; j++) {
+    for (j = 0; j < NTESTS; j++) {
         t1 = cpucycles();
         crypto_kem_keypair(pk, sk);
         t2 = cpucycles();
@@ -128,10 +107,10 @@ static int SpeedCCA(void)
         sum3 += (t2 - t1);
     }
     printf("crypto_kem_keypair/enc/dec/all: ");
-    printf("%s/", ullu(sum1 / (NTESTS * 10)));
-    printf("%s/", ullu(sum2 / (NTESTS * 10)));
-    printf("%s/", ullu(sum3 / (NTESTS * 10)));
-    printf("%s\n", ullu((sum1 + sum2 + sum3) / (NTESTS * 10)));
+    printf("%s/", ullu(sum1 / (NTESTS)));
+    printf("%s/", ullu(sum2 / (NTESTS)));
+    printf("%s/", ullu(sum3 / (NTESTS)));
+    printf("%s\n", ullu((sum1 + sum2 + sum3) / (NTESTS)));
     return 0;
 }
 
@@ -356,7 +335,7 @@ static int SpeedNTT(void)
     uint16_t a[SABER_N];
     uint32_t t[SABER_N], b[SABER_N];
     int k;
-    for (k = 0; k < NTESTS; k++) {
+    for (k = 0; k < 1000; k++) {
         t1 = cpucycles();
         NTT(a, t);
         t2 = cpucycles();
@@ -377,11 +356,11 @@ static int SpeedNTT(void)
         t2 = cpucycles();
         sum4 += (t2 - t1);
     }
-    printf("Overhead of NTT/BaseMul/INTT/PolyMulAcc is:");
-    printf("%s/", ullu(sum1 / NTESTS));
-    printf("%s/", ullu(sum2 / NTESTS));
-    printf("%s/", ullu(sum3 / NTESTS));
-    printf("%s\n", ullu(sum4 / NTESTS));
+    printf("NTT/BaseMul/INTT/PolyMulAcc is:");
+    printf("%s/", ullu(sum1 / 1000));
+    printf("%s/", ullu(sum2 / 1000));
+    printf("%s/", ullu(sum3 / 1000));
+    printf("%s\n", ullu(sum4 / 1000));
     return 0;
 }
 
@@ -435,9 +414,9 @@ static void PrintConfig(void)
 int main(void)
 {
     PrintConfig();
-    DisableWatchDog();
     TestCCA();
 #ifndef HOST
+    // SpeedNTT();
     SpeedCCA();
     // SpeedCCAKP();
     // SpeedCCAEnc();
