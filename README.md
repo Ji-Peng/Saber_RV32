@@ -29,6 +29,9 @@ For the usage of GDBServer, we refer to [wiki](https://wiki.segger.com/J-Link_GD
 
 About the experimental setup, we refer to [Kyber_RISC_V_Thesis](https://github.com/denigreco/Kyber_RISC_V_Thesis), [PQRISCV](https://github.com/mupq/pqriscv), and [PQRISCV-VEXRISCV](https://github.com/mupq/pqriscv-vexriscv).
 
+```bash
+sbt "runMain mupq.PQVexRiscvSim --init ../Saber_RV32/out/kem_vexrv.bin"
+```
 ## Code Size
 
 ```bash

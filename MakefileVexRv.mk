@@ -53,15 +53,15 @@ LD_HOST      = gcc
 CFLAGS_HOST  = -O3 -Wall -Wextra -Wpedantic
 LDFLAGS_HOST =
 
-PROGRAM_SRCS = $(wildcard $(SRC_DIR)/*.c)# $(wildcard $(SRC_DIR)/*.S)
+PROGRAM_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.S)
 COMMON_SRCS = $(COMMON_DIR)/aes.c $(COMMON_DIR)/fips202.c $(COMMON_DIR)/rng.c $(COMMON_DIR)/hal-vexriscv.c
 COMMONINCLUDES=-I"benchmark/common"
 
 .PHONY: all
-all: out/kem.elf
+all: out/kem_vexrv.elf
 
 out/%.elf: \
-		benchmark/%_vexrv.c \
+		benchmark/%.c \
 		$(COMMON_SRCS) $(PROGRAM_SRCS) \
 		$(PLATFORM_LINKDEP)
 	mkdir -p $(dir $@)
@@ -69,6 +69,7 @@ out/%.elf: \
 		$(filter %.c,$^) $(filter %.S,$^) \
 		$(LDFLAGS)
 	$(OBJCOPY) -O ihex $@ $(basename $@).hex
+	$(OBJCOPY) -Obinary $@ $(basename $@).bin
 	$(OBJDUMP) -D $@ > $(basename $@).s
 
 .PHONY: clean-software
