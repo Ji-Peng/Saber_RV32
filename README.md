@@ -28,3 +28,11 @@ For the usage of GDBServer, we refer to [wiki](https://wiki.segger.com/J-Link_GD
 ## PQRISCV Platform
 
 About the experimental setup, we refer to [Kyber_RISC_V_Thesis](https://github.com/denigreco/Kyber_RISC_V_Thesis), [PQRISCV](https://github.com/mupq/pqriscv), and [PQRISCV-VEXRISCV](https://github.com/mupq/pqriscv-vexriscv).
+
+## Code Size
+
+```bash
+riscv64-unknown-elf-nm out/kem.elf --print-size --size-sort --radix=d | \
+grep -v '\<_\|\<metal\|\<pll_configs' | \
+awk '{sum+=$2 ; print $0} END{print "Total size =", sum, "bytes =", sum/1024, "kB"}'
+```
