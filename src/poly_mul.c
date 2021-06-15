@@ -10,22 +10,22 @@ void TC_interpol_16(uint32_t *w1, uint32_t *w2, uint32_t *w3, uint32_t *w4, uint
 
 static inline int16_t reduce(int16_t a, int64_t p);
 
-void print_poly2(int16_t *a, int64_t n, uint64_t p){
+// void print_poly2(int16_t *a, int64_t n, uint64_t p){
 
-	printf("-----------------------\n");
-	int i;
-	for (i = n - 1; i >= 0; i--){
-		if (a[i] != 0){
-			if(i!=0)
-				printf("  Mod(%d,%lu)*x^%d + ", a[i], p,i);
-			else
-				printf("  Mod(%d,%lu)*x^%d ", a[i], p,i);
+// 	printf("-----------------------\n");
+// 	int i;
+// 	for (i = n - 1; i >= 0; i--){
+// 		if (a[i] != 0){
+// 			if(i!=0)
+// 				printf("  Mod(%d,%lu)*x^%d + ", a[i], p,i);
+// 			else
+// 				printf("  Mod(%d,%lu)*x^%d ", a[i], p,i);
 
-			}
-	}
+// 			}
+// 	}
 
-	printf("\n-----------------------\n");
-}
+// 	printf("\n-----------------------\n");
+// }
 
 void pol_mul(uint16_t* a, uint16_t* b, uint16_t* res, uint16_t p, uint32_t n)
 

@@ -1,5 +1,5 @@
 # BSP_DIR sets the path to the target-specific board support package.
-BSP_DIR = bsp
+BSP_DIR = bsp/sifive
 # SRC_DIR sets the path to the program source directory
 SRC_DIR = src
 COMMON_DIR = benchmark/common
