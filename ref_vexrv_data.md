@@ -1,7 +1,7 @@
 <!--
  * @Author: your name
  * @Date: 2021-06-15 21:57:55
- * @LastEditTime: 2021-06-15 22:38:30
+ * @LastEditTime: 2021-06-16 11:29:08
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \Saber_RV32\ref_vexrv_data.md
@@ -11,7 +11,7 @@
 ### speed: 
 crypto_kem_keypair,enc,dec,all: 6477989 6827962 6689277 19995228
 ### stack:
-indcpa_kem_keypair/enc/dec:9380 11380 8276
+kem_keypair/enc/dec:9396 
 ## L=3
 ### speed: 
 crypto_kem_keypair,enc,dec,all: 10877889 12057218 12222184 35157291

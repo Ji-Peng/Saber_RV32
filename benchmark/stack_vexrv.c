@@ -1,16 +1,33 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "SABER_indcpa.h"
 #include "api.h"
 #include "poly.h"
 #include "poly_mul.h"
-#include "hal.h"
 
+#ifdef PQRISCV_PLATFORM
+#    include "hal.h"
+#    define printf hal_send_str
+#endif
+
+char outs[32];
 volatile unsigned char *p;
 unsigned int c;
 uint8_t canary = 0x42;
+
+static void printcycles(const char *s, unsigned int input)
+{
+    hal_send_str(s);
+    snprintf(outs, sizeof(outs), "%u ", input);
+    hal_send_str(outs);
+}
+#define PRINTCYCLES()                       \
+    snprintf(outs, sizeof(outs), "%u ", c); \
+    hal_send_str(outs);                     \
+    hal_send_str("\n");
 
 #define FILL_STACK()               \
     p = &a;                        \
@@ -27,85 +44,75 @@ uint8_t canary = 0x42;
 
 #define TEST_CCA
 #ifdef TEST_CCA
-// 992+1088+1440+32+32=3584
-// 0x2800-3584=0x1a00
 // uint8_t pk[CRYPTO_PUBLICKEYBYTES];
 // uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
 uint8_t sk[CRYPTO_SECRETKEYBYTES];
 uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
 // -128 for avoiding affecting heap memory
-#    define MAX_SIZE (0x18200 - 128)
+#    define MAX_SIZE (0x14000 - 128)
 unsigned int canary_size = MAX_SIZE;
 uint8_t *pk = sk;
 uint8_t *ct = sk;
-
-static void printcycles(const char* s, unsigned long long c)
-{
-    char outs[32];
-    hal_send_str(s);
-    snprintf(outs, sizeof(outs), "%llu ", c);
-    hal_send_str(outs);
-}
-
 static int test_stack(void)
 {
     volatile unsigned char a;
 
-    hal_send_str("indcpa_kem_keypair/enc/dec:");
-    FILL_STACK()
-    indcpa_kem_keypair(pk, sk);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        hal_send_str("c >= canary_size\n");
-        return -1;
-    }
-    printcycles("", c);
+    // printf("keypair,enc,dec:\n");
+    // FILL_STACK()
+    // indcpa_kem_keypair(pk, sk);
+    // CHECK_STACK()
+    // if (c >= canary_size) {
+    //     printf("error\n");
+    //     return -1;
+    // }
+    // // printf("4\n");
+    // PRINTCYCLES()
 
-    FILL_STACK()
-    indcpa_kem_enc(ss_a, ss_b, pk, ct);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        hal_send_str("c >= canary_size\n");
-        return -1;
-    }
-    printcycles("", c);
+    // FILL_STACK()
+    // indcpa_kem_enc(ss_a, ss_b, pk, ct);
+    // CHECK_STACK()
+    // if (c >= canary_size) {
+    //     printf("error\n");
+    //     return -1;
+    // }
+    // PRINTCYCLES()
 
-    FILL_STACK()
-    indcpa_kem_dec(sk, ct, ss_b);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        hal_send_str("c >= canary_size\n");
-        return -1;
-    }
-    printcycles("", c);
+    // FILL_STACK()
+    // indcpa_kem_dec(sk, ct, ss_b);
+    // CHECK_STACK()
+    // if (c >= canary_size) {
+    //     printf("c >= canary_size\n");
+    //     return -1;
+    // }
+    // PRINTCYCLES()
 
-    hal_send_str("\n crypto_kem_keypair/enc/dec:");
+    printf("crypto_kem_keypair,enc,dec:\n");
     FILL_STACK()
     crypto_kem_keypair(pk, sk);
     CHECK_STACK()
     if (c >= canary_size) {
-        hal_send_str("c >= canary_size\n");
+        printf("c >= canary_size\n");
         return -1;
     }
-    printcycles("", c);
+    PRINTCYCLES()
 
     FILL_STACK()
     crypto_kem_enc(ct, ss_a, pk);
     CHECK_STACK()
     if (c >= canary_size) {
-        hal_send_str("c >= canary_size\n");
+        printf("c >= canary_size\n");
         return -1;
     }
-    printcycles("", c);
+    PRINTCYCLES()
 
     FILL_STACK()
     crypto_kem_dec(ss_b, ct, sk);
     CHECK_STACK()
     if (c >= canary_size) {
-        hal_send_str("c >= canary_size\n");
+        printf("c >= canary_size\n");
         return -1;
     }
-    printcycles("", c);
+    PRINTCYCLES()
 
     return 0;
 }
@@ -186,42 +193,10 @@ static int test_stack(void)
 }
 #endif
 
-static void PrintConfig(void)
-{
-    printcycles("SABER_L is: ", SABER_L);
-//     hal_send_str("Strategy: ");
-// #    ifdef FASTGENA_SLOWMUL
-//     hal_send_str("FASTGENA_SLOWMUL ");
-// #    elif defined(FASTGENA_FASTMUL)
-//     hal_send_str("FASTGENA_FASTMUL ");
-// #    elif defined(SLOWGENA_FASTMUL)
-//     hal_send_str("SLOWGENA_FASTMUL ");
-// #    endif
-
-//     hal_send_str("NTT: ");
-// #    ifdef COMPLETE_NTT
-//     hal_send_str("COMPLETE_NTT ");
-// #    elif defined(SEVEN_LAYER_NTT)
-//     hal_send_str("SEVEN_LAYER_NTT ");
-// #    elif defined(SIX_LAYER_NTT)
-//     hal_send_str("SIX_LAYER_NTT ");
-// #    elif defined(FIVE_LAYER_NTT)
-//     hal_send_str("FIVE_LAYER_NTT ");
-// #    endif
-
-// #    ifdef NTTASM
-//     hal_send_str("ASM Implementation\n");
-// #    else
-//     hal_send_str("C Implementation\n");
-// #    endif
-}
-
 int main(void)
 {
     canary_size = MAX_SIZE;
-    // printf("==========stack test==========\n");
-	hal_setup(CLOCK_BENCHMARK);
-	PrintConfig();
+    printf("==========stack test==========\n");
     test_stack();
     return 0;
 }
