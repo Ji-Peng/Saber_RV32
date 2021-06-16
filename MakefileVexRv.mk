@@ -54,6 +54,7 @@ CFLAGS_HOST  = -O3 -Wall -Wextra -Wpedantic
 LDFLAGS_HOST =
 
 PROGRAM_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.S)
+PROGRAM_HEADERS = $(wildcard $(SRC_DIR)/*.h)
 COMMON_SRCS = $(COMMON_DIR)/aes.c $(COMMON_DIR)/fips202.c $(COMMON_DIR)/rng.c $(COMMON_DIR)/hal-vexriscv.c
 COMMONINCLUDES=-I"benchmark/common"
 
@@ -62,7 +63,7 @@ all: out/kem_vexrv.elf
 
 out/%.elf: \
 		benchmark/%.c \
-		$(COMMON_SRCS) $(PROGRAM_SRCS) \
+		$(COMMON_SRCS) $(PROGRAM_SRCS) $(PROGRAM_HEADERS) \
 		$(PLATFORM_LINKDEP)
 	mkdir -p $(dir $@)
 	$(CC) -o $@ $(CFLAGS) \
