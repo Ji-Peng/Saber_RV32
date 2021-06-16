@@ -7,9 +7,20 @@
 #include "poly.h"
 #include "poly_mul.h"
 
+#ifdef PQRISCV_PLATFORM
+#    include "hal.h"
+#    define printf hal_send_str
+#endif
+
+char outs[32];
 volatile unsigned char *p;
 unsigned int c;
 uint8_t canary = 0x42;
+
+#define PRINTCYCLES()                       \
+    snprintf(outs, sizeof(outs), "%u ", c); \
+    hal_send_str(outs);                     \
+    hal_send_str("\n");
 
 #define FILL_STACK()               \
     p = &a;                        \
@@ -33,7 +44,8 @@ uint8_t canary = 0x42;
 uint8_t sk[CRYPTO_SECRETKEYBYTES];
 uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
 // -128 for avoiding affecting heap memory
-#    define MAX_SIZE (0x1a00 - 128)
+// 0x1a00 for sifive, 0x14000 for vexriscv
+#    define MAX_SIZE (0x14000 - 128)
 unsigned int canary_size = MAX_SIZE;
 uint8_t *pk = sk;
 uint8_t *ct = sk;
