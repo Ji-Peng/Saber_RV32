@@ -1,10 +1,18 @@
+/*
+ * @Author: your name
+ * @Date: 2021-06-15 21:05:02
+ * @LastEditTime: 2021-06-15 22:07:18
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \Saber_RV32\src\SABER_params.h
+ */
 #ifndef PARAMS_H
 #define PARAMS_H
 
 /* Change this for different security strengths */
 // #define SABER_L 2 /* LightSaber */
 // #define SABER_L 3 /* Saber */
-#define SABER_L 3 /* FireSaber */
+#define SABER_L 2 /* FireSaber */
 
 /* Don't change anything below this line */
 #if SABER_L == 2
