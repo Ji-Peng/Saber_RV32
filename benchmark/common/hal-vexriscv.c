@@ -46,7 +46,7 @@ void hal_send_str(const char* in)
     uart_write(UART, *cur);
     cur += 1;
   }
-  uart_write(UART, '\n');
+  // uart_write(UART, '\n');
 }
 
 __attribute__((naked)) uint64_t hal_get_time(void)

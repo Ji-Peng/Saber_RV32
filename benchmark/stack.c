@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "SABER_indcpa.h"
@@ -7,9 +8,26 @@
 #include "poly.h"
 #include "poly_mul.h"
 
+#ifdef PQRISCV_PLATFORM
+#    include "hal.h"
+#    define printf hal_send_str
+#endif
+
+char outs[32];
 volatile unsigned char *p;
 unsigned int c;
 uint8_t canary = 0x42;
+
+static void printcycles(const char *s, unsigned int input)
+{
+    hal_send_str(s);
+    snprintf(outs, sizeof(outs), "%u ", input);
+    hal_send_str(outs);
+}
+#define PRINTCYCLES()                       \
+    snprintf(outs, sizeof(outs), "%u ", c); \
+    hal_send_str(outs);                     \
+    hal_send_str("\n");
 
 #define FILL_STACK()               \
     p = &a;                        \
@@ -26,14 +44,12 @@ uint8_t canary = 0x42;
 
 #define TEST_CCA
 #ifdef TEST_CCA
-// 992+1088+1440+32+32=3584
-// 0x2800-3584=0x1a00
 // uint8_t pk[CRYPTO_PUBLICKEYBYTES];
 // uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
 uint8_t sk[CRYPTO_SECRETKEYBYTES];
 uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
 // -128 for avoiding affecting heap memory
-#    define MAX_SIZE (0x1a00 - 128)
+#    define MAX_SIZE (0x14000 - 128)
 unsigned int canary_size = MAX_SIZE;
 uint8_t *pk = sk;
 uint8_t *ct = sk;
@@ -41,35 +57,36 @@ static int test_stack(void)
 {
     volatile unsigned char a;
 
-    printf("indcpa_kem_keypair/enc/dec:");
-    FILL_STACK()
-    indcpa_kem_keypair(pk, sk);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        printf("c >= canary_size\n");
-        return -1;
-    }
-    printf("%u/", c);
+    // printf("keypair,enc,dec:\n");
+    // FILL_STACK()
+    // indcpa_kem_keypair(pk, sk);
+    // CHECK_STACK()
+    // if (c >= canary_size) {
+    //     printf("error\n");
+    //     return -1;
+    // }
+    // // printf("4\n");
+    // PRINTCYCLES()
 
-    FILL_STACK()
-    indcpa_kem_enc(ss_a, ss_b, pk, ct);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        printf("c >= canary_size\n");
-        return -1;
-    }
-    printf("%u/", c);
+    // FILL_STACK()
+    // indcpa_kem_enc(ss_a, ss_b, pk, ct);
+    // CHECK_STACK()
+    // if (c >= canary_size) {
+    //     printf("error\n");
+    //     return -1;
+    // }
+    // PRINTCYCLES()
 
-    FILL_STACK()
-    indcpa_kem_dec(sk, ct, ss_b);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        printf("c >= canary_size\n");
-        return -1;
-    }
-    printf("%u\n", c);
+    // FILL_STACK()
+    // indcpa_kem_dec(sk, ct, ss_b);
+    // CHECK_STACK()
+    // if (c >= canary_size) {
+    //     printf("c >= canary_size\n");
+    //     return -1;
+    // }
+    // PRINTCYCLES()
 
-    printf("crypto_kem_keypair/enc/dec:");
+    printf("crypto_kem_keypair,enc,dec:\n");
     FILL_STACK()
     crypto_kem_keypair(pk, sk);
     CHECK_STACK()
@@ -77,7 +94,7 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("%u/", c);
+    PRINTCYCLES()
 
     FILL_STACK()
     crypto_kem_enc(ct, ss_a, pk);
@@ -86,7 +103,7 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("%u/", c);
+    PRINTCYCLES()
 
     FILL_STACK()
     crypto_kem_dec(ss_b, ct, sk);
@@ -95,7 +112,7 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("%u\n", c);
+    PRINTCYCLES()
 
     return 0;
 }

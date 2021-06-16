@@ -58,7 +58,7 @@ COMMON_SRCS = $(COMMON_DIR)/aes.c $(COMMON_DIR)/fips202.c $(COMMON_DIR)/rng.c $(
 COMMONINCLUDES=-I"benchmark/common"
 
 .PHONY: all
-all: out/kem_vexrv.elf
+all: out/kem_vexrv.elf out/stack.elf
 
 out/%.elf: \
 		benchmark/%.c \
