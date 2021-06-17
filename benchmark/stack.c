@@ -53,35 +53,7 @@ static int test_stack(void)
 {
     volatile unsigned char a;
 
-    printf("indcpa_kem_keypair/enc/dec:");
-    FILL_STACK()
-    indcpa_kem_keypair(pk, sk);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        printf("c >= canary_size\n");
-        return -1;
-    }
-    printf("%u/", c);
-
-    FILL_STACK()
-    indcpa_kem_enc(ss_a, ss_b, pk, ct);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        printf("c >= canary_size\n");
-        return -1;
-    }
-    printf("%u/", c);
-
-    FILL_STACK()
-    indcpa_kem_dec(sk, ct, ss_b);
-    CHECK_STACK()
-    if (c >= canary_size) {
-        printf("c >= canary_size\n");
-        return -1;
-    }
-    printf("%u\n", c);
-
-    printf("crypto_kem_keypair/enc/dec:");
+    printf("crypto_kem_keypair,enc,dec:\n");
     FILL_STACK()
     crypto_kem_keypair(pk, sk);
     CHECK_STACK()
@@ -89,7 +61,7 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("%u/", c);
+    PRINTCYCLES()
 
     FILL_STACK()
     crypto_kem_enc(ct, ss_a, pk);
@@ -98,7 +70,7 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("%u/", c);
+    PRINTCYCLES()
 
     FILL_STACK()
     crypto_kem_dec(ss_b, ct, sk);
@@ -107,7 +79,7 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    printf("%u\n", c);
+    PRINTCYCLES()
 
     return 0;
 }
