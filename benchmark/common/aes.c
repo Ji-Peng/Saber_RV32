@@ -32,6 +32,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef PQRISCV_PLATFORM
+#    include "hal.h"
+#    define printf hal_send_str
+#endif
+
 static inline uint32_t br_dec32le(const unsigned char *src)
 {
     return (uint32_t)src[0] | ((uint32_t)src[1] << 8) |

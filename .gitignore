@@ -2,8 +2,4 @@ out/
 host_out/
 scripts/
 freedom-metal/
-bsp/*
-!bsp/install/
-bsp/install/*
-!bsp/install/include
 .history/
