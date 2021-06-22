@@ -51,7 +51,7 @@ static int test_kem_cca(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     // Generation of secret key sk and public key pk pair
     crypto_kem_keypair(pk, sk);
@@ -90,7 +90,7 @@ static int test_kem_cpa(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     memset(message1, 0, sizeof(message1));
     memset(message2, 0, sizeof(message2));
@@ -132,7 +132,7 @@ static int speed_cpa(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     memset(message1, 0, sizeof(message1));
     memset(message2, 0, sizeof(message2));
@@ -180,7 +180,7 @@ static int speed_cca(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     printf("-----------TEST CCA SPEED-------------\n");
     for (j = 0; j < NTESTS; j++) {
@@ -314,7 +314,7 @@ static int SpeedCCA(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     for (j = 0; j < NTESTS; j++) {
         // Generation of secret key sk and public key pk pair
@@ -355,7 +355,7 @@ static int SpeedCCAKP(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     for (j = 0; j < NTESTS; j++) {
         // Generation of secret key sk and public key pk pair
@@ -382,7 +382,7 @@ static int SpeedCCAEnc(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     for (j = 0; j < NTESTS; j++) {
         // Key-Encapsulation call; input: pk; output: ciphertext c,
@@ -410,7 +410,7 @@ static int SpeedCCADec(void)
 
     for (i = 0; i < 48; i++)
         entropy_input[i] = i + 1;
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     for (j = 0; j < NTESTS; j++) {
         // Key-Decapsulation call; input: sk, c; output: shared-secret ss_b;

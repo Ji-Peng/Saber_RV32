@@ -216,10 +216,10 @@ void indcpa_kem_keypair(unsigned char *pk, unsigned char *sk)
     unsigned char seed_s[SABER_COINBYTES];
     int32_t i, j;
 
-    randombytes(seed_A, SABER_SEEDBYTES);
+    RandomBytes(seed_A, SABER_SEEDBYTES);
     shake128(seed_A, SABER_SEEDBYTES, seed_A,
              SABER_SEEDBYTES);  // for not revealing system RNG state
-    randombytes(seed_s, SABER_COINBYTES);
+    RandomBytes(seed_s, SABER_COINBYTES);
 
     // GenMatrix(a, seed);	//sample matrix A
 

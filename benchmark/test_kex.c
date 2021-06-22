@@ -57,7 +57,7 @@ static int test_kem_cca(void)
         // entropy_input[i] = rand()%256;
         entropy_input[i] = i;
     }
-    randombytes_init(entropy_input, NULL);
+    RandomBytesInit(entropy_input, NULL);
 
     // printf("SABER_INDCPA_PUBLICKEYBYTES=%d\n", SABER_INDCPA_PUBLICKEYBYTES);
     // printf("SABER_INDCPA_SECRETKEYBYTES=%d\n", SABER_INDCPA_SECRETKEYBYTES);

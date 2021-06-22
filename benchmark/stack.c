@@ -2,26 +2,25 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "SABER_params.h"
+#include "SABER_indcpa.h"
 #include "api.h"
+#include "poly.h"
 #include "poly_mul.h"
 
-// the address of a is 0x800035bf
-// the top address of stack is 0x80004000
-// -64 for not clear and check heap memory
-#define MAX_SIZE (0x1a40 - 64)
+#ifdef PQRISCV_PLATFORM
+#    include "hal.h"
+#    define printf hal_send_str
+#endif
 
-unsigned int canary_size = MAX_SIZE;
+char outs[32];
 volatile unsigned char *p;
 unsigned int c;
 uint8_t canary = 0x42;
 
-// reuse sk for saving memory
-uint8_t sk[CRYPTO_SECRETKEYBYTES];
-uint8_t *pk = sk;
-uint8_t *ct = sk;
-uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
-unsigned int stack_keygen, stack_encaps, stack_decaps;
+#define PRINTCYCLES()                       \
+    snprintf(outs, sizeof(outs), "%u ", c); \
+    hal_send_str(outs);                     \
+    hal_send_str("\n");
 
 #define FILL_STACK()               \
     p = &a;                        \
@@ -36,11 +35,25 @@ unsigned int stack_keygen, stack_encaps, stack_decaps;
         c--;                             \
     }
 
+#define TEST_CCA
+#ifdef TEST_CCA
+// 992+1088+1440+32+32=3584
+// 0x2800-3584=0x1a00
+// uint8_t pk[CRYPTO_PUBLICKEYBYTES];
+// uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
+uint8_t sk[CRYPTO_SECRETKEYBYTES];
+uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
+// -128 for avoiding affecting heap memory
+// 0x1a00 for sifive, 0x14000 for vexriscv
+#    define MAX_SIZE (0x14000 - 128)
+unsigned int canary_size = MAX_SIZE;
+uint8_t *pk = sk;
+uint8_t *ct = sk;
 static int test_stack(void)
 {
     volatile unsigned char a;
-    printf("the address of a is 0x%x\n", &a);
-    // Alice generates a public key
+
+    printf("crypto_kem_keypair,enc,dec:\n");
     FILL_STACK()
     crypto_kem_keypair(pk, sk);
     CHECK_STACK()
@@ -48,9 +61,8 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    stack_keygen = c;
+    PRINTCYCLES()
 
-    // Bob derives a secret key and creates a response
     FILL_STACK()
     crypto_kem_enc(ct, ss_a, pk);
     CHECK_STACK()
@@ -58,9 +70,8 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    stack_encaps = c;
+    PRINTCYCLES()
 
-    // Alice uses Bobs response to get her secret key
     FILL_STACK()
     crypto_kem_dec(ss_b, ct, sk);
     CHECK_STACK()
@@ -68,100 +79,91 @@ static int test_stack(void)
         printf("c >= canary_size\n");
         return -1;
     }
-    stack_decaps = c;
-    if (memcmp(ss_a, ss_b, CRYPTO_BYTES)) {
-        printf("KEM ERROR\n");
-    }
-    printf("key gen stack usage %u\n", stack_keygen);
-    printf("encaps stack usage %u\n", stack_encaps);
-    printf("decaps stack usage %u\n", stack_decaps);
+    PRINTCYCLES()
+
     return 0;
 }
 
-// uint16_t A[SABER_N], B[SABER_N], C[SABER_N];
+#else
+// 0x1800 is ok
+uint8_t seed_A[SABER_SEEDBYTES];
+uint8_t seed_s[SABER_NOISE_SEEDBYTES];
+// uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES];
+// uint8_t sk[SABER_INDCPA_SECRETKEYBYTES];
+uint8_t ciphertext[SABER_BYTES_CCA_DEC];
+uint8_t *pk = ciphertext;
+uint8_t *sk = ciphertext;
+// uint16_t A[2 * SABER_N];
+// uint16_t C[SABER_N];
+uint16_t b[SABER_L][SABER_N];
+uint16_t *A = b;
+uint16_t *C = b;
+#    define MAX_SIZE (0x1800 - 64)
+unsigned int canary_size = MAX_SIZE;
+static int test_stack(void)
+{
+    volatile unsigned char a;
+    FILL_STACK()
+    MatrixVectorMulKP(seed_A, seed_s, sk, b);
+    CHECK_STACK()
+    if (c >= canary_size) {
+        printf("c >= canary_size\n");
+        return -1;
+    }
+    printf("MatrixVectorMulKP   %u\n", c);
 
-// static int test_polmul_stack(void)
-// {
-//     volatile unsigned char a;
-//     // Alice generates a public key
-//     FILL_STACK()
-//     pol_mul(A, B, C);
-//     CHECK_STACK()
-//     if (c >= canary_size) {
-//         printf("c >= canary_size\n");
-//         return -1;
-//     }
-//     printf("pol_mul stack usage %u\n", c);
-//     return 0;
-// }
+    FILL_STACK()
+    MatrixVectorMulEnc(seed_A, b, ciphertext);
+    CHECK_STACK()
+    if (c >= canary_size) {
+        printf("c >= canary_size\n");
+        return -1;
+    }
+    printf("MatrixVectorMulEnc  %u\n", c);
 
-// uint8_t seed[SABER_SEEDBYTES];
-// uint16_t skpv[SABER_K][SABER_N];
-// uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
+    // FILL_STACK()
+    // InnerProdInTime(pk, b, A);
+    // CHECK_STACK()
+    // if (c >= canary_size) {
+    //     printf("c >= canary_size\n");
+    //     return -1;
+    // }
+    // printf("InnerProdInTime     %u\n", c);
 
-// static int test_matrixvector_stack(void)
-// {
-//     volatile unsigned char a;
-//     FILL_STACK()
-//     MatrixVectorMul_keypair(seed, skpv, skpv, SABER_Q - 1);
-//     CHECK_STACK()
-//     if (c >= canary_size) {
-//         printf("c >= canary_size\n");
-//         return -1;
-//     }
-//     printf("MatrixVectorMul_keypair stack usage %u\n", c);
+    FILL_STACK()
+    PolyMulAcc(A, (uint16_t *)b, C);
+    CHECK_STACK()
+    if (c >= canary_size) {
+        printf("c >= canary_size\n");
+        return -1;
+    }
+    printf("PolyMulAcc          %u\n", c);
 
-//     FILL_STACK()
-//     MatrixVectorMul_encryption(seed, skpv, ct, SABER_Q - 1);
-//     CHECK_STACK()
-//     if (c >= canary_size) {
-//         printf("c >= canary_size\n");
-//         return -1;
-//     }
-//     printf("MatrixVectorMul_encryption stack usage %u\n", c);
+    FILL_STACK()
+    GenAInTime(A, seed_A, 0);
+    CHECK_STACK()
+    if (c >= canary_size) {
+        printf("c >= canary_size\n");
+        return -1;
+    }
+    printf("GenAInTime          %u\n", c);
 
-//     FILL_STACK()
-//     VectorMul(ct, skpv, skpv[SABER_K - 1]);
-//     CHECK_STACK()
-//     if (c >= canary_size) {
-//         printf("c >= canary_size\n");
-//         return -1;
-//     }
-//     printf("VectorMul stack usage %u\n", c);
-//     return 0;
-// }
-
-// uint16_t temp_ar[SABER_N];
-// uint16_t r[SABER_K][SABER_N];
-// uint8_t seed[SABER_SEEDBYTES];
-
-// static int test_Genpoly_stack(void)
-// {
-//     volatile unsigned char a;
-//     FILL_STACK()
-//     GenMatrix_poly(temp_ar, seed, 0);
-//     CHECK_STACK()
-//     if (c >= canary_size) {
-//         printf("c >= canary_size\n");
-//         return -1;
-//     }
-//     printf("GenMatrix_poly stack usage %u\n", c);
-
-//     FILL_STACK()
-//     GenSecret(r, seed);
-//     CHECK_STACK()
-//     if (c >= canary_size) {
-//         printf("c >= canary_size\n");
-//         return -1;
-//     }
-//     printf("GenSecret stack usage %u\n", c);
-// }
+    FILL_STACK()
+    GenSInTime(A, seed_s, 0);
+    CHECK_STACK()
+    if (c >= canary_size) {
+        printf("c >= canary_size\n");
+        return -1;
+    }
+    printf("GenSInTime     %u\n", c);
+    return 0;
+}
+#endif
 
 int main(void)
 {
     canary_size = MAX_SIZE;
     printf("==========stack test==========\n");
     test_stack();
-    // test_Genpoly_stack();
     return 0;
 }

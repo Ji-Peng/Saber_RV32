@@ -113,7 +113,7 @@ void AES256_ECB(unsigned char *key, unsigned char *in, unsigned char *out)
     aes256_ctx_release(&ctx);
 }
 
-void randombytes_init(unsigned char *entropy_input,
+void RandomBytesInit(unsigned char *entropy_input,
                       unsigned char *personalization_string)
 {
     // printf("randombytes_init test\n");
@@ -129,7 +129,7 @@ void randombytes_init(unsigned char *entropy_input,
     DRBG_ctx.reseed_counter = 1;
 }
 
-int randombytes(unsigned char *x, unsigned long long xlen)
+int RandomBytes(unsigned char *x, unsigned long long xlen)
 {
     unsigned char block[16];
     int i = 0;
