@@ -34,7 +34,7 @@ static char* ullu(uint64_t val)
 #ifdef HOST
 #    define NTESTS 1000
 #else
-#    define NTESTS 10
+#    define NTESTS 100
 #endif
 
 static int TestCCA(void)

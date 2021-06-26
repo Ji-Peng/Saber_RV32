@@ -19,8 +19,8 @@ uint8_t canary = 0x42;
 
 #define PRINTCYCLES()                       \
     snprintf(outs, sizeof(outs), "%u ", c); \
-    hal_send_str(outs);                     \
-    hal_send_str("\n");
+    printf(outs);                     \
+    printf("\n");
 
 #define FILL_STACK()               \
     p = &a;                        \
@@ -45,7 +45,7 @@ uint8_t sk[CRYPTO_SECRETKEYBYTES];
 uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
 // -128 for avoiding affecting heap memory
 // 0x1a00 for sifive, 0x14000 for vexriscv
-#    define MAX_SIZE (0x14000 - 128)
+#    define MAX_SIZE (0x1a00 - 128)
 unsigned int canary_size = MAX_SIZE;
 uint8_t *pk = sk;
 uint8_t *ct = sk;
