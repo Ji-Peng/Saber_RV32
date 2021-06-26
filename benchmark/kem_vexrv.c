@@ -223,30 +223,30 @@ static void PrintConfig(void)
 {
     printcycles("SABER_L is: ", SABER_L);
     hal_send_str("Strategy: ");
-#    ifdef FASTGENA_SLOWMUL
+#ifdef FASTGENA_SLOWMUL
     hal_send_str("FASTGENA_SLOWMUL ");
-#    elif defined(FASTGENA_FASTMUL)
+#elif defined(FASTGENA_FASTMUL)
     hal_send_str("FASTGENA_FASTMUL ");
-#    elif defined(SLOWGENA_FASTMUL)
+#elif defined(SLOWGENA_FASTMUL)
     hal_send_str("SLOWGENA_FASTMUL ");
-#    endif
+#endif
 
     hal_send_str("NTT: ");
-#    ifdef COMPLETE_NTT
+#ifdef COMPLETE_NTT
     hal_send_str("COMPLETE_NTT ");
-#    elif defined(SEVEN_LAYER_NTT)
+#elif defined(SEVEN_LAYER_NTT)
     hal_send_str("SEVEN_LAYER_NTT ");
-#    elif defined(SIX_LAYER_NTT)
+#elif defined(SIX_LAYER_NTT)
     hal_send_str("SIX_LAYER_NTT ");
-#    elif defined(FIVE_LAYER_NTT)
+#elif defined(FIVE_LAYER_NTT)
     hal_send_str("FIVE_LAYER_NTT ");
-#    endif
+#endif
 
-#    ifdef NTTASM
+#ifdef NTTASM
     hal_send_str("ASM Implementation\n");
-#    else
+#else
     hal_send_str("C Implementation\n");
-#    endif
+#endif
 }
 
 int main(void)
@@ -256,6 +256,7 @@ int main(void)
     TestCCA();
     // SpeedNTT();
     SpeedCCA();
+    TestPolyMul();
     // SpeedCCAKP();
     // SpeedCCAEnc();
     // SpeedCCADec();
