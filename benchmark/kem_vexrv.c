@@ -177,11 +177,27 @@ static int SpeedCCADec(void)
     return 0;
 }
 
+static int SpeedPolyMul()
+{
+    uint16_t a[SABER_N], b[SABER_N], res[SABER_N * 2];
+    uint64_t t1, t2, sum;
+    int j;
+
+    for (j = 0; j < NTESTS; j++) {
+        t1 = hal_get_time();
+        pol_mul(a, b, res, 8192, 256);
+        t2 = hal_get_time();
+        sum += (t2 - t1);
+    }
+    printcycles(" ", (sum / NTESTS));
+    hal_send_str("\n");
+}
+
 int main(void)
 {
     hal_setup(CLOCK_BENCHMARK);
+    SpeedPolyMul();
     TestCCA();
-    // SpeedNTT();
     SpeedCCA();
     // SpeedCCAKP();
     // SpeedCCAEnc();
