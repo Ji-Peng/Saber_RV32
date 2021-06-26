@@ -48,6 +48,7 @@ static void printcycles(const char *s, unsigned int input)
 // uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
 uint8_t sk[CRYPTO_SECRETKEYBYTES];
 uint8_t ss_a[CRYPTO_BYTES], ss_b[CRYPTO_BYTES];
+uint16_t poly_a[SABER_N], poly_b[SABER_N], poly_res[SABER_N * 2];
 // -128 for avoiding affecting heap memory
 #    define MAX_SIZE (0x14000 - 128)
 unsigned int canary_size = MAX_SIZE;
@@ -107,6 +108,15 @@ static int test_stack(void)
 
     FILL_STACK()
     crypto_kem_dec(ss_b, ct, sk);
+    CHECK_STACK()
+    if (c >= canary_size) {
+        printf("c >= canary_size\n");
+        return -1;
+    }
+    PRINTCYCLES()
+
+    FILL_STACK()
+    pol_mul(poly_a, poly_b, poly_res, 8192, 256);
     CHECK_STACK()
     if (c >= canary_size) {
         printf("c >= canary_size\n");

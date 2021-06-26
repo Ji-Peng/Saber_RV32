@@ -189,7 +189,7 @@ static int SpeedPolyMul()
         t2 = hal_get_time();
         sum += (t2 - t1);
     }
-    printcycles(" ", (sum / NTESTS));
+    printcycles("pol mul: ", (sum / NTESTS));
     hal_send_str("\n");
 }
 
