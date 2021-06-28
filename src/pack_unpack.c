@@ -36,6 +36,7 @@ void SABER_un_pack3bit(uint8_t *bytes, uint16_t *data){
 
 }
 
+
 void SABER_pack_4bit(uint8_t *bytes, uint16_t *data){
 
 	uint32_t j;
@@ -58,6 +59,10 @@ void SABER_un_pack4bit(const unsigned char *bytes, uint16_t *ar){
 		offset_data=2*j;
 		ar[offset_data] = bytes[j] & 0x0f;
 		ar[offset_data+1] = (bytes[j]>>4) & 0x0f;
+
+		//masked_message_ar[offset_data] = (bytes[j]>>3) & 0x01;
+		//masked_message_ar[offset_data+1] = (bytes[j]>>7) & 0x01;
+
 	}
 }
 
@@ -71,11 +76,10 @@ void SABER_pack_6bit(uint8_t *bytes, uint16_t *data){
 		offset_byte=3*j;
 		offset_data=4*j;
 		bytes[offset_byte + 0]= (data[offset_data + 0]&0x3f) | ((data[offset_data+1]&0x03)<<6);
- 		bytes[offset_byte + 1]= ((data[offset_data+1]>>2)&0x0f) | ((data[offset_data+2]&0x0f)<<4);
- 		bytes[offset_byte + 2]= ((data[offset_data+2]>>4)&0x03) | ((data[offset_data+3]&0x3f)<<2);
+ 		bytes[offset_byte + 1]= ((data[offset_data+1]&0x3f)>>2) | ((data[offset_data+2]&0x0f)<<4);
+ 		bytes[offset_byte + 2]= ((data[offset_data+2]&0x3f)>>4) | ((data[offset_data+3]&0x3f)<<2);
 	}
 }
-
 
 void SABER_un_pack6bit(const unsigned char *bytes, uint16_t *data){
 
@@ -142,7 +146,6 @@ void BS2POLVECp(const unsigned char *bytes, uint16_t data[SABER_K][SABER_N]){
 
 
 }
-
 
 
 void POLVECq2BS(uint8_t *bytes, uint16_t data[SABER_K][SABER_N]){
@@ -213,7 +216,7 @@ void BS2POLVECq(const unsigned char *bytes, uint16_t data[SABER_K][SABER_N]){
 
 }
 
-void BS2POL(const unsigned char *bytes, uint16_t data[SABER_N]){ //only BS2POLq no BS2POLp
+void BS2POL(const unsigned char *bytes, uint16_t data[SABER_N]){
 	
 	uint32_t j;
 	uint32_t offset_data=0,offset_byte=0;	
@@ -236,7 +239,6 @@ void BS2POL(const unsigned char *bytes, uint16_t data[SABER_N]){ //only BS2POLq 
 
 }
 
-
 void POLVEC2BS(uint8_t *bytes, uint16_t data[SABER_K][SABER_N], uint16_t modulus){
 
 	if(modulus==1024)
@@ -252,4 +254,160 @@ void BS2POLVEC(const unsigned char *bytes, uint16_t data[SABER_K][SABER_N], uint
 	else if(modulus==8192)
 		BS2POLVECq(bytes, data);
 
+}
+
+
+void POLSEC2BS(uint8_t *bytes, int8_t data[SABER_K][SABER_N])
+{
+	uint32_t i,j;
+	uint32_t offset_data=0,offset_byte=0,offset_byte1=0;	
+	
+	offset_byte=0;
+	for(i=0;i<SABER_K;i++){
+		offset_byte1=i*(SABER_N*4)/8;
+		for(j=0;j<SABER_N/2;j++){
+			offset_byte=offset_byte1+j;
+			offset_data=2*j;
+
+			bytes[offset_byte] = (data[i][offset_data] & 0x0f) | ((data[i][offset_data+1] & 0x0f)<<4);
+		}
+	}
+}
+
+void BS2POLSEC(const unsigned char *bytes, int8_t data[SABER_K][SABER_N])
+{
+	uint32_t i,j;
+	uint32_t offset_data=0,offset_byte=0,offset_byte1=0;	
+	
+	offset_byte=0;
+	for(i=0;i<SABER_K;i++){
+		offset_byte1=i*(SABER_N*4)/8;
+		for(j=0;j<SABER_N/2;j++){
+			offset_byte=offset_byte1+j;
+			offset_data=2*j;
+
+			data[i][offset_data]   = ( (bytes[offset_byte] & 0x0f) ^ 0x8 ) - 0x8;
+			data[i][offset_data+1] = ( ((bytes[offset_byte] & 0xf0)>>4) ^ 0x8 ) - 0x8;
+
+		}
+	}
+}
+
+void POLp2BS(uint8_t *bytes, uint16_t data[SABER_N], uint16_t pol_vec_index){
+	
+	uint32_t i,j;
+	uint32_t offset_data=0,offset_byte=0,offset_byte1=0;	
+	
+	offset_byte=0;
+
+		offset_byte1=pol_vec_index*(SABER_N*10)/8;
+		for(j=0;j<SABER_N/4;j++){
+			offset_byte=offset_byte1+5*j;
+			offset_data=4*j;
+			bytes[offset_byte + 0]= ( data[offset_data + 0 ] & (0xff));
+
+			bytes[offset_byte + 1]= ( (data[offset_data + 0 ] >>8) & 0x03 ) | ((data[offset_data + 1 ] & 0x3f) << 2);
+
+			bytes[offset_byte + 2]= ( (data[offset_data + 1 ] >>6) & 0x0f ) | ( (data[offset_data + 2 ] &0x0f) << 4);
+
+			bytes[offset_byte + 3]= ( (data[offset_data + 2 ] >>4) & 0x3f ) | ((data[offset_data + 3 ] & 0x03) << 6);
+
+			bytes[offset_byte + 4]= ( (data[offset_data + 3 ] >>2) & 0xff );
+		}
+
+}
+
+void BS2POLp(uint16_t pol_index, const unsigned char *bytes, uint16_t pol[]){
+	
+	uint32_t j;
+	uint32_t offset_data=0,offset_byte=0,offset_byte1=0;	
+	
+		offset_byte=0;
+		offset_byte1=pol_index*(SABER_N*10)/8;
+		for(j=0;j<SABER_N/4;j++){
+			offset_byte=offset_byte1+5*j;
+			offset_data=4*j;
+			pol[offset_data + 0]= ( bytes[ offset_byte + 0 ] & (0xff)) |  ((bytes[ offset_byte + 1 ] & 0x03)<<8);
+			pol[offset_data + 1]= ( (bytes[ offset_byte + 1 ]>>2) & (0x3f)) |  ((bytes[ offset_byte + 2 ] & 0x0f)<<6);		
+			pol[offset_data + 2]= ( (bytes[ offset_byte + 2 ]>>4) & (0x0f)) |  ((bytes[ offset_byte + 3 ] & 0x3f)<<4);
+			pol[offset_data + 3]= ( (bytes[ offset_byte + 3 ]>>6) & (0x03)) |  ((bytes[ offset_byte + 4 ] & 0xff)<<2);		
+
+		}
+}
+
+unsigned char POLp2BS_cmp(uint8_t *bytes, uint16_t data[SABER_N], uint16_t pol_vec_index)
+{
+	unsigned char fail = 0;
+	
+	uint32_t i,j;
+	uint32_t offset_data=0,offset_byte=0,offset_byte1=0;	
+	
+	offset_byte=0;
+
+		offset_byte1=pol_vec_index*(SABER_N*10)/8;
+		for(j=0;j<SABER_N/4;j++){
+			offset_byte=offset_byte1+5*j;
+			offset_data=4*j;
+			fail |= (bytes[offset_byte + 0]) ^ ( data[offset_data + 0 ] & (0xff));
+
+			fail |= (bytes[offset_byte + 1]) ^ (( (data[offset_data + 0 ] >>8) & 0x03 ) | ((data[offset_data + 1 ] & 0x3f) << 2));
+
+			fail |= (bytes[offset_byte + 2]) ^ (( (data[offset_data + 1 ] >>6) & 0x0f ) | ( (data[offset_data + 2 ] &0x0f) << 4));
+
+			fail |= (bytes[offset_byte + 3]) ^ (( (data[offset_data + 2 ] >>4) & 0x3f ) | ((data[offset_data + 3 ] & 0x03) << 6));
+
+			fail |= (bytes[offset_byte + 4]) ^ ( (data[offset_data + 3 ] >>2) & 0xff );
+		}
+	return fail;
+}
+
+unsigned char SABER_pack_3bit_cmp(uint8_t *bytes, uint16_t *data)
+{
+	unsigned char fail = 0;
+
+	uint32_t j;
+	uint32_t offset_data=0,offset_byte=0;
+	
+	offset_byte=0;
+	for(j=0;j<SABER_N/8;j++){
+		offset_byte=3*j;
+		offset_data=8*j;
+		fail |= (bytes[offset_byte + 0]) ^ ((data[offset_data + 0] & 0x7) | ( (data[offset_data + 1] & 0x7)<<3 ) | ((data[offset_data + 2] & 0x3)<<6));
+		fail |= (bytes[offset_byte + 1]) ^ (((data[offset_data + 2] >> 2 ) & 0x01)  | ( (data[offset_data + 3] & 0x7)<<1 ) | ( (data[offset_data + 4] & 0x7)<<4 ) | (((data[offset_data + 5]) & 0x01)<<7));
+		fail |= (bytes[offset_byte + 2]) ^ (((data[offset_data + 5] >> 1 ) & 0x03) | ( (data[offset_data + 6] & 0x7)<<2 ) | ( (data[offset_data + 7] & 0x7)<<5 ));
+	}
+	return fail;
+}
+
+unsigned char SABER_pack_4bit_cmp(uint8_t *bytes, uint16_t *data)
+{
+	unsigned char fail = 0;
+
+	uint32_t j;
+	uint32_t offset_data=0;
+	
+	for(j=0;j<SABER_N/2;j++)
+	{
+		offset_data=2*j;
+		fail |= (bytes[j]) ^ ((data[offset_data] & 0x0f) | ( (data[offset_data + 1] & 0x0f)<<4 ));
+	}
+	return fail;
+}
+
+unsigned char SABER_pack_6bit_cmp(uint8_t *bytes, uint16_t *data)
+{
+	unsigned char fail = 0;
+
+	uint32_t j;
+	uint32_t offset_data=0,offset_byte=0;
+	
+	offset_byte=0;
+	for(j=0;j<SABER_N/4;j++){
+		offset_byte=3*j;
+		offset_data=4*j;
+		fail |= (bytes[offset_byte + 0]) ^ ((data[offset_data + 0]&0x3f) | ((data[offset_data+1]&0x03)<<6));
+ 		fail |= (bytes[offset_byte + 1]) ^ (((data[offset_data+1]&0x3f)>>2) | ((data[offset_data+2]&0x0f)<<4));
+ 		fail |= (bytes[offset_byte + 2]) ^ (((data[offset_data+2]&0x3f)>>4) | ((data[offset_data+3]&0x3f)<<2));
+	}
+	return fail;
 }

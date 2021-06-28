@@ -24,21 +24,21 @@
 //  Set these three values apropriately for your algorithm
 #if SABER_TYPE == LightSaber
 	#define CRYPTO_ALGNAME "LightSaber"
-	#define CRYPTO_SECRETKEYBYTES 1568
+	#define CRYPTO_SECRETKEYBYTES 992
 	#define CRYPTO_PUBLICKEYBYTES (2*320+32)
 	#define CRYPTO_BYTES 32
 	#define CRYPTO_CIPHERTEXTBYTES 736
 	#define Saber_type 1
 #elif SABER_TYPE == Saber
 	#define CRYPTO_ALGNAME "Saber"
-	#define CRYPTO_SECRETKEYBYTES 2304
+	#define CRYPTO_SECRETKEYBYTES 1440
 	#define CRYPTO_PUBLICKEYBYTES (3*320+32)
 	#define CRYPTO_BYTES 32
 	#define CRYPTO_CIPHERTEXTBYTES 1088
 	#define Saber_type 2
 #elif SABER_TYPE == FireSaber
 	#define CRYPTO_ALGNAME "FireSaber"
-	#define CRYPTO_SECRETKEYBYTES 3040
+	#define CRYPTO_SECRETKEYBYTES 1888
 	#define CRYPTO_PUBLICKEYBYTES (4*320+32)
 	#define CRYPTO_BYTES 32
 	#define CRYPTO_CIPHERTEXTBYTES 1472

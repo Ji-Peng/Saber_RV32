@@ -1,32 +1,13 @@
-#include"SABER_params.h"
+#include "SABER_params.h"
 
-#define N_SB (SABER_N >> 2)
-#define N_SB_RES (2*N_SB-1)
+void pol_mul(uint16_t* a, uint8_t* b, uint16_t* res);
 
+//void toom_cook_4way_mem(const uint16_t* a1,const uint16_t* b1, uint16_t* result_final);
+#define toom_cook_4way_mem toom_cook_4way_mem_asm
 
-#define N_SB_16 (N_SB >> 2)
-#define N_SB_16_RES (2*N_SB_16-1)
+// // void karatsuba_unroll(const uint16_t *a, const uint16_t *b, uint16_t *result);
+// #define karatsuba_unroll karatsuba_asm
 
-#define MUL_TYPE TC_TC
-//#define MUL_TYPE TC_KARA
+extern void toom_cook_4way_mem_asm(const uint16_t* a1,const uint16_t* b1, uint16_t* result);
 
-#if MUL_TYPE == TC_TC
-	#define NUM_POLY_MID 7
-#elif MUL_TYPE == TC_KARA
-	#define NUM_POLY_MID 9
-#endif
-
-
-void pol_mul(uint16_t* a, uint16_t* b, uint16_t* res, uint16_t p, uint32_t n);
-
-void pol_mul_sb(int16_t* a, int16_t* b, int16_t* res, uint16_t p, uint32_t n,uint32_t start);
-
-void toom_cook_4way(const uint16_t* a1, const uint16_t* b1, uint16_t* result);
-
-void pol_mul(uint16_t* a, uint16_t* b, uint16_t* res, uint16_t p, uint32_t n);
-
-void evaluation_single(const uint16_t *b, uint32_t bw_ar[7][NUM_POLY_MID][N_SB_16]);
-
-void TC_evaluation_64_unrolled(const uint16_t* a1, uint32_t bw_ar[7][NUM_POLY_MID][N_SB_16], uint32_t w_ar[7][NUM_POLY_MID][N_SB_16_RES]);
-
-void TC_interpol_64_unrolled(uint32_t w_ar[7][NUM_POLY_MID][N_SB_16_RES], uint16_t *result);
+// extern void karatsuba_asm(const uint16_t *a, const uint16_t *b, uint16_t *result);

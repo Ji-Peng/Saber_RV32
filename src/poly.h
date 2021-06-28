@@ -21,6 +21,6 @@ typedef struct{
   poly vec[SABER_K];
 } polyvec;
 
-void GenSecret(uint16_t r[SABER_K][SABER_N],const unsigned char *seed);
+void GenSecret(uint8_t r[SABER_K][SABER_N],const unsigned char *seed);
 
 #endif

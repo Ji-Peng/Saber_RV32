@@ -7,9 +7,10 @@ Vadim Lyubashevsky, John M. Schanck, Peter Schwabe & Damien stehle
 ----------------------------------------------------------------------*/
 
 #include "api.h"
-#include<stdint.h>
+#include <stdint.h>
 #include "SABER_params.h"
 
+#if Saber_type == 1
 static uint64_t load_littleendian(const unsigned char *x, int bytes)
 {
   int i;
@@ -18,14 +19,25 @@ static uint64_t load_littleendian(const unsigned char *x, int bytes)
     r |= (uint64_t)x[i] << (8*i);
   return r;
 }
-
-
-void cbd(uint16_t *r, const unsigned char *buf)
+#elif ((Saber_type == 2)||(Saber_type == 3))
+static uint32_t load_littleendian(const unsigned char *x, int bytes)
 {
-	uint16_t Qmod_minus1=SABER_Q-1;
+  int i;
+  uint32_t r = x[0];
+  for(i=1;i<bytes;i++)
+    r |= (uint32_t)x[i] << (8*i);
+  return r;
+}
+#else
+#error "Unsupported SABER parameter."
+#endif
+
+void cbd(uint8_t *r, const unsigned char *buf)
+{
 
 #if Saber_type == 3
-  uint32_t t,d, a[4], b[4];
+  uint32_t t,d;
+  uint8_t a[4], b[4];
   int i,j;
 
   for(i=0;i<SABER_N/4;i++)
@@ -44,14 +56,15 @@ void cbd(uint16_t *r, const unsigned char *buf)
     a[3] = (d >> 18) & 0x7;
     b[3] = (d >> 21);
 
-    r[4*i+0] = (uint16_t)(a[0]  - b[0]) & Qmod_minus1;
-    r[4*i+1] = (uint16_t)(a[1]  - b[1]) & Qmod_minus1;
-    r[4*i+2] = (uint16_t)(a[2]  - b[2]) & Qmod_minus1;
-    r[4*i+3] = (uint16_t)(a[3]  - b[3]) & Qmod_minus1;
+    r[4*i+0] = (a[0]  - b[0]);
+    r[4*i+1] = (a[1]  - b[1]);
+    r[4*i+2] = (a[2]  - b[2]);
+    r[4*i+3] = (a[3]  - b[3]);
 
   }
 #elif Saber_type == 2
-  uint32_t t,d, a[4], b[4];
+  uint32_t t,d;
+  uint8_t a[4], b[4];
   int i,j;
 
   for(i=0;i<SABER_N/4;i++)
@@ -70,13 +83,14 @@ void cbd(uint16_t *r, const unsigned char *buf)
     a[3] = (d >> 24) & 0xf;
     b[3] = (d >> 28);
 
-    r[4*i+0] = (uint16_t)(a[0]  - b[0]) & Qmod_minus1;
-    r[4*i+1] = (uint16_t)(a[1]  - b[1]) & Qmod_minus1;
-    r[4*i+2] = (uint16_t)(a[2]  - b[2]) & Qmod_minus1;
-    r[4*i+3] = (uint16_t)(a[3]  - b[3]) & Qmod_minus1;
+    r[4*i+0] = (a[0]  - b[0]);
+    r[4*i+1] = (a[1]  - b[1]);
+    r[4*i+2] = (a[2]  - b[2]);
+    r[4*i+3] = (a[3]  - b[3]);
   }
 #elif Saber_type == 1
-  uint64_t t,d, a[4], b[4];
+  uint64_t t,d;
+  uint8_t a[4], b[4];
   int i,j;
 
   for(i=0;i<SABER_N/4;i++)
@@ -95,10 +109,10 @@ void cbd(uint16_t *r, const unsigned char *buf)
     a[3] = (d >> 30) & 0x1f;
     b[3] = (d >> 35);
 
-    r[4*i+0] = (uint16_t)(a[0]  - b[0]) & Qmod_minus1;
-    r[4*i+1] = (uint16_t)(a[1]  - b[1]) & Qmod_minus1;
-    r[4*i+2] = (uint16_t)(a[2]  - b[2]) & Qmod_minus1;
-    r[4*i+3] = (uint16_t)(a[3]  - b[3]) & Qmod_minus1;
+    r[4*i+0] = (a[0]  - b[0]);
+    r[4*i+1] = (a[1]  - b[1]);
+    r[4*i+2] = (a[2]  - b[2]);
+    r[4*i+3] = (a[3]  - b[3]);
   }
 #else
 #error "Unsupported SABER parameter."
