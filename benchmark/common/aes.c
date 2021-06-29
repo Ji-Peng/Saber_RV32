@@ -32,8 +32,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef PQRISCV_PLATFORM
+#if defined(PQRISCV_PLATFORM)
 #    include "hal.h"
+#    define printf hal_send_str
+#elif defined(STM32F4)
+#    include "hal-stm32f4.h"
 #    define printf hal_send_str
 #endif
 
@@ -592,7 +595,6 @@ void aes128_ecb_keyexp(aes128ctx *r, const unsigned char *key)
     r->sk_exp = malloc(sizeof(uint64_t) * PQC_AES128_STATESIZE);
     if (r->sk_exp == NULL) {
         printf("malloc failed\n");
-        exit(111);
     }
 
     br_aes_ct64_keysched(skey, key, 16);
@@ -610,7 +612,6 @@ void aes192_ecb_keyexp(aes192ctx *r, const unsigned char *key)
     r->sk_exp = malloc(sizeof(uint64_t) * PQC_AES192_STATESIZE);
     if (r->sk_exp == NULL) {
         printf("malloc failed\n");
-        exit(111);
     }
 
     br_aes_ct64_keysched(skey, key, 24);
@@ -628,7 +629,7 @@ void aes256_ecb_keyexp(aes256ctx *r, const unsigned char *key)
     r->sk_exp = malloc(sizeof(uint64_t) * PQC_AES256_STATESIZE);
     if (r->sk_exp == NULL) {
         printf("malloc failed\n");
-        exit(111);
+        // exit(1);
     }
 
     br_aes_ct64_keysched(skey, key, 32);

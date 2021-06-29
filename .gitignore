@@ -3,3 +3,5 @@ host_out/
 scripts/
 freedom-metal/
 .history/
+bin/
+elf/

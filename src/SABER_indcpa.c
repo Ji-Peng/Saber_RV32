@@ -26,10 +26,10 @@ void indcpa_kem_keypair(uint8_t pk[SABER_INDCPA_PUBLICKEYBYTES],
     uint8_t seed_s[SABER_NOISE_SEEDBYTES];
     int i, j;
 
-    randombytes(seed_A, SABER_SEEDBYTES);
+    RandomBytes(seed_A, SABER_SEEDBYTES);
     shake128(seed_A, SABER_SEEDBYTES, seed_A,
              SABER_SEEDBYTES);  // for not revealing system RNG state
-    randombytes(seed_s, SABER_NOISE_SEEDBYTES);
+    RandomBytes(seed_s, SABER_NOISE_SEEDBYTES);
 
     GenMatrix(A, seed_A);
     GenSecret(s, seed_s);

@@ -8,8 +8,11 @@
 #include "poly.h"
 #include "poly_mul.h"
 
-#if defined(PQRISCV_PLATFORM) || defined(STM32F4)
+#if defined(PQRISCV_PLATFORM)
 #    include "hal.h"
+#    define printf hal_send_str
+#elif defined(STM32F4)
+#    include "hal-stm32f4.h"
 #    define printf hal_send_str
 #endif
 
@@ -195,6 +198,7 @@ static int test_stack(void)
 
 int main(void)
 {
+    hal_setup(CLOCK_BENCHMARK);
     canary_size = MAX_SIZE;
     printf("==========stack test==========\n");
     test_stack();

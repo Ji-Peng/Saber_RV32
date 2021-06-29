@@ -40,6 +40,6 @@ void AES256_CTR_DRBG_Update(unsigned char *provided_data, unsigned char *Key,
 void randombytes_init(unsigned char *entropy_input,
                       unsigned char *personalization_string);
 
-int randombytes(unsigned char *x, unsigned long long xlen);
+int RandomBytes(unsigned char *x, unsigned long long xlen);
 
 #endif /* rng_h */

@@ -10,6 +10,14 @@
 
 #include "aes.h"
 
+#if defined(PQRISCV_PLATFORM)
+#    include "hal.h"
+#    define printf hal_send_str
+#elif defined(STM32F4)
+#    include "hal-stm32f4.h"
+#    define printf hal_send_str
+#endif
+
 AES256_CTR_DRBG_struct DRBG_ctx;
 
 void AES256_ECB(unsigned char *key, unsigned char *ctr, unsigned char *buffer);
@@ -73,9 +81,9 @@ void AES256_ECB(unsigned char *key, unsigned char *ctr, unsigned char *buffer);
 //         }
 
 //         // take what's in the buffer
-//         memcpy(x + offset, ctx->buffer + ctx->buffer_pos, 16 - ctx->buffer_pos);
-//         xlen -= 16 - ctx->buffer_pos;
-//         offset += 16 - ctx->buffer_pos;
+//         memcpy(x + offset, ctx->buffer + ctx->buffer_pos, 16 -
+//         ctx->buffer_pos); xlen -= 16 - ctx->buffer_pos; offset += 16 -
+//         ctx->buffer_pos;
 
 //         AES256_ECB(ctx->key, ctx->ctr, ctx->buffer);
 //         ctx->buffer_pos = 0;
@@ -128,10 +136,11 @@ void randombytes_init(unsigned char *entropy_input,
     DRBG_ctx.reseed_counter = 1;
 }
 
-int randombytes(unsigned char *x, unsigned long long xlen)
+int RandomBytes(unsigned char *x, unsigned long long xlen)
 {
     unsigned char block[16];
     int i = 0;
+    printf("Random from AES\n");
 
     while (xlen > 0) {
         // increment V

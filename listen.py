@@ -16,7 +16,8 @@ import sys
 
 # print("> Returned data:", file=sys.stderr)
 
-dev=serial.Serial("/dev/ttyACM0",115200, timeout=0.5)
+# dev=serial.Serial("/dev/ttyACM0",115200, timeout=0.5)
+dev=serial.Serial("/dev/ttyUSB0",115200, timeout=0.5)
 
 while True:
     x = dev.read()
