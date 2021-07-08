@@ -32,7 +32,7 @@
 // #    define COMPLETE_NTT
 #endif
 
-// #    define NTTASM
+#    define NTTASM
 
 // check computation strategy
 #if !defined(FASTGENA_SLOWMUL) && !defined(FASTGENA_FASTMUL) && \

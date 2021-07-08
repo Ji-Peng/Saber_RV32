@@ -42,18 +42,18 @@ ifeq ($(UNAME_S),Darwin)
 	HOST_CFLAGS +=
 endif
 # for speed test: L=2: stack_size=0x1b00, L=3: stack_size=0x2300, L=4: stack_size=0x2550
-# for speed test: L=2: stack_size=0x1a00, L=3: stack_size=0x1a00, L=4: stack_size=0x1a00
+# for stack test: L=2: stack_size=0x1a00, L=3: stack_size=0x1a00, L=4: stack_size=0x1a00
 RISCV_LDFLAGS	+=	-Wl,--gc-sections -Wl,-Map,$(basename $@).map \
 					-nostartfiles -nostdlib \
 					-L$(sort $(dir $(abspath $(filter %.a,$^)))) \
 					-T$(abspath $(filter %.lds,$^)) \
-					-Xlinker --defsym=__stack_size=0x1a00 \
+					-Xlinker --defsym=__stack_size=0x2300 \
 					-Xlinker --defsym=__heap_max=1
 
 RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-group
 
 .PHONY: all
-all: out/stack.elf
+all: out/kem.elf
 
 .PHONY: host
 host: host_out/kem
