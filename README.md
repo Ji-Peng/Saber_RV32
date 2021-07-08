@@ -1,5 +1,9 @@
-# Saber on RV32IMAC
+# Time-memory Trade-offs for Saber on Memory-constrained RISC-V
 
+## Abstract
+Saber is a module-lattice-based key encapsulation scheme that has been selected as a finalist in the NIST Post-Quantum Cryptography Standardization project. As Saber computes on considerably large (polynomial) matrices and vectors, its efficient implementation on memory-constrained IoT devices is very challenging. In this paper, we present a modified Saber, Saber+, which has different strategies for the generation of public matrix and secret vector compared with the original Saber. Our highly-optimized software implementation of Saber+ on a memory-constrained RISC-V platform achieves 48\% performance improvement compared with the best state-of-the-art memory-optimized implementation of Saber.
+Specifically, we present various memory and performance optimizations for Saber+ on a memory-constrained RISC-V microcontroller, with merely 16KB of memory available. We utilize the Number Theoretic Transform (NTT) to speed up the polynomial multiplication in Saber+. For optimizing cycle counts and memory consumption during NTT, we carefully compare the efficiency of the complete and incomplete-NTTs, with platform-specific optimization. We implement 4-layers merging in the complete-NTT and 3-layers merging in the 6-layer incomplete-NTT. An improved on-the-fly generation of the public matrix and secret vector in Saber+ results in low memory footprint. Furthermore, by combining different optimization strategies, various time-memory trade-offs are explored. Our software implementation for Saber+ takes just 3,809K, 3,594K, and 3,193K clock cycles for key generation, encapsulation, and decapsulation, respectively, while consuming only 4.8KB of stack at most.
+  
 ## Different Trade-offs and in-complete NTT 
 
 We use different MACRO to choose different time-memory trade-offs and different in-complete NTTs. See `src/SABER_params.h` for detailed information.
@@ -22,6 +26,7 @@ We use different MACRO to choose different time-memory trade-offs and different 
 #### Setup
 
 Development Board: [SiFive FE310 RISC-V CPU](https://www.sifive.com/boards/hifive1-rev-b)
+Experimental Setup: [SiFive Freedom-E-SDK](https://github.com/sifive/freedom-e-sdk)
 
 Project:
 
