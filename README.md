@@ -1,10 +1,10 @@
 # Saber on RV32IMAC
 
-## Different Trade-offs and in-complete NTT 
+## Different Trade-offs and in-complete NTTs
 
-We use different MACRO to choose different time-memory trade-offs and different in-complete NTTs. See `src/SABER_params.h` for detailed information.
+We use different MACROs to choose different time-memory trade-offs and different in-complete NTTs. See `src/SABER_params.h` for detailed information.
 
-**Main MACRO used in our source code are as follows:**
+**Main MACROs used in our source code are as follows:**
 
 * `SABER_L`: used to choose different variants of Saber. L=2 for LightSaber, L=3 for Saber, and L=4 for FireSaber.
 * `FASTGENA_SLOWMUL`: strategy 1 in our paper
