@@ -3,8 +3,8 @@
 
 /* Change this for different security strengths */
 // #define SABER_L 2 /* LightSaber */
-#define SABER_L 3 /* Saber */
-// #define SABER_L 4 /* FireSaber */
+// #define SABER_L 3 /* Saber */
+#define SABER_L 4 /* FireSaber */
 
 #if SABER_L == 2
 #    define SABER_MU 10
@@ -32,7 +32,7 @@
 // #    define COMPLETE_NTT
 #endif
 
-#    define NTTASM
+// #    define NTTASM
 
 // check computation strategy
 #if !defined(FASTGENA_SLOWMUL) && !defined(FASTGENA_FASTMUL) && \

@@ -28,8 +28,7 @@ RISCV_CFLAGS	+=	$(ARCH_FLAGS) \
 					--specs=$(SPEC).specs \
 					-DMTIME_RATE_HZ_DEF=$(MTIME_RATE_HZ_DEF) \
 					-Os
-HOST_CFLAGS 	= 	-Wall -Wextra -Wmissing-prototypes -Wredundant-decls -Wno-unused-function \
-					-DHOST \
+HOST_CFLAGS 	= 	-DHOST \
 					-fomit-frame-pointer -fno-tree-vectorize \
 					-I$(abspath $(BSP_DIR)/install/include/) -I$(COMMON_DIR) -I$(SRC_DIR) -I$(HOST_DIR) \
 					-O3
@@ -56,7 +55,7 @@ RISCV_LDLIBS	+=	-Wl,--start-group -lc -lgcc -lm -lmetal -lmetal-gloss -Wl,--end-
 all: out/kem.elf
 
 .PHONY: host
-host: host_out/kem
+host: host_out/kem host_out/speed
 
 out/%.elf: \
 		benchmark/%.c \
